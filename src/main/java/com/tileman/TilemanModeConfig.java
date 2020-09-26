@@ -99,8 +99,7 @@ public interface TilemanModeConfig extends Config
 	@ConfigItem(
 			keyName = "automarkTiles",
 			name = "Auto-mark tiles",
-			description = "Automatically mark tiles as you walk.",
-			warning = "Will sometimes miss marking a tile"
+			description = "Automatically mark tiles as you walk."
 	)
 	default boolean automarkTiles()
 	{

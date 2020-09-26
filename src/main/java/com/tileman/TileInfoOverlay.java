@@ -31,6 +31,7 @@ import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.LineComponent;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -51,25 +52,37 @@ class TileInfoOverlay extends OverlayPanel {
         this.config = config;
         setPosition(OverlayPosition.TOP_LEFT);
         setPriority(OverlayPriority.MED);
+//        setPreferredSize(new Dimension(250, 0));
         getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, "Tileman Mode overlay"));
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        int unspentTiles = plugin.getRemainingTiles();
+        String unspentTiles = String.valueOf(plugin.getRemainingTiles());
+        String unlockedTiles = String.valueOf(plugin.getTotalTiles());
+        int xpTowardsNextTile = Integer.parseInt(StringUtils.right(Long.toString(client.getOverallExperience()), 3));
+        String xpUntilNextTile = String.valueOf(1000 - xpTowardsNextTile);
 
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Spent Tiles:")
-                .right(String.valueOf(plugin.getTotalTiles()))
-                .build());
-
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("Unspent Tiles:")
+                .left("Available Tiles:")
                 .leftColor(getTextColor())
-                .right(String.valueOf(unspentTiles))
+                .right(unspentTiles)
                 .rightColor(getTextColor())
                 .build());
 
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("XP Until Next Tile:")
+                .right(xpUntilNextTile)
+                .build());
+
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("Tiles Unlocked:")
+                .right(unlockedTiles)
+                .build());
+
+        panelComponent.setPreferredSize(new Dimension(
+                110 + graphics.getFontMetrics().stringWidth(unlockedTiles),
+                0));
 
         return super.render(graphics);
     }

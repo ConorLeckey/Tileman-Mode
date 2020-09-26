@@ -37,6 +37,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.client.config.ConfigManager;
@@ -85,96 +86,15 @@ public class TilemanModePlugin extends Plugin {
     @Inject
     private TileInfoOverlay infoOverlay;
 
-    private int totalTiles, remainingTiles;
-    private LocalPoint lastTile;
-
-    private void savePoints(int regionId, Collection<GroundMarkerPoint> points) {
-        if (points == null || points.isEmpty()) {
-            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
-            return;
-        }
-
-        String json = GSON.toJson(points);
-        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
-    }
-
-    private Collection<GroundMarkerPoint> getPoints(int regionId) {
-        updateTileCounter();
-        return getGroundMarkerConfiguration(REGION_PREFIX + regionId);
-    }
-
-    private void updateTileCounter() {
-        List<String> regions = configManager.getConfigurationKeys("groundMarker.region");
-        int totalTiles = 0;
-        for (String region : regions) {
-            Collection<GroundMarkerPoint> regionTiles = getGroundMarkerConfiguration(region.substring(CONFIG_GROUP.length() + 1));
-
-            totalTiles += regionTiles.size();
-        }
-        if (totalTiles > 0) {
-            updateTotalTilesUsed(totalTiles);
-            updateRemainingTiles(totalTiles);
-        }
-    }
-
-    private Collection<GroundMarkerPoint> getGroundMarkerConfiguration(String key) {
-        String json = configManager.getConfiguration(CONFIG_GROUP, key);
-
-        if (Strings.isNullOrEmpty(json)) {
-            return Collections.emptyList();
-        }
-
-        return GSON.fromJson(json, new TypeToken<List<GroundMarkerPoint>>() {
-        }.getType());
-    }
-
     @Provides
     TilemanModeConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(TilemanModeConfig.class);
     }
 
-    private void loadPoints() {
-        points.clear();
-
-        int[] regions = client.getMapRegions();
-
-        if (regions == null) {
-            return;
-        }
-
-        for (int regionId : regions) {
-            // load points for region
-            log.debug("Loading points for region {}", regionId);
-            Collection<GroundMarkerPoint> regionPoints = getPoints(regionId);
-            Collection<WorldPoint> worldPoint = translateToWorldPoint(regionPoints);
-            points.addAll(worldPoint);
-        }
-    }
-
-    private Collection<WorldPoint> translateToWorldPoint(Collection<GroundMarkerPoint> points) {
-        if (points.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return points.stream()
-                .map(point -> WorldPoint.fromRegion(point.getRegionId(), point.getRegionX(), point.getRegionY(), point.getZ()))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    protected void startUp() {
-        overlayManager.add(overlay);
-        overlayManager.add(minimapOverlay);
-        overlayManager.add(infoOverlay);
-    }
-
-    @Override
-    protected void shutDown() {
-        overlayManager.remove(overlay);
-        overlayManager.remove(minimapOverlay);
-        overlayManager.remove(infoOverlay);
-        points.clear();
-    }
+    private int totalTilesUsed, remainingTiles;
+    private LocalPoint lastTile;
+    private int configState;
+    private int totalTiles;
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -217,15 +137,78 @@ public class TilemanModePlugin extends Plugin {
     }
 
     @Subscribe
+    public void onGameTick(GameTick tick) {
+        final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
+        if (playerPos == null) {
+            return;
+        }
+
+        final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
+        if (playerPosLocal == null) {
+            return;
+        }
+
+        // This number will change should any config that affects the counter be changed
+        int currentConfigState = config.tilesOffset() + config.warningLimit() * 10 * (config.includeTotalLevel() ? -1 : 1);
+        int currentTotalTiles = (int) client.getOverallExperience() / 1000;
+
+        if (lastTile == null || (lastTile.distanceTo(playerPosLocal) != 0)) {
+            handleMovement(playerPosLocal);
+            updateTileCounter();
+        } else if (currentConfigState != configState || totalTiles != currentTotalTiles) {
+            updateTileCounter();
+            configState = currentConfigState;
+            totalTiles = currentTotalTiles;
+        }
+
+    }
+
+    @Subscribe
     public void onGameStateChanged(GameStateChanged gameStateChanged) {
         if (gameStateChanged.getGameState() != GameState.LOGGED_IN) {
             return;
         }
         loadPoints();
+        updateTileCounter();
     }
 
+    @Override
+    protected void startUp() {
+        overlayManager.add(overlay);
+        overlayManager.add(minimapOverlay);
+        overlayManager.add(infoOverlay);
+        loadPoints();
+    }
+
+    @Override
+    protected void shutDown() {
+        overlayManager.remove(overlay);
+        overlayManager.remove(minimapOverlay);
+        overlayManager.remove(infoOverlay);
+        points.clear();
+    }
+
+    private Collection<GroundMarkerPoint> getPoints(int regionId) {
+        return getGroundMarkerConfiguration(REGION_PREFIX + regionId);
+    }
+
+    private void updateTileCounter() {
+        List<String> regions = configManager.getConfigurationKeys("groundMarker.region");
+        int totalTiles = 0;
+        for (String region : regions) {
+            Collection<GroundMarkerPoint> regionTiles = getGroundMarkerConfiguration(region.substring(CONFIG_GROUP.length() + 1));
+
+            totalTiles += regionTiles.size();
+        }
+        if (totalTiles > 0) {
+            updateTotalTilesUsed(totalTiles);
+            updateRemainingTiles(totalTiles);
+        }
+    }
+
+
     private void updateTotalTilesUsed(int totalTilesCount) {
-        totalTiles = totalTilesCount;
+        totalTilesUsed = totalTilesCount;
     }
 
     private void updateRemainingTiles(int totalTilesCount) {
@@ -236,8 +219,56 @@ public class TilemanModePlugin extends Plugin {
         remainingTiles = remainingTilesCount + config.tilesOffset();
     }
 
+    private Collection<GroundMarkerPoint> getGroundMarkerConfiguration(String key) {
+        String json = configManager.getConfiguration(CONFIG_GROUP, key);
+
+        if (Strings.isNullOrEmpty(json)) {
+            return Collections.emptyList();
+        }
+
+        return GSON.fromJson(json, new TypeToken<List<GroundMarkerPoint>>() {
+        }.getType());
+    }
+
+    private void loadPoints() {
+        points.clear();
+
+        int[] regions = client.getMapRegions();
+
+        if (regions == null) {
+            return;
+        }
+
+        for (int regionId : regions) {
+            // load points for region
+            log.debug("Loading points for region {}", regionId);
+            Collection<WorldPoint> worldPoint = translateToWorldPoint(getPoints(regionId));
+            points.addAll(worldPoint);
+        }
+    }
+
+    private void savePoints(int regionId, Collection<GroundMarkerPoint> points) {
+        if (points == null || points.isEmpty()) {
+            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+            return;
+        }
+
+        String json = GSON.toJson(points);
+        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
+    }
+
+    private Collection<WorldPoint> translateToWorldPoint(Collection<GroundMarkerPoint> points) {
+        if (points.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return points.stream()
+                .map(point -> WorldPoint.fromRegion(point.getRegionId(), point.getRegionX(), point.getRegionY(), point.getZ()))
+                .collect(Collectors.toList());
+    }
+
     int getTotalTiles() {
-        return totalTiles;
+        return totalTilesUsed;
     }
 
     int getRemainingTiles() {
@@ -252,7 +283,9 @@ public class TilemanModePlugin extends Plugin {
     }
 
     void handleMovement(LocalPoint currentPlayerPoint) {
-        if (currentPlayerPoint == null || !config.automarkTiles() || client.isInInstancedRegion()) {
+        if (currentPlayerPoint == null ||
+                !config.automarkTiles() ||
+                client.isInInstancedRegion()) {
             return;
         }
 
@@ -284,9 +317,9 @@ public class TilemanModePlugin extends Plugin {
 
         List<GroundMarkerPoint> groundMarkerPoints = new ArrayList<>(getPoints(regionId));
 
-        if(markedValue) {
+        if (markedValue) {
             // Try add tile
-            if(!groundMarkerPoints.contains(point) && remainingTiles > 0) {
+            if (!groundMarkerPoints.contains(point) && remainingTiles > 0) {
                 groundMarkerPoints.add(point);
             }
         } else {
@@ -295,45 +328,6 @@ public class TilemanModePlugin extends Plugin {
         }
 
         savePoints(regionId, groundMarkerPoints);
-        loadPoints();
-    }
-
-    void markTile(LocalPoint localPoint, boolean menuOption) {
-        if (localPoint == null || client.isInInstancedRegion() || (lastTile != null && lastTile.distanceTo(localPoint) == 0)) {
-            return;
-        }
-
-        // If player moves 2 tiles in a straight line, fill in the middle tile
-        if (!menuOption && lastTile != null
-                && (lastTile.distanceTo(localPoint) == 256 || lastTile.distanceTo(localPoint) == 362)) {
-            int xDiff = lastTile.getX() - localPoint.getX();
-            int yDiff = lastTile.getY() - localPoint.getY();
-            int yModifier = yDiff / 2;
-            int xModifier = xDiff / 2;
-
-            markTile(new LocalPoint(localPoint.getX() + xModifier, localPoint.getY() + yModifier), false);
-        }
-        lastTile = localPoint;
-
-        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
-
-        int regionId = worldPoint.getRegionID();
-        GroundMarkerPoint point = new GroundMarkerPoint(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
-        log.debug("Updating point: {} - {}", point, worldPoint);
-
-        List<GroundMarkerPoint> groundMarkerPoints = new ArrayList<>(getPoints(regionId));
-        if (groundMarkerPoints.contains(point)) {
-            if (menuOption) {
-                groundMarkerPoints.remove(point);
-            } else {
-                return;
-            }
-        } else if (remainingTiles > 0) {
-            groundMarkerPoints.add(point);
-        }
-
-        savePoints(regionId, groundMarkerPoints);
-
         loadPoints();
     }
 }
