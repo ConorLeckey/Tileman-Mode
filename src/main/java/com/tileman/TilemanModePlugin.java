@@ -255,7 +255,10 @@ public class TilemanModePlugin extends Plugin {
     }
 
     void handleMovement(LocalPoint currentPlayerPoint) {
-        if (currentPlayerPoint == null || !config.automarkTiles() || client.isInInstancedRegion()) {
+        if (currentPlayerPoint == null ||
+            !config.automarkTiles() ||
+            (lastTile != null && lastTile.distanceTo(currentPlayerPoint) == 0)
+            || client.isInInstancedRegion()) {
             return;
         }
 
