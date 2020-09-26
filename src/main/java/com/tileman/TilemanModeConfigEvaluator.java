@@ -52,13 +52,13 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     static {
         // Load Game Mode defaults for Tiles Offset
         gameModeToTilesOffsetDefault = new HashMap<>();
-        gameModeToTilesOffsetDefault.put(TilemanGameMode.CLASSIC, TILEMAN_TILE_OFFSET);
+        gameModeToTilesOffsetDefault.put(TilemanGameMode.COMMUNITY, TILEMAN_TILE_OFFSET);
         gameModeToTilesOffsetDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_TILE_OFFSET);
         gameModeToTilesOffsetDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_TILE_OFFSET);
 
         // Load Game Mode defaults for Include Total Levels
         gameModeToIncludeTotalLevelDefault = new HashMap<>();
-        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.CLASSIC, TILEMAN_INCLUDE_TOTAL_LEVEL);
+        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.COMMUNITY, TILEMAN_INCLUDE_TOTAL_LEVEL);
         gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_INCLUDE_TOTAL_LEVEL);
         gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL);
     }

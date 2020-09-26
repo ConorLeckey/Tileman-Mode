@@ -39,7 +39,7 @@ public interface TilemanModeConfig extends Config
 	String customGameModeSection = "customGameMode";
 
 	public enum TilemanGameMode {
-		CLASSIC,
+		COMMUNITY,
 		STRICT,
 		ACCELERATED
 	}
@@ -52,7 +52,7 @@ public interface TilemanModeConfig extends Config
 	)
 	default TilemanGameMode gameMode()
 	{
-		return TilemanGameMode.CLASSIC;
+		return TilemanGameMode.COMMUNITY;
 	}
 
 	@Alpha
