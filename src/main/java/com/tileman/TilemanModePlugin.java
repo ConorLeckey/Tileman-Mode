@@ -190,7 +190,7 @@ public class TilemanModePlugin extends Plugin {
         if (target == null) {
             return;
         }
-        markTile(target.getLocalLocation(), true);
+        handleMenuOption(target.getLocalLocation(), event.getMenuOption().equals(MARK));
     }
 
     @Subscribe
@@ -245,6 +245,60 @@ public class TilemanModePlugin extends Plugin {
 
     int getRemainingTiles() {
         return remainingTiles;
+    }
+
+    void handleMenuOption(LocalPoint selectedPoint, boolean markedValue) {
+        if (selectedPoint == null) {
+            return;
+        }
+        updateTileMark(selectedPoint, markedValue);
+    }
+
+    void handleMovement(LocalPoint currentPlayerPoint) {
+        if (currentPlayerPoint == null || !config.automarkTiles() || client.isInInstancedRegion()) {
+            return;
+        }
+
+        // Mark the tile they walked to
+        updateTileMark(currentPlayerPoint, true);
+
+        // If player moves 2 tiles in a straight line, fill in the middle tile
+        // TODO Fill path between last point and current point. This will fix missing tiles that occur when you lag
+        // TODO   and rendered frames are skipped. See if RL has an api that mimic's OSRS's pathing. If so, use that to
+        // TODO   set all tiles between current tile and lastTile as marked
+        if (lastTile != null
+                && (lastTile.distanceTo(currentPlayerPoint) == 256 || lastTile.distanceTo(currentPlayerPoint) == 362)) {
+            int xDiff = lastTile.getX() - currentPlayerPoint.getX();
+            int yDiff = lastTile.getY() - currentPlayerPoint.getY();
+            int yModifier = yDiff / 2;
+            int xModifier = xDiff / 2;
+
+            updateTileMark(new LocalPoint(currentPlayerPoint.getX() + xModifier, currentPlayerPoint.getY() + yModifier), true);
+        }
+        lastTile = currentPlayerPoint;
+    }
+
+    void updateTileMark(LocalPoint localPoint, boolean markedValue) {
+        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
+
+        int regionId = worldPoint.getRegionID();
+        GroundMarkerPoint point = new GroundMarkerPoint(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
+        log.debug("Updating point: {} - {}", point, worldPoint);
+
+        List<GroundMarkerPoint> groundMarkerPoints = new ArrayList<>(getPoints(regionId));
+
+        if(markedValue) {
+            // Try add tile
+            if(!groundMarkerPoints.contains(point) && remainingTiles > 0) {
+                groundMarkerPoints.add(point);
+            }
+        } else {
+            // Try remove tile
+            groundMarkerPoints.remove(point);
+        }
+
+        savePoints(regionId, groundMarkerPoints);
+        loadPoints();
     }
 
     void markTile(LocalPoint localPoint, boolean menuOption) {
