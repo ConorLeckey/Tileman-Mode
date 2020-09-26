@@ -27,13 +27,60 @@
 package com.tileman;
 
 import lombok.extern.slf4j.Slf4j;
+
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
-class TilemanModeConfigEvaluator {
+class TilemanModeConfigEvaluator implements TilemanModeConfig {
+
+    // Tileman Game Mode
+    private static final int TILEMAN_TILE_OFFSET = 9;
+    private static final boolean TILEMAN_INCLUDE_TOTAL_LEVEL = false;
+
+    // Strict Tileman Game Mode
+    private static final int STRICT_TILEMAN_TILE_OFFSET = 0;
+    private static final boolean STRICT_TILEMAN_INCLUDE_TOTAL_LEVEL = false;
+
+    // Expeditious Tileman Game Mode
+    private static final int EXPEDITIOUS_TILEMAN_TILE_OFFSET = 0;
+    private static final boolean EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL = true;
+
+    private static Map<TilemanGameMode, Integer> gameModeToTilesOffsetDefault;
+    private static Map<TilemanGameMode, Boolean> gameModeToIncludeTotalLevelDefault;
+    static {
+        // Load Game Mode defaults for Tiles Offset
+        gameModeToTilesOffsetDefault = new HashMap<>();
+        gameModeToTilesOffsetDefault.put(TilemanGameMode.CLASSIC, TILEMAN_TILE_OFFSET);
+        gameModeToTilesOffsetDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_TILE_OFFSET);
+        gameModeToTilesOffsetDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_TILE_OFFSET);
+
+        // Load Game Mode defaults for Include Total Levels
+        gameModeToIncludeTotalLevelDefault = new HashMap<>();
+        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.CLASSIC, TILEMAN_INCLUDE_TOTAL_LEVEL);
+        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_INCLUDE_TOTAL_LEVEL);
+        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL);
+    }
 
     @Inject
     private TilemanModeConfig config;
 
+    @Override
+    public int tilesOffset() {
+        if(config.enableCustomGameMode()) {
+            return config.tilesOffset();
+        } else {
+            return gameModeToTilesOffsetDefault.get(config.gameMode());
+        }
+    }
 
+    @Override
+    public boolean includeTotalLevel() {
+        if(config.enableCustomGameMode()) {
+            return config.includeTotalLevel();
+        } else {
+            return gameModeToIncludeTotalLevelDefault.get(config.gameMode());
+        }
+    }
 }
