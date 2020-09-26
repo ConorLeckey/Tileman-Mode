@@ -34,6 +34,22 @@ import net.runelite.client.config.ConfigItem;
 @ConfigGroup("tilemanMode")
 public interface TilemanModeConfig extends Config
 {
+	public enum TilemanGameMode {
+		TILEMAN,
+		STRICT_START_TILEMAN,
+		CASUAL_TILEMAN
+	}
+	@Alpha
+	@ConfigItem(
+			keyName = "gameMode",
+			name = "Game Mode",
+			description = "Select your Tileman game mode"
+	)
+	default TilemanGameMode gameMode()
+	{
+		return TilemanGameMode.TILEMAN;
+	}
+
 	@Alpha
 	@ConfigItem(
 		keyName = "drawOnMinimap",
