@@ -59,15 +59,15 @@ class TileInfoOverlay extends OverlayPanel {
         int unspentTiles = plugin.getRemainingTiles();
 
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Spent Tiles:")
-                .right(String.valueOf(plugin.getTotalTiles()))
-                .build());
-
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("Unspent Tiles:")
+                .left("Available Tiles:")
                 .leftColor(getTextColor())
                 .right(String.valueOf(unspentTiles))
                 .rightColor(getTextColor())
+                .build());
+
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("Tiles Unlocked:")
+                .right(String.valueOf(plugin.getTotalTiles()))
                 .build());
 
 
