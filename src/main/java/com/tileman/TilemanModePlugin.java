@@ -300,43 +300,4 @@ public class TilemanModePlugin extends Plugin {
         savePoints(regionId, groundMarkerPoints);
         loadPoints();
     }
-
-    void markTile(LocalPoint localPoint, boolean menuOption) {
-        if (localPoint == null || client.isInInstancedRegion() || (lastTile != null && lastTile.distanceTo(localPoint) == 0)) {
-            return;
-        }
-
-        // If player moves 2 tiles in a straight line, fill in the middle tile
-        if (!menuOption && lastTile != null
-                && (lastTile.distanceTo(localPoint) == 256 || lastTile.distanceTo(localPoint) == 362)) {
-            int xDiff = lastTile.getX() - localPoint.getX();
-            int yDiff = lastTile.getY() - localPoint.getY();
-            int yModifier = yDiff / 2;
-            int xModifier = xDiff / 2;
-
-            markTile(new LocalPoint(localPoint.getX() + xModifier, localPoint.getY() + yModifier), false);
-        }
-        lastTile = localPoint;
-
-        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
-
-        int regionId = worldPoint.getRegionID();
-        GroundMarkerPoint point = new GroundMarkerPoint(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
-        log.debug("Updating point: {} - {}", point, worldPoint);
-
-        List<GroundMarkerPoint> groundMarkerPoints = new ArrayList<>(getPoints(regionId));
-        if (groundMarkerPoints.contains(point)) {
-            if (menuOption) {
-                groundMarkerPoints.remove(point);
-            } else {
-                return;
-            }
-        } else if (remainingTiles > 0) {
-            groundMarkerPoints.add(point);
-        }
-
-        savePoints(regionId, groundMarkerPoints);
-
-        loadPoints();
-    }
 }
