@@ -60,21 +60,6 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-
-		final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
-		if (playerPos == null)
-		{
-			return null;
-		}
-
-		final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
-		if (playerPosLocal == null)
-		{
-			return null;
-		}
-
-		plugin.handleMovement(playerPosLocal);
-
 		final Collection<WorldPoint> points = plugin.getPoints();
 		for (final WorldPoint point : points)
 		{
