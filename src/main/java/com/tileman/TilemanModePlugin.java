@@ -94,8 +94,10 @@ public class TilemanModePlugin extends Plugin {
         return configManager.getConfig(TilemanModeConfig.class);
     }
 
-    private int totalTiles, remainingTiles;
+    private int totalTilesUsed, remainingTiles;
     private LocalPoint lastTile;
+    private int configState;
+    private int totalTiles;
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -149,8 +151,19 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
-        handleMovement(playerPosLocal);
-        updateTileCounter();
+        // This number will change should any config that affects the counter be changed
+        int currentConfigState = config.tilesOffset() + config.warningLimit() * 10 * (config.includeTotalLevel() ? -1 : 1);
+        int currentTotalTiles = (int) client.getOverallExperience() / 1000;
+
+        if (lastTile == null || (lastTile.distanceTo(playerPosLocal) != 0)) {
+            handleMovement(playerPosLocal);
+            updateTileCounter();
+        } else if (currentConfigState != configState || totalTiles != currentTotalTiles) {
+            updateTileCounter();
+            configState = currentConfigState;
+            totalTiles = currentTotalTiles;
+        }
+
     }
 
     @Subscribe
@@ -159,6 +172,7 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
         loadPoints();
+        updateTileCounter();
     }
 
     @Override
@@ -193,6 +207,19 @@ public class TilemanModePlugin extends Plugin {
             updateTotalTilesUsed(totalTiles);
             updateRemainingTiles(totalTiles);
         }
+    }
+
+
+    private void updateTotalTilesUsed(int totalTilesCount) {
+        totalTilesUsed = totalTilesCount;
+    }
+
+    private void updateRemainingTiles(int totalTilesCount) {
+        int remainingTilesCount = (int) client.getOverallExperience() / 1000 - totalTilesCount;
+        if (config.includeTotalLevel()) {
+            remainingTilesCount += client.getTotalLevel();
+        }
+        remainingTiles = remainingTilesCount + config.tilesOffset();
     }
 
     private Collection<GroundMarkerPoint> getGroundMarkerConfiguration(String key) {
@@ -243,20 +270,8 @@ public class TilemanModePlugin extends Plugin {
                 .collect(Collectors.toList());
     }
 
-    private void updateTotalTilesUsed(int totalTilesCount) {
-        totalTiles = totalTilesCount;
-    }
-
-    private void updateRemainingTiles(int totalTilesCount) {
-        int remainingTilesCount = (int) client.getOverallExperience() / 1000 - totalTilesCount;
-        if (config.includeTotalLevel()) {
-            remainingTilesCount += client.getTotalLevel();
-        }
-        remainingTiles = remainingTilesCount + config.tilesOffset();
-    }
-
     int getTotalTiles() {
-        return totalTiles;
+        return totalTilesUsed;
     }
 
     int getRemainingTiles() {
@@ -273,8 +288,7 @@ public class TilemanModePlugin extends Plugin {
     void handleMovement(LocalPoint currentPlayerPoint) {
         if (currentPlayerPoint == null ||
                 !config.automarkTiles() ||
-                (lastTile != null && lastTile.distanceTo(currentPlayerPoint) == 0)
-                || client.isInInstancedRegion()) {
+                client.isInInstancedRegion()) {
             return;
         }
 
