@@ -73,7 +73,7 @@ public class TilemanModeOverlay extends Overlay
 			return null;
 		}
 
-		plugin.markTile(playerPosLocal, false);
+		plugin.handleMovement(playerPosLocal);
 
 		final Collection<WorldPoint> points = plugin.getPoints();
 		for (final WorldPoint point : points)
