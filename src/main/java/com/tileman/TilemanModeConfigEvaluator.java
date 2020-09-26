@@ -32,8 +32,21 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
+/***
+ * This class handles evaluating the config basedon which game mode is selected, and whether or not the user
+ * has selected to customize their game mode.
+ */
 @Slf4j
 class TilemanModeConfigEvaluator implements TilemanModeConfig {
+
+    /***
+     * Instead of injecting TilemanModeConfig into TilemanModePlugin, we inject it here and use it to evaluate
+     * what the final permissions should be. Then we should instead inject this class into TilemanModePlugin.
+     * Because this class also implements TilemanModeConfig, we only need to override the methods we care about ie.
+     * the ones controlled by the Game Mode dropdown.
+     */
+    @Inject
+    private TilemanModeConfig config;
 
     // Tileman Game Mode
     private static final int TILEMAN_TILE_OFFSET = 9;
@@ -62,9 +75,6 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
         gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_INCLUDE_TOTAL_LEVEL);
         gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL);
     }
-
-    @Inject
-    private TilemanModeConfig config;
 
     @Override
     public int tilesOffset() {
