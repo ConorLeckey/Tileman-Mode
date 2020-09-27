@@ -1,14 +1,14 @@
 # Tileman Mode Custom Plugin 
-Tileman Mode is a series on youtube, see it here: https://www.youtube.com/playlist?list=PLLNTajexsGYaw5pcyLOMyrW6w8_IMDG90
+Tileman Mode is a series on youtube, check out the playlist <a href="https://www.youtube.com/playlist?list=PLLNTajexsGYaw5pcyLOMyrW6w8_IMDG90">here</a>.
 
 The game mode is defined by the player being limited to standing on certain tiles. The amount of tiles you are allowed to stand on depends on your total experience. Each 1000 exp represents one tile you can 'spend'. 
 
 This plugin sets out to make the marking of tiles and the counting of both your used and remaining tiles automated.
 
 ## Installing 
-To install and play Tileman Mode on RuneLite, use the following method: https://www.youtube.com/watch?v=-eTTrlFoKPc&t=493s
+To install and play Tileman Mode on RuneLite, use the method <a href="https://www.youtube.com/watch?v=-eTTrlFoKPc&t=493s">described in this video</a>.
 
-Once you find RuneLite's plugin folder, put all the files from this repo's src/main/java/com/tileman/ folder into their own 'tileman' folder inside the plugins folder.
+Once you find RuneLite's plugin folder, put all the files from this repos src/main/java/com/tileman/ folder into their own 'tileman' folder inside the plugins folder.
 
 Once installed and have RuneLite launched, you <b>should disable</b> the 'Ground Markers' plugin. If you don't there will be some visual bugs (tiles will be rendered twice).
 
