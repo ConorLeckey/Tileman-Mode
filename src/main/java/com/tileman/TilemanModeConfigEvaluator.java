@@ -62,6 +62,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
 
     private static Map<TilemanGameMode, Integer> gameModeToTilesOffsetDefault;
     private static Map<TilemanGameMode, Boolean> gameModeToIncludeTotalLevelDefault;
+
     static {
         // Load Game Mode defaults for Tiles Offset
         gameModeToTilesOffsetDefault = new HashMap<>();
@@ -78,7 +79,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
 
     @Override
     public int tilesOffset() {
-        if(config.enableCustomGameMode()) {
+        if (config.enableCustomGameMode()) {
             return config.tilesOffset();
         } else {
             return gameModeToTilesOffsetDefault.get(config.gameMode());
@@ -87,7 +88,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
 
     @Override
     public boolean includeTotalLevel() {
-        if(config.enableCustomGameMode()) {
+        if (config.enableCustomGameMode()) {
             return config.includeTotalLevel();
         } else {
             return gameModeToIncludeTotalLevelDefault.get(config.gameMode());
@@ -106,5 +107,27 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     @Override
     public boolean automarkTiles() {
         return config.automarkTiles();
+    }
+
+    @Override
+    public String toString() {
+        return intsToString(new int[] {tilesOffset(), warningLimit()})
+                + boolToString(new boolean[] {automarkTiles(), drawTileOnMinimmap(), enableCustomGameMode(), includeTotalLevel(), excludeExp()});
+    }
+
+    public String intsToString(int[] configValues) {
+        StringBuilder outputStringBuilder = new StringBuilder();
+        for (int configValue : configValues) {
+            outputStringBuilder.append(String.valueOf(configValue)).append("-");
+        }
+        return outputStringBuilder.toString();
+    }
+
+    public String boolToString(boolean[] configValues) {
+        StringBuilder outputStringBuilder = new StringBuilder();
+        for (boolean configValue : configValues) {
+            outputStringBuilder.append(configValue ? "1" : "0").append("-");
+        }
+        return outputStringBuilder.toString();
     }
 }

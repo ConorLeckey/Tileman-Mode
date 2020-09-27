@@ -96,7 +96,7 @@ public class TilemanModePlugin extends Plugin {
 
     private int totalTilesUsed, remainingTiles;
     private LocalPoint lastTile;
-    private int configState;
+    private String configState;
     private int totalTiles;
 
     @Subscribe
@@ -151,19 +151,16 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
-        // This number will change should any config that affects the counter be changed
-        int currentConfigState = config.tilesOffset()
-                + config.warningLimit() * 10
-                * (config.includeTotalLevel() ? -1 : 1)
-                * (config.excludeExp() ? -1 : 1);
+        //This string will change should any config be changed
+        String currentConfigString = config.toString();
         int currentTotalTiles = (int) client.getOverallExperience() / 1000;
 
         if (lastTile == null || (lastTile.distanceTo(playerPosLocal) != 0)) {
             handleMovement(playerPosLocal);
             updateTileCounter();
-        } else if (currentConfigState != configState || totalTiles != currentTotalTiles) {
+        } else if (!currentConfigString.equals(configState) || totalTiles != currentTotalTiles) {
             updateTileCounter();
-            configState = currentConfigState;
+            configState = currentConfigString;
             totalTiles = currentTotalTiles;
         }
 
