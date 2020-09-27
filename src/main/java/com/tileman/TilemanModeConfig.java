@@ -28,6 +28,8 @@ package com.tileman;
 
 import net.runelite.client.config.*;
 
+import java.awt.*;
+
 @ConfigGroup("tilemanMode")
 public interface TilemanModeConfig extends Config
 {
@@ -86,6 +88,18 @@ public interface TilemanModeConfig extends Config
 	default boolean drawTileOnMinimmap()
 	{
 		return false;
+	}
+
+	@Alpha
+	@ConfigItem(
+			keyName = "markerColor",
+			name = "Tile Color",
+			description = "Configures the color of the tiles",
+			position = 5
+	)
+	default Color markerColor()
+	{
+		return Color.YELLOW;
 	}
 
 	/***   Custom Game Mode section   ***/
