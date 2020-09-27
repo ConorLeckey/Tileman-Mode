@@ -95,9 +95,9 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     }
 
     @Override
-    public boolean includeExp() {
+    public boolean excludeExp() {
         if(config.enableCustomGameMode()) {
-            return config.includeExp();
+            return config.excludeExp();
         } else {
             return true;
         }

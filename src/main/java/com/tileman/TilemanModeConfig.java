@@ -129,13 +129,13 @@ public interface TilemanModeConfig extends Config
 
 	@ConfigItem(
 			keyName = "includeExp",
-			name = "Include Experience",
+			name = "Exclude Experience",
 			description = "Includes experience / 1000 in usable tiles",
 			section = customGameModeSection,
 			position = 4
 	)
-	default boolean includeExp()
+	default boolean excludeExp()
 	{
-		return true;
+		return false;
 	}
 }
