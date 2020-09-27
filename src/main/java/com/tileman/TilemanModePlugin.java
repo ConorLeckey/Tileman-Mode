@@ -152,7 +152,10 @@ public class TilemanModePlugin extends Plugin {
         }
 
         // This number will change should any config that affects the counter be changed
-        int currentConfigState = config.tilesOffset() + config.warningLimit() * 10 * (config.includeTotalLevel() ? -1 : 1);
+        int currentConfigState = config.tilesOffset()
+                + config.warningLimit() * 10
+                * (config.includeTotalLevel() ? -1 : 1)
+                * (config.excludeExp() ? -1 : 1);
         int currentTotalTiles = (int) client.getOverallExperience() / 1000;
 
         if (lastTile == null || (lastTile.distanceTo(playerPosLocal) != 0)) {
@@ -215,11 +218,15 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateRemainingTiles(int totalTilesCount) {
-        int remainingTilesCount = (int) client.getOverallExperience() / 1000 - totalTilesCount;
-        if (config.includeTotalLevel()) {
-            remainingTilesCount += client.getTotalLevel();
+        if(!config.excludeExp()){
+            int remainingTilesCount = (int) client.getOverallExperience() / 1000 - totalTilesCount;
+            if (config.includeTotalLevel()) {
+                remainingTilesCount += client.getTotalLevel();
+            }
+            remainingTiles = remainingTilesCount + config.tilesOffset();
+        } else {
+            remainingTiles = config.tilesOffset() - totalTilesCount;
         }
-        remainingTiles = remainingTilesCount + config.tilesOffset();
     }
 
     private Collection<GroundMarkerPoint> getGroundMarkerConfiguration(String key) {
@@ -248,6 +255,7 @@ public class TilemanModePlugin extends Plugin {
             Collection<WorldPoint> worldPoint = translateToWorldPoint(getPoints(regionId));
             points.addAll(worldPoint);
         }
+        updateTileCounter();
     }
 
     private void savePoints(int regionId, Collection<GroundMarkerPoint> points) {

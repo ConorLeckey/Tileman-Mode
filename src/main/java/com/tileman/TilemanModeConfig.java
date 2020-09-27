@@ -100,6 +100,9 @@ public interface TilemanModeConfig extends Config
 		return false;
 	}
 
+	@Range(
+			min = Integer.MIN_VALUE
+	)
 	@ConfigItem(
 		keyName = "tilesOffset",
 		name = "Bonus tiles",
@@ -120,6 +123,18 @@ public interface TilemanModeConfig extends Config
 		position = 3
 	)
 	default boolean includeTotalLevel()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "includeExp",
+			name = "Exclude Experience",
+			description = "Includes experience / 1000 in usable tiles",
+			section = customGameModeSection,
+			position = 4
+	)
+	default boolean excludeExp()
 	{
 		return false;
 	}
