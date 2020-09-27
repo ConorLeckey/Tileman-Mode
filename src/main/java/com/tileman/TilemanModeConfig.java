@@ -55,7 +55,6 @@ public interface TilemanModeConfig extends Config
 		return TilemanGameMode.COMMUNITY;
 	}
 
-	@Alpha
 	@ConfigItem(
 		keyName = "automarkTiles",
 		name = "Auto-mark tiles",
@@ -67,7 +66,6 @@ public interface TilemanModeConfig extends Config
 		return false;
 	}
 
-	@Alpha
 	@ConfigItem(
 		keyName = "warningLimit",
 		name = "Unspent tiles warning",
@@ -79,7 +77,6 @@ public interface TilemanModeConfig extends Config
 		return 50;
 	}
 
-	@Alpha
 	@ConfigItem(
 		keyName = "drawOnMinimap",
 		name = "Draw tiles on minimap",
@@ -92,12 +89,10 @@ public interface TilemanModeConfig extends Config
 	}
 
 	/***   Custom Game Mode section   ***/
-	@Alpha
 	@ConfigItem(
 		keyName = "enableCustomGameMode",
 		name = "Enable Custom Game Mode",
 		description = "Settings below will override Game Mode defaults",
-		section = customGameModeSection,
 		position = 1
 	)
 	default boolean enableCustomGameMode()
@@ -105,7 +100,6 @@ public interface TilemanModeConfig extends Config
 		return false;
 	}
 
-	@Alpha
 	@ConfigItem(
 		keyName = "tilesOffset",
 		name = "Bonus tiles",
@@ -118,7 +112,6 @@ public interface TilemanModeConfig extends Config
 		return 9;
 	}
 
-	@Alpha
 	@ConfigItem(
 		keyName = "includeTotalLevels",
 		name = "Include total level",

@@ -93,4 +93,9 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
             return gameModeToIncludeTotalLevelDefault.get(config.gameMode());
         }
     }
+
+    @Override
+    public boolean automarkTiles() {
+        return config.automarkTiles();
+    }
 }
