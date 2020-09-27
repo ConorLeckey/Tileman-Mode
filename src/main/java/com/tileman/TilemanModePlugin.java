@@ -72,7 +72,7 @@ public class TilemanModePlugin extends Plugin {
     private Client client;
 
     @Inject
-    private TilemanModeConfig config;
+    private TilemanModeConfigEvaluator config;
 
     @Inject
     private ConfigManager configManager;

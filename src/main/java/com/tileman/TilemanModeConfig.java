@@ -26,66 +26,107 @@
  */
 package com.tileman;
 
-import net.runelite.client.config.Alpha;
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.*;
 
 @ConfigGroup("tilemanMode")
 public interface TilemanModeConfig extends Config
 {
+	@ConfigSection(
+		name = "Custom Game Mode",
+		description = "Create a custom Tileman game mode. Be sure to 'Enable Custom Game Mode'",
+		position = 99
+	)
+	String customGameModeSection = "customGameMode";
+
+	public enum TilemanGameMode {
+		COMMUNITY,
+		STRICT,
+		ACCELERATED
+	}
 	@Alpha
 	@ConfigItem(
-		keyName = "drawOnMinimap",
-		name = "Draw tiles on minimap",
-		description = "Configures whether marked tiles should be drawn on minimap"
+		keyName = "gameMode",
+		name = "Game Mode",
+		description = "Select your Tileman game mode",
+		position = 1
 	)
-	default boolean drawTileOnMinimmap()
+	default TilemanGameMode gameMode()
+	{
+		return TilemanGameMode.COMMUNITY;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "automarkTiles",
+		name = "Auto-mark tiles",
+		description = "Automatically mark tiles as you walk.",
+		position = 2
+	)
+	default boolean automarkTiles()
 	{
 		return false;
 	}
 
 	@Alpha
 	@ConfigItem(
-			keyName = "includeTotalLevels",
-			name = "Include total level",
-			description = "Includes total level in usable tiles"
-	)
-	default boolean includeTotalLevel()
-	{
-		return false;
-	}
-
-	@Alpha
-	@ConfigItem(
-			keyName = "warningLimit",
-			name = "Unspent tiles warning",
-			description = "Highlights overlay when limit reached"
+		keyName = "warningLimit",
+		name = "Unspent tiles warning",
+		description = "Highlights overlay when limit reached",
+		position = 3
 	)
 	default int warningLimit()
 	{
 		return 50;
 	}
 
-
 	@Alpha
 	@ConfigItem(
-			keyName = "tilesOffset",
-			name = "Additional tiles",
-			description = "Add more tiles to your limit, set to 0 for off"
+		keyName = "drawOnMinimap",
+		name = "Draw tiles on minimap",
+		description = "Configures whether marked tiles should be drawn on minimap",
+		position = 4
 	)
-	default int tilesOffset()
+	default boolean drawTileOnMinimmap()
 	{
-		return 20;
+		return false;
+	}
+
+	/***   Custom Game Mode section   ***/
+	@Alpha
+	@ConfigItem(
+		keyName = "enableCustomGameMode",
+		name = "Enable Custom Game Mode",
+		description = "Settings below will override Game Mode defaults",
+		section = customGameModeSection,
+		position = 1
+	)
+	default boolean enableCustomGameMode()
+	{
+		return false;
 	}
 
 	@Alpha
 	@ConfigItem(
-			keyName = "automarkTiles",
-			name = "Auto-mark tiles",
-			description = "Automatically mark tiles as you walk."
+		keyName = "tilesOffset",
+		name = "Bonus tiles",
+		description = "Add more tiles to your limit, set to 0 for off",
+		section = customGameModeSection,
+		position = 2
 	)
-	default boolean automarkTiles()
+	default int tilesOffset()
+	{
+		return 9;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "includeTotalLevels",
+		name = "Include total level",
+		description = "Includes total level in usable tiles",
+		section = customGameModeSection,
+		position = 3
+	)
+	default boolean includeTotalLevel()
 	{
 		return false;
 	}
