@@ -70,10 +70,12 @@ class TileInfoOverlay extends OverlayPanel {
                 .rightColor(getTextColor())
                 .build());
 
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("XP Until Next Tile:")
-                .right(xpUntilNextTile)
-                .build());
+        if(!(config.enableCustomGameMode() && config.excludeExp())) {
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("XP Until Next Tile:")
+                    .right(xpUntilNextTile)
+                    .build());
+        }
 
         panelComponent.getChildren().add(LineComponent.builder()
                 .left("Tiles Unlocked:")
