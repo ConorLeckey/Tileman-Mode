@@ -215,7 +215,11 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateRemainingTiles(int totalTilesCount) {
-        remainingTiles = config.tilesOffset() - totalTilesCount;
+        int remainingTilesCount = (int) client.getOverallExperience() / 1000 - totalTilesCount;
+        if (config.includeTotalLevel()) {
+            remainingTilesCount += client.getTotalLevel();
+        }
+        remainingTiles = remainingTilesCount + config.tilesOffset();
     }
 
     private Collection<GroundMarkerPoint> getGroundMarkerConfiguration(String key) {
