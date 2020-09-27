@@ -90,7 +90,7 @@ class TileInfoOverlay extends OverlayPanel {
     private Color getTextColor() {
         if (plugin.getRemainingTiles() <= 0) {
             return Color.RED;
-        } else if (plugin.getRemainingTiles() < config.warningLimit()) {
+        } else if (plugin.getRemainingTiles() <= config.warningLimit()) {
             return Color.ORANGE;
         }
         return Color.WHITE;

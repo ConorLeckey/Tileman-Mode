@@ -101,7 +101,7 @@ public class TilemanModeOverlay extends Overlay
 	private Color getTileColor() {
 		if (plugin.getRemainingTiles() <= 0) {
 			return Color.RED;
-		} else if (plugin.getRemainingTiles() < config.warningLimit()) {
+		} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
 			return Color.ORANGE;
 		}
 		return Color.YELLOW;
