@@ -278,14 +278,14 @@ public class TilemanModePlugin extends Plugin {
         return remainingTiles;
     }
 
-    void handleMenuOption(LocalPoint selectedPoint, boolean markedValue) {
+    private void handleMenuOption(LocalPoint selectedPoint, boolean markedValue) {
         if (selectedPoint == null) {
             return;
         }
         updateTileMark(selectedPoint, markedValue);
     }
 
-    void handleMovement(LocalPoint currentPlayerPoint) {
+    private void handleMovement(LocalPoint currentPlayerPoint) {
         if (currentPlayerPoint == null ||
                 !config.automarkTiles() ||
                 client.isInInstancedRegion()) {
@@ -311,7 +311,7 @@ public class TilemanModePlugin extends Plugin {
         lastTile = currentPlayerPoint;
     }
 
-    void updateTileMark(LocalPoint localPoint, boolean markedValue) {
+    private void updateTileMark(LocalPoint localPoint, boolean markedValue) {
         WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
 
         int regionId = worldPoint.getRegionID();

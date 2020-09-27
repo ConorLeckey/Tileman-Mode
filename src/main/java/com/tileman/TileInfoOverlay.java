@@ -52,7 +52,6 @@ class TileInfoOverlay extends OverlayPanel {
         this.config = config;
         setPosition(OverlayPosition.TOP_LEFT);
         setPriority(OverlayPriority.MED);
-//        setPreferredSize(new Dimension(250, 0));
         getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, "Tileman Mode overlay"));
     }
 
