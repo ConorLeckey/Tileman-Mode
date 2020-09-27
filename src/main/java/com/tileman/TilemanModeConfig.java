@@ -100,6 +100,9 @@ public interface TilemanModeConfig extends Config
 		return false;
 	}
 
+	@Range(
+			min = Integer.MIN_VALUE
+	)
 	@ConfigItem(
 		keyName = "tilesOffset",
 		name = "Bonus tiles",
