@@ -44,9 +44,13 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
+import javax.swing.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -89,6 +93,9 @@ public class TilemanModePlugin extends Plugin {
     @Inject
     private TileInfoOverlay infoOverlay;
 
+    @Inject
+    private ClientToolbar clientToolbar;
+
     @Provides
     TilemanModeConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(TilemanModeConfig.class);
@@ -98,6 +105,9 @@ public class TilemanModePlugin extends Plugin {
     private LocalPoint lastTile;
     private int configState;
     private int totalTiles;
+    private TilemanImportPanel panel;
+    private NavigationButton navButton;
+    private boolean panelEnabled = false;
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -184,6 +194,15 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.add(minimapOverlay);
         overlayManager.add(infoOverlay);
         loadPoints();
+        panel = new TilemanImportPanel(this);
+        navButton = NavigationButton.builder()
+                .tooltip("Tileman Import")
+                .icon(ImageUtil.getResourceStreamFromClass(getClass(), "/icon.png"))
+                .priority(70)
+                .panel(panel)
+                .build();
+
+        clientToolbar.addNavigation(navButton);
     }
 
     @Override
