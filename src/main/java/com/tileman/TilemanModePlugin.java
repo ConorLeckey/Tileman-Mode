@@ -100,24 +100,6 @@ public class TilemanModePlugin extends Plugin {
     private int configState;
     private long totalXp;
 
-    @Override
-    protected void startUp() {
-        overlayManager.add(overlay);
-        overlayManager.add(minimapOverlay);
-        overlayManager.add(infoOverlay);
-        loadPoints();
-        updateTileCounter();
-        log.debug("startup");
-    }
-
-    @Override
-    protected void shutDown() {
-        overlayManager.remove(overlay);
-        overlayManager.remove(minimapOverlay);
-        overlayManager.remove(infoOverlay);
-        points.clear();
-    }
-
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
@@ -198,97 +180,35 @@ public class TilemanModePlugin extends Plugin {
 
     }
 
-//    @Subscribe
-//    public void onGameStateChanged(GameStateChanged gameStateChanged) {
-//        if (gameStateChanged.getGameState() != GameState.LOGGED_IN) {
-//            return;
-//        }
-//        loadPoints();
-//        updateTileCounter();
-//    }
+    //    @Subscribe
+    //    public void onGameStateChanged(GameStateChanged gameStateChanged) {
+    //        if (gameStateChanged.getGameState() != GameState.LOGGED_IN) {
+    //            return;
+    //        }
+    //        loadPoints();
+    //        updateTileCounter();
+    //    }
 
-    void handleMenuOption(LocalPoint selectedPoint, boolean markedValue) {
-        if (selectedPoint == null) {
-            return;
-        }
-        updateTileMark(selectedPoint, markedValue);
-    }
-
-    void handleMovement(LocalPoint currentPlayerPoint) {
-        if (currentPlayerPoint == null ||
-                !config.automarkTiles() ||
-                client.isInInstancedRegion()) {
-            return;
-        }
-
-        // Mark the tile they walked to
-        updateTileMark(currentPlayerPoint, true);
-
-        // If player moves 2 tiles in a straight line, fill in the middle tile
-        // TODO Fill path between last point and current point. This will fix missing tiles that occur when you lag
-        // TODO   and rendered frames are skipped. See if RL has an api that mimic's OSRS's pathing. If so, use that to
-        // TODO   set all tiles between current tile and lastTile as marked
-        if (lastTile != null
-                && (lastTile.distanceTo(currentPlayerPoint) == 256 || lastTile.distanceTo(currentPlayerPoint) == 362)) {
-            int xDiff = lastTile.getX() - currentPlayerPoint.getX();
-            int yDiff = lastTile.getY() - currentPlayerPoint.getY();
-            int yModifier = yDiff / 2;
-            int xModifier = xDiff / 2;
-
-            updateTileMark(new LocalPoint(currentPlayerPoint.getX() + xModifier, currentPlayerPoint.getY() + yModifier), true);
-        }
-        lastTile = currentPlayerPoint;
-    }
-
-    void updateTileMark(LocalPoint localPoint, boolean markedValue) {
-        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
-
-        int regionId = worldPoint.getRegionID();
-        GroundMarkerPoint point = new GroundMarkerPoint(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
-        log.debug("Updating point: {} - {}", point, worldPoint);
-
-        List<GroundMarkerPoint> groundMarkerPoints = new ArrayList<>(getPoints(regionId));
-
-        if (markedValue) {
-            // Try add tile
-            if (!groundMarkerPoints.contains(point) && remainingTiles > 0) {
-                groundMarkerPoints.add(point);
-            }
-        } else {
-            // Try remove tile
-            groundMarkerPoints.remove(point);
-        }
-
-        savePoints(regionId, groundMarkerPoints);
+    @Override
+    protected void startUp() {
+        overlayManager.add(overlay);
+        overlayManager.add(minimapOverlay);
+        overlayManager.add(infoOverlay);
         loadPoints();
-    }
-
-    private void savePoints(int regionId, Collection<GroundMarkerPoint> points) {
-        if (points == null || points.isEmpty()) {
-            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
-            return;
-        }
-
-        String json = GSON.toJson(points);
-        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
-    }
-
-    private void loadPoints() {
-        points.clear();
-
-        int[] regions = client.getMapRegions();
-
-        if (regions == null) {
-            return;
-        }
-
-        for (int regionId : regions) {
-            // load points for region
-            log.debug("Loading points for region {}", regionId);
-            Collection<WorldPoint> worldPoint = translateToWorldPoint(getPoints(regionId));
-            points.addAll(worldPoint);
-        }
         updateTileCounter();
+        log.debug("startup");
+    }
+
+    @Override
+    protected void shutDown() {
+        overlayManager.remove(overlay);
+        overlayManager.remove(minimapOverlay);
+        overlayManager.remove(infoOverlay);
+        points.clear();
+    }
+
+    private Collection<GroundMarkerPoint> getPoints(int regionId) {
+        return getGroundMarkerConfiguration(REGION_PREFIX + regionId);
     }
 
     private void updateTileCounter() {
@@ -327,23 +247,6 @@ public class TilemanModePlugin extends Plugin {
         xpUntilNextTile = 1000 - Integer.parseInt(StringUtils.right(Long.toString(client.getOverallExperience()), 3));
     }
 
-    private Collection<WorldPoint> translateToWorldPoint(Collection<GroundMarkerPoint> points) {
-        if (points.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return points.stream()
-                .map(point -> WorldPoint.fromRegion(point.getRegionId(), point.getRegionX(), point.getRegionY(), point.getZ()))
-                .collect(Collectors.toList());
-    }
-
-
-    /* Getters */
-
-    private Collection<GroundMarkerPoint> getPoints(int regionId) {
-        return getGroundMarkerConfiguration(REGION_PREFIX + regionId);
-    }
-
     private Collection<GroundMarkerPoint> getGroundMarkerConfiguration(String key) {
         String json = configManager.getConfiguration(CONFIG_GROUP, key);
 
@@ -355,12 +258,106 @@ public class TilemanModePlugin extends Plugin {
         }.getType());
     }
 
+    private void loadPoints() {
+        points.clear();
+
+        int[] regions = client.getMapRegions();
+
+        if (regions == null) {
+            return;
+        }
+
+        for (int regionId : regions) {
+            // load points for region
+            log.debug("Loading points for region {}", regionId);
+            Collection<WorldPoint> worldPoint = translateToWorldPoint(getPoints(regionId));
+            points.addAll(worldPoint);
+        }
+        updateTileCounter();
+    }
+
+    private void savePoints(int regionId, Collection<GroundMarkerPoint> points) {
+        if (points == null || points.isEmpty()) {
+            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+            return;
+        }
+
+        String json = GSON.toJson(points);
+        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
+    }
+
+    private Collection<WorldPoint> translateToWorldPoint(Collection<GroundMarkerPoint> points) {
+        if (points.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return points.stream()
+                .map(point -> WorldPoint.fromRegion(point.getRegionId(), point.getRegionX(), point.getRegionY(), point.getZ()))
+                .collect(Collectors.toList());
+    }
+
     int getTotalTiles() {
         return totalTilesUsed;
     }
 
     int getRemainingTiles() {
         return remainingTiles;
+    }
+
+    private void handleMenuOption(LocalPoint selectedPoint, boolean markedValue) {
+        if (selectedPoint == null) {
+            return;
+        }
+        updateTileMark(selectedPoint, markedValue);
+    }
+
+    private void handleMovement(LocalPoint currentPlayerPoint) {
+        if (currentPlayerPoint == null ||
+                !config.automarkTiles() ||
+                client.isInInstancedRegion()) {
+            return;
+        }
+
+        // Mark the tile they walked to
+        updateTileMark(currentPlayerPoint, true);
+
+        // If player moves 2 tiles in a straight line, fill in the middle tile
+        // TODO Fill path between last point and current point. This will fix missing tiles that occur when you lag
+        // TODO   and rendered frames are skipped. See if RL has an api that mimic's OSRS's pathing. If so, use that to
+        // TODO   set all tiles between current tile and lastTile as marked
+        if (lastTile != null
+                && (lastTile.distanceTo(currentPlayerPoint) == 256 || lastTile.distanceTo(currentPlayerPoint) == 362)) {
+            int xDiff = lastTile.getX() - currentPlayerPoint.getX();
+            int yDiff = lastTile.getY() - currentPlayerPoint.getY();
+            int yModifier = yDiff / 2;
+            int xModifier = xDiff / 2;
+
+            updateTileMark(new LocalPoint(currentPlayerPoint.getX() + xModifier, currentPlayerPoint.getY() + yModifier), true);
+        }
+        lastTile = currentPlayerPoint;
+    }
+
+    private void updateTileMark(LocalPoint localPoint, boolean markedValue) {
+        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
+
+        int regionId = worldPoint.getRegionID();
+        GroundMarkerPoint point = new GroundMarkerPoint(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
+        log.debug("Updating point: {} - {}", point, worldPoint);
+
+        List<GroundMarkerPoint> groundMarkerPoints = new ArrayList<>(getPoints(regionId));
+
+        if (markedValue) {
+            // Try add tile
+            if (!groundMarkerPoints.contains(point) && remainingTiles > 0) {
+                groundMarkerPoints.add(point);
+            }
+        } else {
+            // Try remove tile
+            groundMarkerPoints.remove(point);
+        }
+
+        savePoints(regionId, groundMarkerPoints);
+        loadPoints();
     }
 
     int getXpUntilNextTile() {
