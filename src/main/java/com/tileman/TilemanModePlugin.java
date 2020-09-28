@@ -100,6 +100,7 @@ public class TilemanModePlugin extends Plugin {
     private int configState;
     private long totalXp;
 
+
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
@@ -156,22 +157,24 @@ public class TilemanModePlugin extends Plugin {
         int currentConfigState = config.tilesOffset()
                 + config.warningLimit() * 10
                 * (config.includeTotalLevel() ? -1 : 1)
-                * (config.excludeExp() ? -1 : 1);
+                * (config.excludeExp() ? -1 : 1)
+                * (config.automarkTiles() ? -1 : 1);
         long currentTotalXp = client.getOverallExperience();
 
-        // If we have no last tile, we probably just spawned in, so assume its our current tile
-        if(lastTile == null) {
-            lastTile = playerPosLocal;
-        }
-
-        if (lastTile.distanceTo(playerPosLocal) != 0) {
+        // If we have no last tile, we probably just spawned in, so make sure we walk on our current tile
+        if (lastTile == null || lastTile.distanceTo(playerPosLocal) != 0) {
             // Player moved
-            handleMovement(playerPosLocal);
+            handleWalkedToTile(playerPosLocal);
+            lastTile = playerPosLocal;
             updateTileCounter();
             log.debug("player moved");
             log.debug("last tile={}  distance={}", lastTile, lastTile==null ? "null" : lastTile.distanceTo(playerPosLocal));
         } else if (currentConfigState != configState || totalXp != currentTotalXp) {
             // Config changed
+            // Check if automark tiles is on, and if so attempt to step on current tile
+            if(config.automarkTiles()) {
+                handleWalkedToTile(playerPosLocal);
+            }
             updateTileCounter();
             configState = currentConfigState;
             totalXp = currentTotalXp;
@@ -180,14 +183,15 @@ public class TilemanModePlugin extends Plugin {
 
     }
 
-    //    @Subscribe
-    //    public void onGameStateChanged(GameStateChanged gameStateChanged) {
-    //        if (gameStateChanged.getGameState() != GameState.LOGGED_IN) {
-    //            return;
-    //        }
-    //        loadPoints();
-    //        updateTileCounter();
-    //    }
+    @Subscribe
+    public void onGameStateChanged(GameStateChanged gameStateChanged) {
+        if (gameStateChanged.getGameState() != GameState.LOGGED_IN) {
+            lastTile = null;
+            return;
+        }
+        loadPoints();
+        updateTileCounter();
+    }
 
     @Override
     protected void startUp() {
@@ -231,16 +235,20 @@ public class TilemanModePlugin extends Plugin {
         totalTilesUsed = totalTilesCount;
     }
 
-    private void updateRemainingTiles(int totalTilesCount) {
+    private void updateRemainingTiles(int placedTiles) {
+        // Start with tiles offset. We always get these
+        int earnedTiles = config.tilesOffset();
+
+        // If including xp, add those tiles in
         if(!config.excludeExp()){
-            int remainingTilesCount = (int) client.getOverallExperience() / 1000 - totalTilesCount;
-            if (config.includeTotalLevel()) {
-                remainingTilesCount += client.getTotalLevel();
-            }
-            remainingTiles = remainingTilesCount + config.tilesOffset();
-        } else {
-            remainingTiles = config.tilesOffset() - totalTilesCount;
+            earnedTiles += (int) client.getOverallExperience() / 1000;
         }
+        // If including total level, add those tiles in
+        if (config.includeTotalLevel()) {
+            earnedTiles += client.getTotalLevel();
+        }
+
+        remainingTiles = earnedTiles - placedTiles;
     }
 
     private void updateXpUntilNextTile() {
@@ -311,7 +319,7 @@ public class TilemanModePlugin extends Plugin {
         updateTileMark(selectedPoint, markedValue);
     }
 
-    private void handleMovement(LocalPoint currentPlayerPoint) {
+    private void handleWalkedToTile(LocalPoint currentPlayerPoint) {
         if (currentPlayerPoint == null ||
                 !config.automarkTiles() ||
                 client.isInInstancedRegion()) {
@@ -334,7 +342,6 @@ public class TilemanModePlugin extends Plugin {
 
             updateTileMark(new LocalPoint(currentPlayerPoint.getX() + xModifier, currentPlayerPoint.getY() + yModifier), true);
         }
-        lastTile = currentPlayerPoint;
     }
 
     private void updateTileMark(LocalPoint localPoint, boolean markedValue) {
