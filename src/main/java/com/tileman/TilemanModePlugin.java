@@ -42,6 +42,7 @@ import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -96,8 +97,6 @@ public class TilemanModePlugin extends Plugin {
 
     private int totalTilesUsed, remainingTiles;
     private LocalPoint lastTile;
-    private String configState;
-    private int totalTiles;
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -151,19 +150,10 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
-        //This string will change should any config be changed
-        String currentConfigString = config.toString();
-        int currentTotalTiles = (int) client.getOverallExperience() / 1000;
-
         if (lastTile == null || (lastTile.distanceTo(playerPosLocal) != 0)) {
             handleMovement(playerPosLocal);
             updateTileCounter();
-        } else if (!currentConfigString.equals(configState) || totalTiles != currentTotalTiles) {
-            updateTileCounter();
-            configState = currentConfigString;
-            totalTiles = currentTotalTiles;
         }
-
     }
 
     @Subscribe
@@ -172,6 +162,11 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
         loadPoints();
+        updateTileCounter();
+    }
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
         updateTileCounter();
     }
 

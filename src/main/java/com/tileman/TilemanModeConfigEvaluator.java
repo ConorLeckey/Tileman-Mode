@@ -108,26 +108,4 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     public boolean automarkTiles() {
         return config.automarkTiles();
     }
-
-    @Override
-    public String toString() {
-        return intsToString(new int[] {tilesOffset(), warningLimit()})
-                + boolToString(new boolean[] {automarkTiles(), drawTileOnMinimmap(), enableCustomGameMode(), includeTotalLevel(), excludeExp()});
-    }
-
-    public String intsToString(int[] configValues) {
-        StringBuilder outputStringBuilder = new StringBuilder();
-        for (int configValue : configValues) {
-            outputStringBuilder.append(String.valueOf(configValue)).append("-");
-        }
-        return outputStringBuilder.toString();
-    }
-
-    public String boolToString(boolean[] configValues) {
-        StringBuilder outputStringBuilder = new StringBuilder();
-        for (boolean configValue : configValues) {
-            outputStringBuilder.append(configValue ? "1" : "0").append("-");
-        }
-        return outputStringBuilder.toString();
-    }
 }
