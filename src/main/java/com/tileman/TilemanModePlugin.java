@@ -199,7 +199,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateTileCounter() {
-        List<String> regions = configManager.getConfigurationKeys("groundMarker.region");
+        List<String> regions = configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
         int totalTiles = 0;
         for (String region : regions) {
             Collection<GroundMarkerPoint> regionTiles = getGroundMarkerConfiguration(region.substring(CONFIG_GROUP.length() + 1));
@@ -218,7 +218,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateRemainingTiles(int totalTilesCount) {
-        if(!config.excludeExp()){
+        if (!config.excludeExp()) {
             int remainingTilesCount = (int) client.getOverallExperience() / 1000 - totalTilesCount;
             if (config.includeTotalLevel()) {
                 remainingTilesCount += client.getTotalLevel();

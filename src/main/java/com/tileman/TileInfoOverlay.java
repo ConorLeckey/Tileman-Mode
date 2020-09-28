@@ -82,7 +82,8 @@ class TileInfoOverlay extends OverlayPanel {
                 .build());
 
         panelComponent.setPreferredSize(new Dimension(
-                110 + graphics.getFontMetrics().stringWidth(unlockedTiles),
+                graphics.getFontMetrics().stringWidth("XP Until Next Tile:")
+                        + getLongestStringWidth(new String[] {unlockedTiles, unspentTiles}, graphics),
                 0));
 
         return super.render(graphics);
@@ -95,5 +96,16 @@ class TileInfoOverlay extends OverlayPanel {
             return Color.ORANGE;
         }
         return Color.WHITE;
+    }
+
+    private int getLongestStringWidth(String[] strings, Graphics2D graphics) {
+        int longest = graphics.getFontMetrics().stringWidth("000000");
+        for(String i: strings) {
+            int currentItemWidth = graphics.getFontMetrics().stringWidth(i);
+            if(currentItemWidth > longest) {
+                longest = currentItemWidth;
+            }
+        }
+        return longest;
     }
 }
