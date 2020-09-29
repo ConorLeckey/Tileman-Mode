@@ -141,7 +141,7 @@ public class TilemanModePlugin extends Plugin {
             final int regionId = worldPoint.getRegionID();
             final Tile point = new Tile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
 
-            menuEntry.setOption(getPoints(regionId).contains(point) ? UNMARK : MARK);
+            menuEntry.setOption(getTiles(regionId).contains(point) ? UNMARK : MARK);
             menuEntry.setTarget(event.getTarget());
             menuEntry.setType(MenuAction.RUNELITE.getId());
 
@@ -233,33 +233,60 @@ public class TilemanModePlugin extends Plugin {
 
     public void importGroundMarkerTiles() {
         // Get and store all the Ground Markers Regions
-        // Loop through regions and remove the 'groundMarker.region_' prefix (for ease of processing later)
+        List<String> groundMarkerRegions = removeRegionPrefixes(configManager.getConfigurationKeys("groundMarker.region"));
         // If none, Exit function
 
         // Get and store array list of existing Tileman World Regions (like updateTileCounter does)
-        // Loop through regions and remove the 'tilemanMode.region_' prefix (for ease of processing later)
+        List<String> tilemanModeRegions = removeRegionPrefixes(configManager.getConfigurationKeys(CONFIG_GROUP + ".region"));
 
         // CONVERSION
         // Loop through Ground Marker Regions
-        //      If region already exists in Tileman World Regions Array:
-        //          Create Empty ArrayList for Region;
-        //          Create int for regionOriginalSize;
-        //          Get Tileman Region's tiles and add them to the region array list
-        //          Get Ground Markers Region's Tiles
-        //          Set regionOriginalSize to arraylists length
-        //          Loop through Ground Markers Points
-        //              If Ground Marker point already exists in Tileman World Region: Break loop
-        //              Else:
-        //                  Add point to array list
-        //          End Loop
-        //          If regionOriginalSize != current size, Save points for arrayList
-        //      Else:
-        //          Get Ground Markers Region's Tiles
-        //          Save points for that region
-        // End Loop
+        for (String region: groundMarkerRegions) {
+            // Get Ground Markers Region's Tiles
+            ArrayList<Tile> groundMarkerTiles =
+                    new ArrayList<>(getConfiguration("groundMarker", REGION_PREFIX + region));
+            // If region already exists in Tileman World Regions Array:
+            if(tilemanModeRegions.contains(region)) {
+                // Create Empty ArrayList for Region;
+                // Get Tileman Region's tiles and add them to the region array list
+                ArrayList<Tile> regionTiles = new ArrayList<>(getTiles(Integer.parseInt(region)));
+
+                // Create int for regionOriginalSize;
+                // Set regionOriginalSize to arraylists length
+                int regionOriginalSize = regionTiles.size();
+                int nonUniqueTiles = 0;
+
+                // Loop through Ground Markers Points
+                for(Tile groundMarkerTile: groundMarkerTiles) {
+                    // If Ground Marker point already exists in Tileman World Region: Break loop iteration
+                    if(regionTiles.contains(groundMarkerTile)){
+                        nonUniqueTiles++;
+                        continue;
+                    }
+                    // Add point to array list
+                    regionTiles.add(groundMarkerTile);
+                }
+                // If regionOriginalSize != current size
+                if(regionOriginalSize != regionTiles.size()) {
+                    // Save points for arrayList
+                    savePoints(Integer.parseInt(region), regionTiles);
+                }
+            } else {
+                // Save points for that region
+                savePoints(Integer.parseInt(region), groundMarkerTiles);
+            }
+        }
     }
 
-    private Collection<Tile> getPoints(int regionId) {
+    private List<String> removeRegionPrefixes(List<String> regions) {
+        List<String> trimmedRegions = new ArrayList<String>();
+        for (String region : regions) {
+            trimmedRegions.add(region.substring(region.indexOf('_') + 1));
+        }
+        return trimmedRegions;
+    }
+
+    private Collection<Tile> getTiles(int regionId) {
         return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
     }
 
@@ -327,7 +354,7 @@ public class TilemanModePlugin extends Plugin {
         for (int regionId : regions) {
             // load points for region
             log.debug("Loading points for region {}", regionId);
-            Collection<WorldPoint> worldPoint = translateToWorldPoint(getPoints(regionId));
+            Collection<WorldPoint> worldPoint = translateToWorldPoint(getTiles(regionId));
             points.addAll(worldPoint);
         }
         updateTileCounter();
@@ -400,7 +427,7 @@ public class TilemanModePlugin extends Plugin {
         Tile point = new Tile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
         log.debug("Updating point: {} - {}", point, worldPoint);
 
-        List<Tile> tiles = new ArrayList<>(getPoints(regionId));
+        List<Tile> tiles = new ArrayList<>(getTiles(regionId));
 
         if (markedValue) {
             // Try add tile

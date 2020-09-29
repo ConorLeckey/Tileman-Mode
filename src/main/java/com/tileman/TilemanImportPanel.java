@@ -41,6 +41,7 @@ public class TilemanImportPanel extends PluginPanel {
         centerPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
         JButton importButton = new JButton("Import");
         centerPanel.add(importButton, BorderLayout.SOUTH);
+        importButton.addActionListener(l -> plugin.importGroundMarkerTiles());
 
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
