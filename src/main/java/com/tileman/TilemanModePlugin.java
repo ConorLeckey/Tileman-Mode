@@ -243,6 +243,7 @@ public class TilemanModePlugin extends Plugin {
         if(!config.excludeExp()){
             earnedTiles += (int) client.getOverallExperience() / 1000;
         }
+
         // If including total level, add those tiles in
         if (config.includeTotalLevel()) {
             earnedTiles += client.getTotalLevel();
