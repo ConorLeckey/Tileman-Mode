@@ -100,7 +100,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
         if(config.enableCustomGameMode()) {
             return config.excludeExp();
         } else {
-            return true;
+            return false;
         }
     }
 

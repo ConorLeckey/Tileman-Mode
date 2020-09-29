@@ -107,6 +107,7 @@ public interface TilemanModeConfig extends Config
 		keyName = "enableCustomGameMode",
 		name = "Enable Custom Game Mode",
 		description = "Settings below will override Game Mode defaults",
+		section = customGameModeSection,
 		position = 1
 	)
 	default boolean enableCustomGameMode()
