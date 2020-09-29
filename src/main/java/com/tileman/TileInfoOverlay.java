@@ -68,8 +68,7 @@ class TileInfoOverlay extends OverlayPanel {
     public Dimension render(Graphics2D graphics) {
         String unspentTiles = String.valueOf(plugin.getRemainingTiles());
         String unlockedTiles = String.valueOf(plugin.getTotalTiles());
-        int xpTowardsNextTile = Integer.parseInt(StringUtils.right(Long.toString(client.getOverallExperience()), 3));
-        String xpUntilNextTile = String.valueOf(1000 - xpTowardsNextTile);
+        String xpUntilNextTile = String.valueOf(plugin.getXpUntilNextTile());
 
         panelComponent.getChildren().add(LineComponent.builder()
                 .left(UNSPENT_TILES_STRING)
