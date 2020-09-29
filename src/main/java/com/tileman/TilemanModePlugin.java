@@ -42,6 +42,7 @@ import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -97,9 +98,7 @@ public class TilemanModePlugin extends Plugin {
 
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
-    private int configState;
     private long totalXp;
-
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -169,18 +168,10 @@ public class TilemanModePlugin extends Plugin {
             updateTileCounter();
             log.debug("player moved");
             log.debug("last tile={}  distance={}", lastTile, lastTile==null ? "null" : lastTile.distanceTo(playerPosLocal));
-        } else if (currentConfigState != configState || totalXp != currentTotalXp) {
-            // Config changed
-            // Check if automark tiles is on, and if so attempt to step on current tile
-            if(config.automarkTiles()) {
-                handleWalkedToTile(playerPosLocal);
-            }
+        } else if (totalXp != currentTotalXp) {
             updateTileCounter();
-            configState = currentConfigState;
             totalXp = currentTotalXp;
-            log.debug("config changed");
         }
-
     }
 
     @Subscribe
@@ -190,6 +181,17 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
         loadPoints();
+        updateTileCounter();
+    }
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        // Check if automark tiles is on, and if so attempt to step on current tile
+        final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
+        final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
+        if(playerPosLocal != null && config.automarkTiles()) {
+            handleWalkedToTile(playerPosLocal);
+        }
         updateTileCounter();
     }
 

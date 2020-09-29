@@ -62,6 +62,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
 
     private static Map<TilemanGameMode, Integer> gameModeToTilesOffsetDefault;
     private static Map<TilemanGameMode, Boolean> gameModeToIncludeTotalLevelDefault;
+
     static {
         // Load Game Mode defaults for Tiles Offset
         gameModeToTilesOffsetDefault = new HashMap<>();
@@ -78,7 +79,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
 
     @Override
     public int tilesOffset() {
-        if(config.enableCustomGameMode()) {
+        if (config.enableCustomGameMode()) {
             return config.tilesOffset();
         } else {
             return gameModeToTilesOffsetDefault.get(config.gameMode());
@@ -87,7 +88,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
 
     @Override
     public boolean includeTotalLevel() {
-        if(config.enableCustomGameMode()) {
+        if (config.enableCustomGameMode()) {
             return config.includeTotalLevel();
         } else {
             return gameModeToIncludeTotalLevelDefault.get(config.gameMode());

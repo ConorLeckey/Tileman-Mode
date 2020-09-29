@@ -143,7 +143,7 @@ public interface TilemanModeConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "includeExp",
+			keyName = "excludeExp",
 			name = "Exclude Experience",
 			description = "Includes experience / 1000 in usable tiles",
 			section = customGameModeSection,
