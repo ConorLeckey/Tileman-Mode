@@ -107,6 +107,7 @@ public interface TilemanModeConfig extends Config
 		keyName = "enableCustomGameMode",
 		name = "Enable Custom Game Mode",
 		description = "Settings below will override Game Mode defaults",
+		section = customGameModeSection,
 		position = 1
 	)
 	default boolean enableCustomGameMode()
@@ -142,7 +143,7 @@ public interface TilemanModeConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "includeExp",
+			keyName = "excludeExp",
 			name = "Exclude Experience",
 			description = "Includes experience / 1000 in usable tiles",
 			section = customGameModeSection,
