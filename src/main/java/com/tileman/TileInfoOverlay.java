@@ -44,6 +44,15 @@ class TileInfoOverlay extends OverlayPanel {
     private final TilemanModeConfig config;
     private final TilemanModePlugin plugin;
 
+    private final static String UNSPENT_TILES_STRING = "Available Tiles:";
+    private final static String XP_UNTIL_NEXT_TILE = "XP Until Next Tile:";
+    private final static String UNLOCKED_TILES = "Tiles Unlocked:";
+    private final static String[] STRINGS = new String[] {
+        UNSPENT_TILES_STRING,
+        XP_UNTIL_NEXT_TILE,
+        UNLOCKED_TILES,
+    };
+
     @Inject
     private TileInfoOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
         super(plugin);
@@ -63,7 +72,7 @@ class TileInfoOverlay extends OverlayPanel {
         String xpUntilNextTile = String.valueOf(1000 - xpTowardsNextTile);
 
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Available Tiles:")
+                .left(UNSPENT_TILES_STRING)
                 .leftColor(getTextColor())
                 .right(unspentTiles)
                 .rightColor(getTextColor())
@@ -71,18 +80,18 @@ class TileInfoOverlay extends OverlayPanel {
 
         if(!(config.enableCustomGameMode() && config.excludeExp())) {
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("XP Until Next Tile:")
+                    .left(XP_UNTIL_NEXT_TILE)
                     .right(xpUntilNextTile)
                     .build());
         }
 
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Tiles Unlocked:")
+                .left(UNLOCKED_TILES)
                 .right(unlockedTiles)
                 .build());
 
         panelComponent.setPreferredSize(new Dimension(
-                graphics.getFontMetrics().stringWidth("XP Until Next Tile:")
+                getLongestStringWidth(STRINGS, graphics)
                         + getLongestStringWidth(new String[] {unlockedTiles, unspentTiles}, graphics),
                 0));
 
