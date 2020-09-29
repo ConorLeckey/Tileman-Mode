@@ -232,43 +232,42 @@ public class TilemanModePlugin extends Plugin {
     }
 
     public void importGroundMarkerTiles() {
-        // Called from panel on import button click
-
-        // Get and store all the Ground Markers (getTilemanTileConfiguration but modified)
+        // Get and store all the Ground Markers Regions
+        // Loop through regions and remove the 'groundMarker.region_' prefix (for ease of processing later)
         // If none, Exit function
 
         // Get and store array list of existing Tileman World Regions (like updateTileCounter does)
         // Loop through regions and remove the 'tilemanMode.region_' prefix (for ease of processing later)
 
         // CONVERSION
-        // Loop through Ground Markers
-        //      Convert Ground Marker to World Point
-        //      Get Region ID of World point
+        // Loop through Ground Marker Regions
         //      If region already exists in Tileman World Regions Array:
-        //          Get Region's World Points from config
-        //          If World point already exists in Tileman World Region: Break loop
-        //          Else:
-        //              Add new World Point to Region
-        //              Save points for region
+        //          Create Empty ArrayList for Region;
+        //          Create int for regionOriginalSize;
+        //          Get Tileman Region's tiles and add them to the region array list
+        //          Get Ground Markers Region's Tiles
+        //          Set regionOriginalSize to arraylists length
+        //          Loop through Ground Markers Points
+        //              If Ground Marker point already exists in Tileman World Region: Break loop
+        //              Else:
+        //                  Add point to array list
+        //          End Loop
+        //          If regionOriginalSize != current size, Save points for arrayList
         //      Else:
-        //          Create new WorldPoints Array with that single World Point
+        //          Get Ground Markers Region's Tiles
         //          Save points for that region
         // End Loop
-
-        // TODO: Rename groundmarkerpoint
-
-
     }
 
     private Collection<Tile> getPoints(int regionId) {
-        return getTilemanTileConfiguration(REGION_PREFIX + regionId);
+        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
     }
 
     private void updateTileCounter() {
         List<String> regions = configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
         int totalTiles = 0;
         for (String region : regions) {
-            Collection<Tile> regionTiles = getTilemanTileConfiguration(region.substring(CONFIG_GROUP.length() + 1));
+            Collection<Tile> regionTiles = getConfiguration(CONFIG_GROUP, region.substring(CONFIG_GROUP.length() + 1));
 
             totalTiles += regionTiles.size();
         }
@@ -305,8 +304,8 @@ public class TilemanModePlugin extends Plugin {
         xpUntilNextTile = 1000 - Integer.parseInt(StringUtils.right(Long.toString(client.getOverallExperience()), 3));
     }
 
-    private Collection<Tile> getTilemanTileConfiguration(String key) {
-        String json = configManager.getConfiguration(CONFIG_GROUP, key);
+    private Collection<Tile> getConfiguration(String configGroup, String key) {
+        String json = configManager.getConfiguration(configGroup, key);
 
         if (Strings.isNullOrEmpty(json)) {
             return Collections.emptyList();
