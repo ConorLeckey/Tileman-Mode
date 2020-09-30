@@ -243,18 +243,16 @@ public class TilemanModePlugin extends Plugin {
             if(tilemanModeRegions.contains(region)) {
                 // Create Empty ArrayList for Region;
                 // Get Tileman Region's tiles and add them to the region array list
-                ArrayList<TilemanModeTile> regionTiles = new ArrayList<>(getTiles(Integer.parseInt(region)));
+                ArrayList<TilemanModeTile> regionTiles = new ArrayList<>(getTiles(region));
 
                 // Create int for regionOriginalSize;
                 // Set regionOriginalSize to arraylists length
                 int regionOriginalSize = regionTiles.size();
-                int nonUniqueTiles = 0;
 
                 // Loop through Ground Markers Points
                 for(TilemanModeTile groundMarkerTile: groundMarkerTiles) {
                     // If Ground Marker point already exists in Tileman World Region: Break loop iteration
                     if(regionTiles.contains(groundMarkerTile)){
-                        nonUniqueTiles++;
                         continue;
                     }
                     // Add point to array list
@@ -275,12 +273,20 @@ public class TilemanModePlugin extends Plugin {
     private List<String> removeRegionPrefixes(List<String> regions) {
         List<String> trimmedRegions = new ArrayList<String>();
         for (String region : regions) {
-            trimmedRegions.add(region.substring(region.indexOf('_') + 1));
+            trimmedRegions.add(removeRegionPrefix(region));
         }
         return trimmedRegions;
     }
 
+    private String removeRegionPrefix(String region) {
+        return region.substring(region.indexOf('_') + 1);
+    }
+
     private Collection<TilemanModeTile> getTiles(int regionId) {
+        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+    }
+
+    private Collection<TilemanModeTile> getTiles(String regionId) {
         return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
     }
 
@@ -288,7 +294,7 @@ public class TilemanModePlugin extends Plugin {
         List<String> regions = configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
         int totalTiles = 0;
         for (String region : regions) {
-            Collection<TilemanModeTile> regionTiles = getConfiguration(CONFIG_GROUP, region.substring(CONFIG_GROUP.length() + 1));
+            Collection<TilemanModeTile> regionTiles = getTiles(removeRegionPrefix(region));
 
             totalTiles += regionTiles.size();
         }
