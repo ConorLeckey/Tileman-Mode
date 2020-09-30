@@ -31,7 +31,7 @@ import lombok.Value;
  * Used for serialization of ground marker points.
  */
 @Value
-class Tile
+class TilemanModeTile
 {
 	private int regionId;
 	private int regionX;
