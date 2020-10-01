@@ -31,6 +31,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Provides;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -410,13 +411,48 @@ public class TilemanModePlugin extends Plugin {
         // TODO   and rendered frames are skipped. See if RL has an api that mimic's OSRS's pathing. If so, use that to
         // TODO   set all tiles between current tile and lastTile as marked
         if (lastTile != null
-                && (lastTile.distanceTo(currentPlayerPoint) == 256 || lastTile.distanceTo(currentPlayerPoint) == 362)) {
-            int xDiff = lastTile.getX() - currentPlayerPoint.getX();
-            int yDiff = lastTile.getY() - currentPlayerPoint.getY();
+                && (lastTile.distanceTo(currentPlayerPoint) == 256
+                || lastTile.distanceTo(currentPlayerPoint) == 286
+                || lastTile.distanceTo(currentPlayerPoint) == 362)) {
+            int xDiff = currentPlayerPoint.getX() - lastTile.getX();
+            int yDiff = currentPlayerPoint.getY() - lastTile.getY();
             int yModifier = yDiff / 2;
             int xModifier = xDiff / 2;
 
-            updateTileMark(new LocalPoint(currentPlayerPoint.getX() + xModifier, currentPlayerPoint.getY() + yModifier), true);
+            if(lastTile.distanceTo(currentPlayerPoint) == 286) {
+                int tileBesideXDiff, tileBesideYDiff;
+
+                // Whichever direction has moved only one, keep it 0. This is the translation to the potential 'problem' gameObject
+                if(Math.abs(yDiff) == 128) {
+                    tileBesideXDiff = xDiff;
+                    tileBesideYDiff = 0;
+                } else {
+                    tileBesideXDiff = 0;
+                    tileBesideYDiff = yDiff;
+                }
+
+                LocalPoint pointBeside = new LocalPoint(lastTile.getX() + tileBesideXDiff, lastTile.getY() + tileBesideYDiff);
+
+                CollisionData[] collisionData = client.getCollisionMaps();
+                assert collisionData != null;
+                int[][] collisionDataFlags = collisionData[client.getPlane()].getFlags(); // Add movement flags when available
+
+                if( collisionDataFlags[pointBeside.getSceneX()][pointBeside.getSceneY()] == 0) {
+                    log.info(MovementFlag.getSetFlags(collisionDataFlags[pointBeside.getSceneX()][pointBeside.getSceneY()]).toString());
+                    updateTileMark(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2), true);
+                } else {
+                    log.info(MovementFlag.getSetFlags(collisionDataFlags[pointBeside.getSceneX()][pointBeside.getSceneY()]).toString());
+                    if(yModifier == 64) {
+                        yModifier = 128;
+                    } else  if(xModifier == 64) {
+                        xModifier = 128;
+                    }
+                    updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
+                }
+
+            } else {
+                updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
+            }
         }
     }
 
@@ -446,4 +482,37 @@ public class TilemanModePlugin extends Plugin {
     int getXpUntilNextTile() {
         return xpUntilNextTile;
     }
+
+    @AllArgsConstructor
+    enum MovementFlag
+    {
+        BLOCK_MOVEMENT_NORTH_WEST(CollisionDataFlag.BLOCK_MOVEMENT_NORTH_WEST),
+        BLOCK_MOVEMENT_NORTH(CollisionDataFlag.BLOCK_MOVEMENT_NORTH),
+        BLOCK_MOVEMENT_NORTH_EAST(CollisionDataFlag.BLOCK_MOVEMENT_NORTH_EAST),
+        BLOCK_MOVEMENT_EAST(CollisionDataFlag.BLOCK_MOVEMENT_EAST),
+        BLOCK_MOVEMENT_SOUTH_EAST(CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_EAST),
+        BLOCK_MOVEMENT_SOUTH(CollisionDataFlag.BLOCK_MOVEMENT_SOUTH),
+        BLOCK_MOVEMENT_SOUTH_WEST(CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_WEST),
+        BLOCK_MOVEMENT_WEST(CollisionDataFlag.BLOCK_MOVEMENT_WEST),
+
+        BLOCK_MOVEMENT_OBJECT(CollisionDataFlag.BLOCK_MOVEMENT_OBJECT),
+        BLOCK_MOVEMENT_FLOOR_DECORATION(CollisionDataFlag.BLOCK_MOVEMENT_FLOOR_DECORATION),
+        BLOCK_MOVEMENT_FLOOR(CollisionDataFlag.BLOCK_MOVEMENT_FLOOR),
+        BLOCK_MOVEMENT_FULL(CollisionDataFlag.BLOCK_MOVEMENT_FULL);
+
+        @Getter
+        private int flag;
+
+        /**
+         * @param collisionData The tile collision flags.
+         * @return The set of {@link MovementFlag}s that have been set.
+         */
+        public static Set<MovementFlag> getSetFlags(int collisionData)
+        {
+            return Arrays.stream(values())
+                    .filter(movementFlag -> (movementFlag.flag & collisionData) != 0)
+                    .collect(Collectors.toSet());
+        }
+    }
+
 }
