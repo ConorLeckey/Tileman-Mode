@@ -104,6 +104,34 @@ public class TilemanModePlugin extends Plugin {
         return configManager.getConfig(TilemanModeConfig.class);
     }
 
+    private final MovementFlag[] fullBlock = new MovementFlag[]
+            {MovementFlag.BLOCK_MOVEMENT_FLOOR,
+                    MovementFlag.BLOCK_MOVEMENT_FLOOR_DECORATION,
+                    MovementFlag.BLOCK_MOVEMENT_OBJECT,
+                    MovementFlag.BLOCK_MOVEMENT_FULL};
+
+    private final MovementFlag[] directionalNorth = new MovementFlag[]
+            {MovementFlag.BLOCK_MOVEMENT_NORTH_WEST,
+                    MovementFlag.BLOCK_MOVEMENT_NORTH,
+                    MovementFlag.BLOCK_MOVEMENT_NORTH_EAST};
+
+    private final MovementFlag[] directionalSouth = new MovementFlag[]
+            {MovementFlag.BLOCK_MOVEMENT_SOUTH_WEST,
+                    MovementFlag.BLOCK_MOVEMENT_SOUTH,
+                    MovementFlag.BLOCK_MOVEMENT_SOUTH_EAST};
+
+    private final MovementFlag[] directionalWest = new MovementFlag[]
+            {MovementFlag.BLOCK_MOVEMENT_NORTH_WEST,
+                    MovementFlag.BLOCK_MOVEMENT_WEST,
+                    MovementFlag.BLOCK_MOVEMENT_SOUTH_WEST};
+
+    private final MovementFlag[] directionalEast = new MovementFlag[]
+            {MovementFlag.BLOCK_MOVEMENT_NORTH_EAST,
+                    MovementFlag.BLOCK_MOVEMENT_EAST,
+                    MovementFlag.BLOCK_MOVEMENT_SOUTH_EAST};
+
+    private final MovementFlag[] allDirections = Stream.of(directionalNorth, directionalSouth, directionalWest, directionalEast).flatMap(Stream::of).toArray(MovementFlag[]::new);
+
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
     private TilemanImportPanel panel;
@@ -417,33 +445,6 @@ public class TilemanModePlugin extends Plugin {
             int yModifier = yDiff / 2;
             int xModifier = xDiff / 2;
 
-            MovementFlag[] directionalNorth = new MovementFlag[]
-                    {MovementFlag.BLOCK_MOVEMENT_NORTH_WEST,
-                            MovementFlag.BLOCK_MOVEMENT_NORTH,
-                            MovementFlag.BLOCK_MOVEMENT_NORTH_EAST};
-
-            MovementFlag[] directionalSouth = new MovementFlag[]
-                    {MovementFlag.BLOCK_MOVEMENT_SOUTH_WEST,
-                            MovementFlag.BLOCK_MOVEMENT_SOUTH,
-                            MovementFlag.BLOCK_MOVEMENT_SOUTH_EAST};
-
-            MovementFlag[] directionalWest = new MovementFlag[]
-                    {MovementFlag.BLOCK_MOVEMENT_NORTH_WEST,
-                            MovementFlag.BLOCK_MOVEMENT_WEST,
-                            MovementFlag.BLOCK_MOVEMENT_SOUTH_WEST};
-
-            MovementFlag[] directionalEast = new MovementFlag[]
-                    {MovementFlag.BLOCK_MOVEMENT_NORTH_EAST,
-                            MovementFlag.BLOCK_MOVEMENT_EAST,
-                            MovementFlag.BLOCK_MOVEMENT_SOUTH_EAST};
-
-            MovementFlag[] fullBlock = new MovementFlag[]
-                    {MovementFlag.BLOCK_MOVEMENT_FLOOR,
-                            MovementFlag.BLOCK_MOVEMENT_FLOOR_DECORATION,
-                            MovementFlag.BLOCK_MOVEMENT_OBJECT,
-                            MovementFlag.BLOCK_MOVEMENT_FULL};
-
-            MovementFlag[] allDirections = Stream.of(directionalNorth, directionalSouth, directionalWest, directionalEast).flatMap(Stream::of).toArray(MovementFlag[]::new);
             switch(lastTile.distanceTo(currentPlayerPoint)) {
                 case 0:
                     return;
@@ -452,93 +453,103 @@ public class TilemanModePlugin extends Plugin {
                     updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
                     break;
                 case 286:
-                    int tileBesideXDiff, tileBesideYDiff;
-
-                    // Whichever direction has moved only one, keep it 0. This is the translation to the potential 'problem' gameObject
-                    if (Math.abs(yDiff) == 128) {
-                        tileBesideXDiff = xDiff;
-                        tileBesideYDiff = 0;
-                    } else {
-                        tileBesideXDiff = 0;
-                        tileBesideYDiff = yDiff;
-                    }
-
-                    MovementFlag[] tileBesideFlagsArray = getTileMovementFlags(lastTile.getX() + tileBesideXDiff, lastTile.getY() + tileBesideYDiff);
-
-                    if (tileBesideFlagsArray.length == 0) {
-                        updateTileMark(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2), true);
-                    } else if (containsAnyOf(tileBesideFlagsArray, fullBlock) || !containsAnyOf(allDirections, tileBesideFlagsArray)) {
-                        if (yModifier == 64) {
-                            yModifier = 128;
-                        } else if (xModifier == 64) {
-                            xModifier = 128;
-                        }
-                        updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
-                    } else {
-                        MovementFlag direction1, direction2;
-                        if (yDiff == 256 || yDiff == -128) {
-                            // Moving 2 North or 1 South
-                            direction1 = MovementFlag.BLOCK_MOVEMENT_SOUTH;
-                        } else {
-                            // Moving 2 South or 1 North
-                            direction1 = MovementFlag.BLOCK_MOVEMENT_NORTH;
-                        }
-                        if (xDiff == 256 || xDiff == -128) {
-                            // Moving 2 East or 1 West
-                            direction2 = MovementFlag.BLOCK_MOVEMENT_WEST;
-                        } else {
-                            // Moving 2 West or 1 East
-                            direction2 = MovementFlag.BLOCK_MOVEMENT_EAST;
-                        }
-
-                        if (containsAnyOf(tileBesideFlagsArray, new MovementFlag[]{direction1, direction2})) {
-                            // Interrupted
-                            if (yModifier == 64) {
-                                yModifier = 128;
-                            } else if (xModifier == 64) {
-                                xModifier = 128;
-                            }
-                            updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
-                        } else {
-                            // Normal Pathing
-                            updateTileMark(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2), true);
-                        }
-                    }
+                    handleLMovement(xDiff, yDiff);
                     break;
                 case 181:
-                    LocalPoint northPoint;
-                    LocalPoint southPoint;
-                    if(yDiff > 0) {
-                        northPoint = new LocalPoint(lastTile.getX(), lastTile.getY() + yDiff);
-                        southPoint = new LocalPoint(lastTile.getX() + xDiff, lastTile.getY());
-                    } else {
-                        northPoint = new LocalPoint(lastTile.getX() + xDiff, lastTile.getY());
-                        southPoint = new LocalPoint(lastTile.getX(), lastTile.getY() + yDiff);
-                    }
-
-                    MovementFlag[] northTile = getTileMovementFlags(northPoint.getX(), northPoint.getY());
-                    MovementFlag[] southTile = getTileMovementFlags(southPoint.getX(), southPoint.getY());
-
-                    if (xDiff + yDiff == 0) {
-                        // Diagonal tilts north west
-                        if(containsAnyOf(fullBlock, northTile)
-                                || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_WEST})){
-                            updateTileMark(southPoint, true);
-                        } else if (containsAnyOf(fullBlock, southTile)
-                                || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_EAST})){
-                            updateTileMark(northPoint, true);
-                        }
-                    } else {
-                        // Diagonal tilts north east
-                        if(containsAnyOf(fullBlock, northTile)
-                                || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_EAST})){
-                            updateTileMark(southPoint, true);
-                        } else if (containsAnyOf(fullBlock, southTile)
-                                || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_WEST})){
-                            updateTileMark(northPoint, true);
-                        }
-                    }
+                    handleCornerMovement(xDiff, yDiff);
                     break;
+            }
+        }
+    }
+
+    private void handleLMovement(int xDiff, int yDiff) {
+        int xModifier = xDiff / 2;
+        int yModifier = yDiff / 2;
+        int tileBesideXDiff, tileBesideYDiff;
+
+        // Whichever direction has moved only one, keep it 0. This is the translation to the potential 'problem' gameObject
+        if (Math.abs(yDiff) == 128) {
+            tileBesideXDiff = xDiff;
+            tileBesideYDiff = 0;
+        } else {
+            tileBesideXDiff = 0;
+            tileBesideYDiff = yDiff;
+        }
+
+        MovementFlag[] tileBesideFlagsArray = getTileMovementFlags(lastTile.getX() + tileBesideXDiff, lastTile.getY() + tileBesideYDiff);
+
+        if (tileBesideFlagsArray.length == 0) {
+            updateTileMark(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2), true);
+        } else if (containsAnyOf(tileBesideFlagsArray, fullBlock) || !containsAnyOf(allDirections, tileBesideFlagsArray)) {
+            if (yModifier == 64) {
+                yModifier = 128;
+            } else if (xModifier == 64) {
+                xModifier = 128;
+            }
+            updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
+        } else {
+            MovementFlag direction1, direction2;
+            if (yDiff == 256 || yDiff == -128) {
+                // Moving 2 North or 1 South
+                direction1 = MovementFlag.BLOCK_MOVEMENT_SOUTH;
+            } else {
+                // Moving 2 South or 1 North
+                direction1 = MovementFlag.BLOCK_MOVEMENT_NORTH;
+            }
+            if (xDiff == 256 || xDiff == -128) {
+                // Moving 2 East or 1 West
+                direction2 = MovementFlag.BLOCK_MOVEMENT_WEST;
+            } else {
+                // Moving 2 West or 1 East
+                direction2 = MovementFlag.BLOCK_MOVEMENT_EAST;
+            }
+
+            if (containsAnyOf(tileBesideFlagsArray, new MovementFlag[]{direction1, direction2})) {
+                // Interrupted
+                if (yModifier == 64) {
+                    yModifier = 128;
+                } else if (xModifier == 64) {
+                    xModifier = 128;
+                }
+                updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
+            } else {
+                // Normal Pathing
+                updateTileMark(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2), true);
+            }
+        }
+    }
+
+    private void handleCornerMovement(int xDiff, int yDiff) {
+        LocalPoint northPoint;
+        LocalPoint southPoint;
+        if(yDiff > 0) {
+            northPoint = new LocalPoint(lastTile.getX(), lastTile.getY() + yDiff);
+            southPoint = new LocalPoint(lastTile.getX() + xDiff, lastTile.getY());
+        } else {
+            northPoint = new LocalPoint(lastTile.getX() + xDiff, lastTile.getY());
+            southPoint = new LocalPoint(lastTile.getX(), lastTile.getY() + yDiff);
+        }
+
+        MovementFlag[] northTile = getTileMovementFlags(northPoint.getX(), northPoint.getY());
+        MovementFlag[] southTile = getTileMovementFlags(southPoint.getX(), southPoint.getY());
+
+        if (xDiff + yDiff == 0) {
+            // Diagonal tilts north west
+            if(containsAnyOf(fullBlock, northTile)
+                    || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_WEST})){
+                updateTileMark(southPoint, true);
+            } else if (containsAnyOf(fullBlock, southTile)
+                    || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_EAST})){
+                updateTileMark(northPoint, true);
+            }
+        } else {
+            // Diagonal tilts north east
+            if(containsAnyOf(fullBlock, northTile)
+                    || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_EAST})){
+                updateTileMark(southPoint, true);
+            } else if (containsAnyOf(fullBlock, southTile)
+                    || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_WEST})){
+                updateTileMark(northPoint, true);
             }
         }
     }
