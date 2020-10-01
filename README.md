@@ -7,13 +7,15 @@ This plugin sets out to make the marking of tiles and the counting of both your 
 
 ## Installing 
 
-###Method 1 (doesnt allow other external plugins)
+<b>Method 1 (doesnt allow other external plugins)</b>
+
 To install and play Tileman Mode on RuneLite, go to releases and download the latest release.
 
 Unzip, then run the jar file to launch (You must have JRE installed).
 
 
-###Method 2
+<b>Method 2</b>
+
 Alternatively, use the method <a href="https://www.youtube.com/watch?v=-eTTrlFoKPc&">described in this video</a>.
 
 Once you find RuneLite's plugin folder, put all the files from this repos src/main/java/com/tileman/ folder into their own 'tileman' folder inside the plugins folder.
