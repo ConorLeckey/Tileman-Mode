@@ -268,6 +268,7 @@ public class TilemanModePlugin extends Plugin {
                 savePoints(Integer.parseInt(region), groundMarkerTiles);
             }
         }
+        loadPoints();
     }
 
     private List<String> removeRegionPrefixes(List<String> regions) {
