@@ -110,27 +110,17 @@ public class TilemanModePlugin extends Plugin {
                     MovementFlag.BLOCK_MOVEMENT_OBJECT,
                     MovementFlag.BLOCK_MOVEMENT_FULL};
 
-    private final MovementFlag[] directionalNorth = new MovementFlag[]
-            {MovementFlag.BLOCK_MOVEMENT_NORTH_WEST,
+    private final MovementFlag[] allDirections = new MovementFlag[]
+            {
+                    MovementFlag.BLOCK_MOVEMENT_NORTH_WEST,
                     MovementFlag.BLOCK_MOVEMENT_NORTH,
-                    MovementFlag.BLOCK_MOVEMENT_NORTH_EAST};
-
-    private final MovementFlag[] directionalSouth = new MovementFlag[]
-            {MovementFlag.BLOCK_MOVEMENT_SOUTH_WEST,
-                    MovementFlag.BLOCK_MOVEMENT_SOUTH,
-                    MovementFlag.BLOCK_MOVEMENT_SOUTH_EAST};
-
-    private final MovementFlag[] directionalWest = new MovementFlag[]
-            {MovementFlag.BLOCK_MOVEMENT_NORTH_WEST,
-                    MovementFlag.BLOCK_MOVEMENT_WEST,
-                    MovementFlag.BLOCK_MOVEMENT_SOUTH_WEST};
-
-    private final MovementFlag[] directionalEast = new MovementFlag[]
-            {MovementFlag.BLOCK_MOVEMENT_NORTH_EAST,
+                    MovementFlag.BLOCK_MOVEMENT_NORTH_EAST,
                     MovementFlag.BLOCK_MOVEMENT_EAST,
-                    MovementFlag.BLOCK_MOVEMENT_SOUTH_EAST};
-
-    private final MovementFlag[] allDirections = Stream.of(directionalNorth, directionalSouth, directionalWest, directionalEast).flatMap(Stream::of).toArray(MovementFlag[]::new);
+                    MovementFlag.BLOCK_MOVEMENT_SOUTH_EAST,
+                    MovementFlag.BLOCK_MOVEMENT_SOUTH,
+                    MovementFlag.BLOCK_MOVEMENT_SOUTH_WEST,
+                    MovementFlag.BLOCK_MOVEMENT_WEST
+            };
 
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
