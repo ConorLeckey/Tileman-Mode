@@ -9,6 +9,8 @@ This plugin sets out to make the marking of tiles and the counting of both your 
 
 <b>Method 1 (doesnt allow other external plugins)</b>
 
+NOTE: This method is much easier, but you will be installing a new RuneLite launcher built with the Tileman plugin pre-installed
+
 To install and play Tileman Mode on RuneLite, go to releases and download the latest release.
 
 Unzip, then run the jar file to launch (You must have JRE installed).
@@ -36,9 +38,7 @@ Option to add additional tiles to your total usable tiles.
 Option to include your total level in the total usable tiles, along side your exp tiles. 
 
 ## Known Issues
-When running, occasionally some tiles may not be automatically filled in for you. This happens when your character moves in an 'L' shape.
-
-Lagging will cause some tiles to be missed
+Moving between map chunks will sometimes cause tiles to be missed.
 
 ## Contact
 Feel free to contact me on discord at Conleck#6160 with any bug reports or suggestions :) 
