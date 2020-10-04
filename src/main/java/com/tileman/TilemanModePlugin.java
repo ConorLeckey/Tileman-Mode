@@ -123,6 +123,7 @@ public class TilemanModePlugin extends Plugin {
 
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
+    private int lastPlane;
     private boolean lastAutoTilesConfig = false;
     private long totalXp;
 
@@ -181,10 +182,13 @@ public class TilemanModePlugin extends Plugin {
         long currentTotalXp = client.getOverallExperience();
 
         // If we have no last tile, we probably just spawned in, so make sure we walk on our current tile
-        if (lastTile == null || lastTile.distanceTo(playerPosLocal) != 0) {
+        if (lastTile == null
+                || (lastTile.distanceTo(playerPosLocal) != 0 && lastPlane == playerPos.getPlane())
+                || lastPlane != playerPos.getPlane()) {
             // Player moved
             handleWalkedToTile(playerPosLocal);
             lastTile = playerPosLocal;
+            lastPlane = client.getPlane();
             updateTileCounter();
             log.debug("player moved");
             log.debug("last tile={}  distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
@@ -575,13 +579,17 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void fillTile(LocalPoint localPoint){
-        if(containsAnyOf(getTileMovementFlags(localPoint), fullBlock)) {
+        if(lastPlane != client.getPlane()) {
             return;
         }
         updateTileMark(localPoint, true);
     }
 
     private void updateTileMark(LocalPoint localPoint, boolean markedValue) {
+        if(containsAnyOf(getTileMovementFlags(localPoint), fullBlock)) {
+            return;
+        }
+
         WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
 
         int regionId = worldPoint.getRegionID();

@@ -33,8 +33,11 @@ public class TilemanImportPanel extends PluginPanel {
         infoPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         infoPanel.setLayout(new GridLayout(0, 1));
 
-        JLabel warning = new JLabel(htmlLabel("WARNING: Clicking the Import button below will migrate all Ground Marker Tiles into Tileman Mode Tiles. They will NOT be removed from the Ground Marker Plugin."));
+        JLabel info = new JLabel(htmlLabel("Clicking the Import button below will migrate all tiles marked with the Ground Marker plugin into the Tileman Mode plugin. They will NOT be removed from the Ground Marker Plugin.", "#FFFFFF"));
 
+        JLabel warning = new JLabel(htmlLabel("WARNING: This directly modifies RuneLite's settings.properties file. You should make a back up before importing.", "#FFFF00"));
+
+        infoPanel.add(info);
         infoPanel.add(warning);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
@@ -57,8 +60,8 @@ public class TilemanImportPanel extends PluginPanel {
     }
 
 
-    private static String htmlLabel(String key)
+    private static String htmlLabel(String key, String color)
     {
-        return "<html><body style = 'color:#FFFF00'>" + key + "</body></html>";
+        return "<html><body style = 'color:" + color + "'>" + key + "</body></html>";
     }
 }
