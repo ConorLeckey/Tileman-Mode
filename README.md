@@ -37,6 +37,8 @@ Option to add additional tiles to your total usable tiles.
 
 Option to include your total level in the total usable tiles, along side your exp tiles. 
 
+Ability to import Ground Marker tiles, if you started playing using the Ground Marker plugin.
+
 ## Known Issues
 Moving between map chunks will sometimes cause tiles to be missed.
 
