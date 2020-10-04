@@ -55,7 +55,6 @@ import org.apache.commons.lang3.StringUtils;
 import javax.inject.Inject;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @PluginDescriptor(
@@ -124,8 +123,7 @@ public class TilemanModePlugin extends Plugin {
 
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
-    private TilemanImportPanel panel;
-    private NavigationButton navButton;
+    private boolean lastAutoTilesConfig = false;
     private long totalXp;
 
     @Subscribe
@@ -211,9 +209,10 @@ public class TilemanModePlugin extends Plugin {
         // Check if automark tiles is on, and if so attempt to step on current tile
         final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
         final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
-        if (playerPosLocal != null && config.automarkTiles()) {
+        if (playerPosLocal != null && config.automarkTiles() && !lastAutoTilesConfig) {
             handleWalkedToTile(playerPosLocal);
         }
+        lastAutoTilesConfig = config.automarkTiles();
         updateTileCounter();
     }
 
@@ -225,8 +224,8 @@ public class TilemanModePlugin extends Plugin {
         loadPoints();
         updateTileCounter();
         log.debug("startup");
-        panel = new TilemanImportPanel(this);
-        navButton = NavigationButton.builder()
+        TilemanImportPanel panel = new TilemanImportPanel(this);
+        NavigationButton navButton = NavigationButton.builder()
                 .tooltip("Tileman Import")
                 .icon(ImageUtil.getResourceStreamFromClass(getClass(), "/icon.png"))
                 .priority(70)
@@ -436,17 +435,18 @@ public class TilemanModePlugin extends Plugin {
             int xModifier = xDiff / 2;
 
             switch(lastTile.distanceTo(currentPlayerPoint)) {
-                case 0:
+                case 0: // Haven't moved
+                case 128: // Moved 1 tile
                     return;
-                case 256:
-                case 362:
-                    updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
-                    break;
-                case 286:
-                    handleLMovement(xDiff, yDiff);
-                    break;
-                case 181:
+                case 181: // Moved 1 tile diagonally
                     handleCornerMovement(xDiff, yDiff);
+                    break;
+                case 256: // Moved 2 tiles straight
+                case 362: // Moved 2 tiles diagonally
+                    fillTile(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier));
+                    break;
+                case 286: // Moved in an 'L' shape
+                    handleLMovement(xDiff, yDiff);
                     break;
             }
         }
@@ -469,15 +469,15 @@ public class TilemanModePlugin extends Plugin {
         MovementFlag[] tileBesideFlagsArray = getTileMovementFlags(lastTile.getX() + tileBesideXDiff, lastTile.getY() + tileBesideYDiff);
 
         if (tileBesideFlagsArray.length == 0) {
-            updateTileMark(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2), true);
-        } else if (containsAnyOf(tileBesideFlagsArray, fullBlock) || !containsAnyOf(allDirections, tileBesideFlagsArray)) {
+            fillTile(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2));
+        } else if (containsAnyOf(fullBlock, tileBesideFlagsArray)) {
             if (yModifier == 64) {
                 yModifier = 128;
             } else if (xModifier == 64) {
                 xModifier = 128;
             }
-            updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
-        } else {
+            fillTile(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier));
+        } else if (containsAnyOf(allDirections, tileBesideFlagsArray)){
             MovementFlag direction1, direction2;
             if (yDiff == 256 || yDiff == -128) {
                 // Moving 2 North or 1 South
@@ -501,10 +501,10 @@ public class TilemanModePlugin extends Plugin {
                 } else if (xModifier == 64) {
                     xModifier = 128;
                 }
-                updateTileMark(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier), true);
+                fillTile(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier));
             } else {
                 // Normal Pathing
-                updateTileMark(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2), true);
+                fillTile(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2));
             }
         }
     }
@@ -520,26 +520,26 @@ public class TilemanModePlugin extends Plugin {
             southPoint = new LocalPoint(lastTile.getX(), lastTile.getY() + yDiff);
         }
 
-        MovementFlag[] northTile = getTileMovementFlags(northPoint.getX(), northPoint.getY());
-        MovementFlag[] southTile = getTileMovementFlags(southPoint.getX(), southPoint.getY());
+        MovementFlag[] northTile = getTileMovementFlags(northPoint);
+        MovementFlag[] southTile = getTileMovementFlags(southPoint);
 
         if (xDiff + yDiff == 0) {
             // Diagonal tilts north west
             if(containsAnyOf(fullBlock, northTile)
                     || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_WEST})){
-                updateTileMark(southPoint, true);
+                fillTile(southPoint);
             } else if (containsAnyOf(fullBlock, southTile)
                     || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_EAST})){
-                updateTileMark(northPoint, true);
+                fillTile(northPoint);
             }
         } else {
             // Diagonal tilts north east
             if(containsAnyOf(fullBlock, northTile)
                     || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_EAST})){
-                updateTileMark(southPoint, true);
+                fillTile(southPoint);
             } else if (containsAnyOf(fullBlock, southTile)
                     || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_WEST})){
-                updateTileMark(northPoint, true);
+                fillTile(northPoint);
             }
         }
     }
@@ -558,6 +558,10 @@ public class TilemanModePlugin extends Plugin {
         return tileBesideFlagsArray;
     }
 
+    private MovementFlag[] getTileMovementFlags(LocalPoint localPoint) {
+        return  getTileMovementFlags(localPoint.getX(), localPoint.getY());
+    }
+
     private boolean containsAnyOf(MovementFlag[] comparisonFlags, MovementFlag[] flagsToCompare) {
         if (comparisonFlags.length == 0 || flagsToCompare.length == 0) {
             return false;
@@ -568,6 +572,13 @@ public class TilemanModePlugin extends Plugin {
             }
         }
         return false;
+    }
+
+    private void fillTile(LocalPoint localPoint){
+        if(containsAnyOf(getTileMovementFlags(localPoint), fullBlock)) {
+            return;
+        }
+        updateTileMark(localPoint, true);
     }
 
     private void updateTileMark(LocalPoint localPoint, boolean markedValue) {
