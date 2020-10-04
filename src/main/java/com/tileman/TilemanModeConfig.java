@@ -31,126 +31,137 @@ import net.runelite.client.config.*;
 import java.awt.*;
 
 @ConfigGroup("tilemanMode")
-public interface TilemanModeConfig extends Config
-{
-	@ConfigSection(
-		name = "Custom Game Mode",
-		description = "Create a custom Tileman game mode. Be sure to 'Enable Custom Game Mode'",
-		position = 99
-	)
-	String customGameModeSection = "customGameMode";
+public interface TilemanModeConfig extends Config {
+    @ConfigSection(
+            name = "Game Mode",
+            description = "Select your Tileman game mode'",
+            position = 1
+    )
+    String gameModeSection = "gameMode";
 
-	public enum TilemanGameMode {
-		COMMUNITY,
-		STRICT,
-		ACCELERATED
-	}
-	@Alpha
-	@ConfigItem(
-		keyName = "gameMode",
-		name = "Game Mode",
-		description = "Select your Tileman game mode",
-		position = 1
-	)
-	default TilemanGameMode gameMode()
-	{
-		return TilemanGameMode.COMMUNITY;
-	}
+    @ConfigSection(
+            name = "Settings",
+            description = "Settings'",
+            position = 2
+    )
+    String settingsSection = "settings";
 
-	@ConfigItem(
-		keyName = "automarkTiles",
-		name = "Auto-mark tiles",
-		description = "Automatically mark tiles as you walk.",
-		position = 2
-	)
-	default boolean automarkTiles()
-	{
-		return false;
-	}
+    @ConfigSection(
+            name = "Custom Game Mode",
+            description = "Create a custom Tileman game mode. Be sure to 'Enable Custom Game Mode'",
+            position = 99,
+            closedByDefault = true
+    )
+    String customGameModeSection = "customGameMode";
 
-	@ConfigItem(
-		keyName = "warningLimit",
-		name = "Unspent tiles warning",
-		description = "Highlights overlay when limit reached",
-		position = 3
-	)
-	default int warningLimit()
-	{
-		return 50;
-	}
+    public enum TilemanGameMode {
+        COMMUNITY,
+        STRICT,
+        ACCELERATED
+    }
 
-	@ConfigItem(
-		keyName = "drawOnMinimap",
-		name = "Draw tiles on minimap",
-		description = "Configures whether marked tiles should be drawn on minimap",
-		position = 4
-	)
-	default boolean drawTileOnMinimmap()
-	{
-		return false;
-	}
+    @Alpha
+    @ConfigItem(
+            keyName = "gameMode",
+            name = "Game Mode",
+            section = gameModeSection,
+            description = "Select your Tileman game mode",
+            position = 1
+    )
+    default TilemanGameMode gameMode() {
+        return TilemanGameMode.COMMUNITY;
+    }
 
-	@Alpha
-	@ConfigItem(
-			keyName = "markerColor",
-			name = "Tile Color",
-			description = "Configures the color of the tiles",
-			position = 5
-	)
-	default Color markerColor()
-	{
-		return Color.YELLOW;
-	}
+    @ConfigItem(
+            keyName = "automarkTiles",
+            name = "Auto-mark tiles",
+            section = settingsSection,
+            description = "Automatically mark tiles as you walk.",
+            position = 2
+    )
+    default boolean automarkTiles() {
+        return false;
+    }
 
-	/***   Custom Game Mode section   ***/
-	@ConfigItem(
-		keyName = "enableCustomGameMode",
-		name = "Enable Custom Game Mode",
-		description = "Settings below will override Game Mode defaults",
-		section = customGameModeSection,
-		position = 1
-	)
-	default boolean enableCustomGameMode()
-	{
-		return false;
-	}
+    @ConfigItem(
+            keyName = "warningLimit",
+            name = "Unspent tiles warning",
+            section = settingsSection,
+            description = "Highlights overlay when limit reached",
+            position = 3
+    )
+    default int warningLimit() {
+        return 50;
+    }
 
-	@Range(
-			min = Integer.MIN_VALUE
-	)
-	@ConfigItem(
-		keyName = "tilesOffset",
-		name = "Bonus tiles",
-		description = "Add more tiles to your limit, set to 0 for off",
-		section = customGameModeSection,
-		position = 2
-	)
-	default int tilesOffset()
-	{
-		return 9;
-	}
+    @ConfigItem(
+            keyName = "drawOnMinimap",
+            name = "Draw tiles on minimap",
+            section = settingsSection,
+            description = "Configures whether marked tiles should be drawn on minimap",
+            position = 4
+    )
+    default boolean drawTileOnMinimmap() {
+        return false;
+    }
 
-	@ConfigItem(
-		keyName = "includeTotalLevels",
-		name = "Include total level",
-		description = "Includes total level in usable tiles",
-		section = customGameModeSection,
-		position = 3
-	)
-	default boolean includeTotalLevel()
-	{
-		return false;
-	}
+    @Alpha
+    @ConfigItem(
+            keyName = "markerColor",
+            name = "Tile Color",
+            section = settingsSection,
+            description = "Configures the color of the tiles",
+            position = 5
+    )
+    default Color markerColor() {
+        return Color.YELLOW;
+    }
 
-	@ConfigItem(
-			keyName = "excludeExp",
-			name = "Exclude Experience",
-			description = "Includes experience / 1000 in usable tiles",
-			section = customGameModeSection,
-			position = 4
-	)
-	default boolean excludeExp()
-	{
-		return false;
-	}
+    /***   Custom Game Mode section   ***/
+    @ConfigItem(
+            keyName = "enableCustomGameMode",
+            name = "Enable Custom Game Mode",
+            description = "Settings below will override Game Mode defaults",
+            section = customGameModeSection,
+            position = 1
+    )
+    default boolean enableCustomGameMode() {
+        return false;
+    }
+
+    @Range(
+            min = Integer.MIN_VALUE
+    )
+    @ConfigItem(
+            keyName = "tilesOffset",
+            name = "Bonus tiles",
+            description = "Add more tiles to your limit, set to 0 for off",
+            section = customGameModeSection,
+            position = 2
+    )
+    default int tilesOffset() {
+        return 9;
+    }
+
+    @ConfigItem(
+            keyName = "includeTotalLevels",
+            name = "Include total level",
+            description = "Includes total level in usable tiles",
+            section = customGameModeSection,
+            position = 3
+    )
+    default boolean includeTotalLevel() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "excludeExp",
+            name = "Exclude Experience",
+            description = "Includes experience / 1000 in usable tiles",
+            section = customGameModeSection,
+            position = 4
+    )
+    default boolean excludeExp() {
+        return false;
+    }
 }
