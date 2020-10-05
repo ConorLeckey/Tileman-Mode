@@ -60,7 +60,7 @@ class TilemanModeMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.drawTileOnMinimmap())
+		if (!config.drawTilesOnMinimmap())
 		{
 			return null;
 		}
