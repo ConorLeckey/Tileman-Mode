@@ -110,7 +110,7 @@ public interface TilemanModeConfig extends Config {
             name = "Draw tiles on world map",
             section = settingsSection,
             description = "Configures whether marked tiles should be drawn on world map",
-            position = 4
+            position = 5
     )
     default boolean drawTilesOnWorldMap() {
         return false;
