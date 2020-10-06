@@ -83,6 +83,9 @@ public interface TilemanModeConfig extends Config {
         return false;
     }
 
+    @Range(
+            min = Integer.MIN_VALUE
+    )
     @ConfigItem(
             keyName = "warningLimit",
             name = "Unspent tiles warning",
@@ -94,14 +97,27 @@ public interface TilemanModeConfig extends Config {
         return 50;
     }
 
+
+    @ConfigItem(
+            keyName = "enableTilesWarning",
+            name = "Enable Tiles Warning",
+            section = settingsSection,
+            description = "Turns on tile warnings when you reach your set limit or 0.",
+            position = 4
+    )
+    default boolean enableTileWarnings() {
+        return true;
+    }
+
     @ConfigItem(
             keyName = "drawOnMinimap",
             name = "Draw tiles on minimap",
             section = settingsSection,
             description = "Configures whether marked tiles should be drawn on minimap",
-            position = 4
+            position = 5
     )
-    default boolean drawTileOnMinimmap() {
+
+    default boolean drawTilesOnMinimmap() {
         return false;
     }
 
@@ -111,7 +127,7 @@ public interface TilemanModeConfig extends Config {
             name = "Tile Color",
             section = settingsSection,
             description = "Configures the color of the tiles",
-            position = 5
+            position = 7
     )
     default Color markerColor() {
         return Color.YELLOW;

@@ -60,7 +60,7 @@ class TilemanModeMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.drawTileOnMinimmap())
+		if (!config.drawTilesOnMinimmap())
 		{
 			return null;
 		}
@@ -105,10 +105,12 @@ class TilemanModeMinimapOverlay extends Overlay
 	}
 
 	private Color getTileColor() {
-		if (plugin.getRemainingTiles() <= 0) {
-			return Color.RED;
-		} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
-			return Color.ORANGE;
+		if(config.enableTileWarnings()) {
+			if (plugin.getRemainingTiles() <= 0) {
+				return Color.RED;
+			} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
+				return Color.ORANGE;
+			}
 		}
 		return config.markerColor();
 	}
