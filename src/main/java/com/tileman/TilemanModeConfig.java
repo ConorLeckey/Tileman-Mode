@@ -97,7 +97,6 @@ public interface TilemanModeConfig extends Config {
         return 50;
     }
 
-
     @ConfigItem(
             keyName = "enableTilesWarning",
             name = "Enable Tiles Warning",
@@ -110,11 +109,22 @@ public interface TilemanModeConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "allowTileDeficit",
+            name = "Allow Tile Deficit",
+            section = settingsSection,
+            description = "Allows you to place tiles after you have none left.",
+            position = 5
+    )
+    default boolean allowTileDeficit() {
+        return false;
+    }
+
+    @ConfigItem(
             keyName = "drawOnMinimap",
             name = "Draw tiles on minimap",
             section = settingsSection,
             description = "Configures whether marked tiles should be drawn on minimap",
-            position = 5
+            position = 6
     )
 
     default boolean drawTilesOnMinimmap() {
