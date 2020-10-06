@@ -104,10 +104,12 @@ class TilemanModeWorldMapOverlay extends Overlay {
                     int xTileOffset = x + widthInTiles / 2 - worldMapPosition.getX();
                     int xPos = ((int) (xTileOffset * pixelsPerTile)) + (int) worldMapRect.getX();
                     int yPos = (worldMapRect.height - (int) (yTileOffset * pixelsPerTile)) + (int) worldMapRect.getY();
-                    int size = regionPixelSize / 64;
+                    int size = (regionPixelSize / (64 - Math.round(48f * ((8f - pixelsPerTile) / 7f))));
+                    int tileSize = regionPixelSize / 64;
 
                     graphics.setColor(new Color(config.markerColor().getRGB()));
-                    graphics.drawRect(xPos + (tile.getRegionX() * size), yPos - (tile.getRegionY() * size) + size, size - 1, size - 1);
+                    graphics.fillRect(xPos + (tile.getRegionX() * tileSize), yPos - (tile.getRegionY() * tileSize) + tileSize, size - 1, size - 1);
+                    graphics.drawRect(xPos + (tile.getRegionX() * tileSize), yPos - (tile.getRegionY() * tileSize) + tileSize, size - 1, size - 1);
                 }
             }
         }
