@@ -98,7 +98,7 @@ class TilemanModeWorldMapOverlay extends Overlay {
                 int regionId = ((x >> 6) << 8) | (y >> 6);
                 for (final TilemanModeTile tile : plugin.getTiles(regionId)) {
                     if(tile.getZ() != client.getPlane()) {
-                        return;
+                        continue;
                     }
                     int yTileOffset = -(yTileMin - y) + 2; // Added offset of 2 as tiles were misaligned
                     int xTileOffset = x + widthInTiles / 2 - worldMapPosition.getX();
