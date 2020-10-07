@@ -124,6 +124,10 @@ public class TilemanModePlugin extends Plugin {
                     MovementFlag.BLOCK_MOVEMENT_WEST
             };
 
+    private final int[] tutorialIslandRegionIds = new int[] {
+            12079, 12080, 12335, 12336, 12592
+    };
+
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
     private int lastPlane;
@@ -172,33 +176,7 @@ public class TilemanModePlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick tick) {
-        final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
-        if (playerPos == null) {
-            return;
-        }
-
-        final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
-        if (playerPosLocal == null) {
-            return;
-        }
-
-        long currentTotalXp = client.getOverallExperience();
-
-        // If we have no last tile, we probably just spawned in, so make sure we walk on our current tile
-        if (lastTile == null
-                || (lastTile.distanceTo(playerPosLocal) != 0 && lastPlane == playerPos.getPlane())
-                || lastPlane != playerPos.getPlane()) {
-            // Player moved
-            handleWalkedToTile(playerPosLocal);
-            lastTile = playerPosLocal;
-            lastPlane = client.getPlane();
-            updateTileCounter();
-            log.debug("player moved");
-            log.debug("last tile={}  distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
-        } else if (totalXp != currentTotalXp) {
-            updateTileCounter();
-            totalXp = currentTotalXp;
-        }
+        autoMark();
     }
 
     @Subscribe
@@ -250,6 +228,36 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.remove(worldMapOverlay);
         overlayManager.remove(infoOverlay);
         points.clear();
+    }
+
+    private void autoMark() {
+        final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
+        if (playerPos == null) {
+            return;
+        }
+
+        final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
+        if (playerPosLocal == null) {
+            return;
+        }
+
+        long currentTotalXp = client.getOverallExperience();
+
+        // If we have no last tile, we probably just spawned in, so make sure we walk on our current tile
+        if ((lastTile == null
+                || (lastTile.distanceTo(playerPosLocal) != 0 && lastPlane == playerPos.getPlane())
+                || lastPlane != playerPos.getPlane()) && !regionIsOnTutorialIsland(playerPos.getRegionID())) {
+            // Player moved
+            handleWalkedToTile(playerPosLocal);
+            lastTile = playerPosLocal;
+            lastPlane = client.getPlane();
+            updateTileCounter();
+            log.debug("player moved");
+            log.debug("last tile={}  distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
+        } else if (totalXp != currentTotalXp) {
+            updateTileCounter();
+            totalXp = currentTotalXp;
+        }
     }
 
     public void importGroundMarkerTiles() {
@@ -581,6 +589,15 @@ public class TilemanModePlugin extends Plugin {
         }
         for (MovementFlag flag : flagsToCompare) {
             if (Arrays.asList(comparisonFlags).contains(flag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean regionIsOnTutorialIsland(int regionId) {
+        for(int tutorialIslandRegionId: tutorialIslandRegionIds) {
+            if (regionId == tutorialIslandRegionId) {
                 return true;
             }
         }
