@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019, Benjamin <https://github.com/genetic-soybean>
  * Copyright (c) 2020, Bram91 <https://github.com/Bram91>
+ * Copyright (c) 2020, ConorLeckey <https://github.com/ConorLeckey>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
