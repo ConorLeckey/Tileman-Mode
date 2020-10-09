@@ -54,6 +54,14 @@ public interface TilemanModeConfig extends Config {
     )
     String customGameModeSection = "customGameMode";
 
+    @ConfigSection(
+            name = "Scaling",
+            description = "Increase the cost of your tiles as you unlock more tiles",
+            position = 100,
+            closedByDefault = true
+    )
+    String scalingSection = "scaling";
+
     public enum TilemanGameMode {
         COMMUNITY,
         STRICT,
@@ -163,5 +171,77 @@ public interface TilemanModeConfig extends Config {
     )
     default boolean excludeExp() {
         return false;
+    }
+
+    /***   Scaling section   ***/
+
+    @Range(
+            min = 1
+    )
+    @ConfigItem(
+            keyName = "scaleStartTile",
+            name = "Scale from x Tile",
+            description = "After which tile should next tiles cost increase",
+            section = scalingSection,
+            position = 1
+    )
+    default int scaleStartTile() {
+        return 1000;
+    }
+
+    @Range(
+            min = 1
+    )
+    @ConfigItem(
+            keyName = "scaleEveryTiles",
+            name = "Scale every x Tiles",
+            description = "After scaling starts, every how many Tiles should it scale again",
+            section = scalingSection,
+            position = 2
+    )
+    default int scaleEveryTiles() {
+        return 1000;
+    }
+
+    @Range(
+            min = 1
+    )
+    @ConfigItem(
+            keyName = "costIncreasePerScale",
+            name = "Scale cost Increase",
+            description = "How much xp cost should each instance of scaling add",
+            section = scalingSection,
+            position = 3
+    )
+    default int costIncreasePerScale() {
+        return 100;
+    }
+
+    @Range(
+            min = 1
+    )
+    @ConfigItem(
+            keyName = "baseTileCost",
+            name = "Base tile Cost",
+            description = "What is the tile cost before scaling",
+            section = scalingSection,
+            position = 4
+    )
+    default int baseTileCost() {
+        return 100;
+    }
+
+    @Range(
+            min = 1
+    )
+    @ConfigItem(
+            keyName = "maxTileCost",
+            name = "Max tile Cost",
+            description = "What is the Maximum cost of a tile",
+            section = scalingSection,
+            position = 4
+    )
+    default int maxTileCost() {
+        return 50000;
     }
 }
