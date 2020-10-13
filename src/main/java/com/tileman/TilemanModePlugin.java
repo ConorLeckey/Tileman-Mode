@@ -131,6 +131,14 @@ public class TilemanModePlugin extends Plugin {
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
                 !(event.getMenuOption().equals(MARK) || event.getMenuOption().equals(UNMARK))) {
+            if(event.getMenuAction() == MenuAction.WALK && !modeTilescontainSelectedSceneTile() ){
+                //We are attempting to walking to a location and it is not in our list
+                if(!config.automarkTiles() || (config.automarkTiles() && remainingTiles == 0)) {
+                    //consume the event because the selected tile is not in our list and we don't have anymore tiles remaining
+                    event.consume();
+                    return;
+                }
+            }
             return;
         }
 
@@ -614,6 +622,19 @@ public class TilemanModePlugin extends Plugin {
 
     int getXpUntilNextTile() {
         return xpUntilNextTile;
+    }
+
+    private boolean modeTilescontainSelectedSceneTile(){
+        Tile target = client.getSelectedSceneTile();
+        if (target == null) {
+            return false;
+        }
+        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, target.getLocalLocation());
+
+        int regionId = worldPoint.getRegionID();
+        TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
+        List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(regionId));
+        return tilemanModeTiles.contains(point);
     }
 
     @AllArgsConstructor
