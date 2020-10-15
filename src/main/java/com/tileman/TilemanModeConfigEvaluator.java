@@ -108,4 +108,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     public boolean automarkTiles() {
         return config.automarkTiles();
     }
+
+    @Override
+    public boolean movementRestriction() { return config.movementRestriction(); }
 }

@@ -131,10 +131,10 @@ public class TilemanModePlugin extends Plugin {
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
                 !(event.getMenuOption().equals(MARK) || event.getMenuOption().equals(UNMARK))) {
-            if(event.getMenuAction() == MenuAction.WALK && !modeTilescontainSelectedSceneTile() ){
-                //We are attempting to walking to a location and it is not in our list
-                if(!config.automarkTiles() || (config.automarkTiles() && remainingTiles == 0)) {
-                    //consume the event because the selected tile is not in our list and we don't have anymore tiles remaining
+            if (event.getMenuAction() == MenuAction.WALK && !isTileMarked(client.getSelectedSceneTile())) {
+                //We are attempting to walking to a tile and it is not in our marked tiles list
+                if (isMovementRestricted()) {
+                    //consume the event because our movement is being restricted
                     event.consume();
                     return;
                 }
@@ -440,13 +440,13 @@ public class TilemanModePlugin extends Plugin {
         // TODO Fill path between last point and current point. This will fix missing tiles that occur when you lag
         // TODO   and rendered frames are skipped. See if RL has an api that mimic's OSRS's pathing. If so, use that to
         // TODO   set all tiles between current tile and lastTile as marked
-        if(lastTile != null){
+        if (lastTile != null) {
             int xDiff = currentPlayerPoint.getX() - lastTile.getX();
             int yDiff = currentPlayerPoint.getY() - lastTile.getY();
             int yModifier = yDiff / 2;
             int xModifier = xDiff / 2;
 
-            switch(lastTile.distanceTo(currentPlayerPoint)) {
+            switch (lastTile.distanceTo(currentPlayerPoint)) {
                 case 0: // Haven't moved
                 case 128: // Moved 1 tile
                     return;
@@ -489,7 +489,7 @@ public class TilemanModePlugin extends Plugin {
                 xModifier = 128;
             }
             fillTile(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier));
-        } else if (containsAnyOf(allDirections, tileBesideFlagsArray)){
+        } else if (containsAnyOf(allDirections, tileBesideFlagsArray)) {
             MovementFlag direction1, direction2;
             if (yDiff == 256 || yDiff == -128) {
                 // Moving 2 North or 1 South
@@ -524,7 +524,7 @@ public class TilemanModePlugin extends Plugin {
     private void handleCornerMovement(int xDiff, int yDiff) {
         LocalPoint northPoint;
         LocalPoint southPoint;
-        if(yDiff > 0) {
+        if (yDiff > 0) {
             northPoint = new LocalPoint(lastTile.getX(), lastTile.getY() + yDiff);
             southPoint = new LocalPoint(lastTile.getX() + xDiff, lastTile.getY());
         } else {
@@ -537,20 +537,20 @@ public class TilemanModePlugin extends Plugin {
 
         if (xDiff + yDiff == 0) {
             // Diagonal tilts north west
-            if(containsAnyOf(fullBlock, northTile)
-                    || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_WEST})){
+            if (containsAnyOf(fullBlock, northTile)
+                    || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_WEST})) {
                 fillTile(southPoint);
             } else if (containsAnyOf(fullBlock, southTile)
-                    || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_EAST})){
+                    || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_EAST})) {
                 fillTile(northPoint);
             }
         } else {
             // Diagonal tilts north east
-            if(containsAnyOf(fullBlock, northTile)
-                    || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_EAST})){
+            if (containsAnyOf(fullBlock, northTile)
+                    || containsAnyOf(northTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_SOUTH, MovementFlag.BLOCK_MOVEMENT_EAST})) {
                 fillTile(southPoint);
             } else if (containsAnyOf(fullBlock, southTile)
-                    || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_WEST})){
+                    || containsAnyOf(southTile, new MovementFlag[]{MovementFlag.BLOCK_MOVEMENT_NORTH, MovementFlag.BLOCK_MOVEMENT_WEST})) {
                 fillTile(northPoint);
             }
         }
@@ -571,7 +571,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private MovementFlag[] getTileMovementFlags(LocalPoint localPoint) {
-        return  getTileMovementFlags(localPoint.getX(), localPoint.getY());
+        return getTileMovementFlags(localPoint.getX(), localPoint.getY());
     }
 
     private boolean containsAnyOf(MovementFlag[] comparisonFlags, MovementFlag[] flagsToCompare) {
@@ -586,15 +586,15 @@ public class TilemanModePlugin extends Plugin {
         return false;
     }
 
-    private void fillTile(LocalPoint localPoint){
-        if(lastPlane != client.getPlane()) {
+    private void fillTile(LocalPoint localPoint) {
+        if (lastPlane != client.getPlane()) {
             return;
         }
         updateTileMark(localPoint, true);
     }
 
     private void updateTileMark(LocalPoint localPoint, boolean markedValue) {
-        if(containsAnyOf(getTileMovementFlags(localPoint), fullBlock)) {
+        if (containsAnyOf(getTileMovementFlags(localPoint), fullBlock)) {
             return;
         }
 
@@ -624,17 +624,19 @@ public class TilemanModePlugin extends Plugin {
         return xpUntilNextTile;
     }
 
-    private boolean modeTilescontainSelectedSceneTile(){
-        Tile target = client.getSelectedSceneTile();
-        if (target == null) {
-            return false;
-        }
-        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, target.getLocalLocation());
+    private boolean isTileMarked(Tile tile) {
+        if (tile == null) return false;
+        LocalPoint localPoint = tile.getLocalLocation();
+        if (localPoint == null) return false;
+        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
 
         int regionId = worldPoint.getRegionID();
         TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
         List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(regionId));
         return tilemanModeTiles.contains(point);
+    }
+    private boolean isMovementRestricted(){
+       return (config.movementRestriction() && (!config.automarkTiles() || (config.automarkTiles() && remainingTiles == 0)));
     }
 
     @AllArgsConstructor

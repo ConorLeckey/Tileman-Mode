@@ -77,9 +77,20 @@ public interface TilemanModeConfig extends Config {
             name = "Auto-mark tiles",
             section = settingsSection,
             description = "Automatically mark tiles as you walk.",
-            position = 2
+            position = 1
     )
     default boolean automarkTiles() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "movementRestriction",
+            name = "Restrict movement",
+            section = settingsSection,
+            description = "Restricts movement to only tiles that are marked.",
+            position = 2
+    )
+    default boolean movementRestriction() {
         return false;
     }
 
