@@ -163,11 +163,7 @@ public class TilemanModePlugin extends Plugin {
             menuEntries = Arrays.copyOf(menuEntries, menuEntries.length + 1);
             MenuEntry menuEntry = menuEntries[menuEntries.length - 1] = new MenuEntry();
 
-            final WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, selectedSceneTile.getLocalLocation());
-            final int regionId = worldPoint.getRegionID();
-            final TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
-
-            menuEntry.setOption(getTiles(regionId).contains(point) ? UNMARK : MARK);
+            menuEntry.setOption(isTileMarked(selectedSceneTile) ? UNMARK : MARK);
             menuEntry.setTarget(event.getTarget());
             menuEntry.setType(MenuAction.RUNELITE.getId());
 
@@ -319,6 +315,16 @@ public class TilemanModePlugin extends Plugin {
 
     private Collection<TilemanModeTile> getTiles(String regionId) {
         return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+    }
+    private Collection<TilemanModeTile> getTiles(LocalPoint localPoint){
+        if (localPoint == null) return new ArrayList<>();
+
+        return getTiles(getRegionId(localPoint));
+    }
+    private Collection<TilemanModeTile> getTiles(Tile tile){
+        if (tile == null) return new ArrayList<>();
+
+        return getTiles(tile.getLocalLocation());
     }
 
     private void updateTileCounter() {
@@ -598,26 +604,13 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
-        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
-
-        int regionId = worldPoint.getRegionID();
-        TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
-        log.debug("Updating point: {} - {}", point, worldPoint);
-
-        List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(regionId));
-
         if (markedValue) {
             // Try add tile
-            if (!tilemanModeTiles.contains(point) && remainingTiles > 0) {
-                tilemanModeTiles.add(point);
-            }
+            tryAddTilemanModeTile(localPoint);
         } else {
             // Try remove tile
-            tilemanModeTiles.remove(point);
+            tryRemoveTilemanModeTile(localPoint);
         }
-
-        savePoints(regionId, tilemanModeTiles);
-        loadPoints();
     }
 
     int getXpUntilNextTile() {
@@ -626,17 +619,66 @@ public class TilemanModePlugin extends Plugin {
 
     private boolean isTileMarked(Tile tile) {
         if (tile == null) return false;
-        LocalPoint localPoint = tile.getLocalLocation();
-        if (localPoint == null) return false;
-        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
 
-        int regionId = worldPoint.getRegionID();
-        TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
-        List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(regionId));
+        TilemanModeTile point = getNewTilemanModeTile(tile);
+        if (point == null) return false;
+
+        List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(tile));
         return tilemanModeTiles.contains(point);
     }
-    private boolean isMovementRestricted(){
-       return (config.movementRestriction() && (!config.automarkTiles() || (config.automarkTiles() && remainingTiles == 0)));
+
+    private boolean isTileMarked(LocalPoint localPoint) {
+        if (localPoint == null) return false;
+
+        TilemanModeTile point = getNewTilemanModeTile(localPoint);
+        if (point == null) return false;
+
+        List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(localPoint));
+        return tilemanModeTiles.contains(point);
+    }
+
+    private void tryAddTilemanModeTile(LocalPoint localPoint) {
+        if (isTileMarked(localPoint) || remainingTiles <= 0) return;
+
+        TilemanModeTile point = getNewTilemanModeTile(localPoint);
+        if (point == null) return;
+
+        List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(localPoint));
+        if(tilemanModeTiles.add(point)){
+            savePoints(getRegionId(localPoint),tilemanModeTiles);
+            loadPoints();
+        }
+    }
+    private  void tryRemoveTilemanModeTile(LocalPoint localPoint){
+        TilemanModeTile point = getNewTilemanModeTile(localPoint);
+        if (point == null) return;
+
+        List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(localPoint));
+        if(tilemanModeTiles.remove(point)){
+            savePoints(getRegionId(localPoint),tilemanModeTiles);
+            loadPoints();
+        }
+    }
+    private TilemanModeTile getNewTilemanModeTile(LocalPoint localPoint){
+        if (localPoint == null) return null;
+
+        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
+        int regionId = worldPoint.getRegionID();
+        return new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
+    }
+    private TilemanModeTile getNewTilemanModeTile(Tile tile){
+        if (tile == null) return null;
+
+        return getNewTilemanModeTile(tile.getLocalLocation());
+    }
+    private int getRegionId(LocalPoint localPoint){
+        if (localPoint == null) return 0;
+
+        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
+        return worldPoint.getRegionID();
+    }
+    private boolean isMovementRestricted() {
+        return (config.movementRestriction() && (!config.automarkTiles() || (config.automarkTiles() && remainingTiles <= 0)));
     }
 
     @AllArgsConstructor
