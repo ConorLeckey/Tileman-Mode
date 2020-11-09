@@ -175,4 +175,15 @@ public interface TilemanModeConfig extends Config {
     default boolean excludeExp() {
         return false;
     }
+
+    @ConfigItem(
+            keyName = "expPerTile",
+            name = "Exp per Tile",
+            description = "Determines how much exp you require per tile",
+            section = customGameModeSection,
+            position = 5
+    )
+    default int expPerTile() {
+        return 9;
+    }
 }
