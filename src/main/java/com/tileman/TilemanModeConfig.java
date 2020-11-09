@@ -101,7 +101,18 @@ public interface TilemanModeConfig extends Config {
             description = "Configures whether marked tiles should be drawn on minimap",
             position = 4
     )
-    default boolean drawTileOnMinimmap() {
+    default boolean drawTilesOnMinimap() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "drawTilesOnWorldMap",
+            name = "Draw tiles on world map",
+            section = settingsSection,
+            description = "Configures whether marked tiles should be drawn on world map",
+            position = 5
+    )
+    default boolean drawTilesOnWorldMap() {
         return false;
     }
 
@@ -111,7 +122,7 @@ public interface TilemanModeConfig extends Config {
             name = "Tile Color",
             section = settingsSection,
             description = "Configures the color of the tiles",
-            position = 5
+            position = 6
     )
     default Color markerColor() {
         return Color.YELLOW;
@@ -163,5 +174,16 @@ public interface TilemanModeConfig extends Config {
     )
     default boolean excludeExp() {
         return false;
+    }
+
+    @ConfigItem(
+            keyName = "expPerTile",
+            name = "Exp per Tile",
+            description = "Determines how much exp you require per tile",
+            section = customGameModeSection,
+            position = 5
+    )
+    default int expPerTile() {
+        return 9;
     }
 }
