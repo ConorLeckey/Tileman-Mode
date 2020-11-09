@@ -94,7 +94,7 @@ public interface TilemanModeConfig extends Config {
             position = 3
     )
     default int warningLimit() {
-        return 50;
+        return 20;
     }
 
     @ConfigItem(
@@ -105,7 +105,7 @@ public interface TilemanModeConfig extends Config {
             position = 4
     )
     default boolean enableTileWarnings() {
-        return true;
+        return false;
     }
 
     @ConfigItem(
