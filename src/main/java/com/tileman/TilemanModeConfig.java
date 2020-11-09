@@ -101,7 +101,7 @@ public interface TilemanModeConfig extends Config {
             description = "Configures whether marked tiles should be drawn on minimap",
             position = 4
     )
-    default boolean drawTilesOnMinimmap() {
+    default boolean drawTilesOnMinimap() {
         return false;
     }
 
