@@ -117,4 +117,9 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     public boolean automarkTiles() {
         return config.automarkTiles();
     }
+
+    @Override
+    public boolean allowTileDeficit() {
+        return config.allowTileDeficit();
+    }
 }

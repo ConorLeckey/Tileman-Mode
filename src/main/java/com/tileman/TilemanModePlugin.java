@@ -609,7 +609,7 @@ public class TilemanModePlugin extends Plugin {
 
         if (markedValue) {
             // Try add tile
-            if (!tilemanModeTiles.contains(point) && remainingTiles > 0) {
+            if (!tilemanModeTiles.contains(point) && (config.allowTileDeficit() || remainingTiles > 0)) {
                 tilemanModeTiles.add(point);
             }
         } else {
