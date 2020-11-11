@@ -109,7 +109,7 @@ class TilemanModeMinimapOverlay extends Overlay
 			if (plugin.getRemainingTiles() <= 0) {
 				return Color.RED;
 			} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
-				return Color.ORANGE;
+				return new Color(255, 153, 0);
 			}
 		}
 		return config.markerColor();
