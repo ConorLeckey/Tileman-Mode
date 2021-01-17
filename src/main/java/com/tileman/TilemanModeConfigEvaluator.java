@@ -96,6 +96,15 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     }
 
     @Override
+    public int expPerTile() {
+        if (config.enableCustomGameMode()) {
+            return config.expPerTile();
+        } else {
+            return 1000;
+        }
+    }
+
+    @Override
     public boolean excludeExp() {
         if(config.enableCustomGameMode()) {
             return config.excludeExp();
@@ -107,5 +116,10 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     @Override
     public boolean automarkTiles() {
         return config.automarkTiles();
+    }
+
+    @Override
+    public boolean allowTileDeficit() {
+        return config.allowTileDeficit();
     }
 }

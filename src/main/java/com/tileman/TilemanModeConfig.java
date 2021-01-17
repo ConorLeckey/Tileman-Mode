@@ -83,6 +83,9 @@ public interface TilemanModeConfig extends Config {
         return false;
     }
 
+    @Range(
+            min = Integer.MIN_VALUE
+    )
     @ConfigItem(
             keyName = "warningLimit",
             name = "Unspent tiles warning",
@@ -91,7 +94,29 @@ public interface TilemanModeConfig extends Config {
             position = 3
     )
     default int warningLimit() {
-        return 50;
+        return 20;
+    }
+
+    @ConfigItem(
+            keyName = "enableTilesWarning",
+            name = "Enable Tiles Warning",
+            section = settingsSection,
+            description = "Turns on tile warnings when you reach your set limit or 0.",
+            position = 4
+    )
+    default boolean enableTileWarnings() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "allowTileDeficit",
+            name = "Allow Tile Deficit",
+            section = settingsSection,
+            description = "Allows you to place tiles after you have none left.",
+            position = 5
+    )
+    default boolean allowTileDeficit() {
+        return false;
     }
 
     @ConfigItem(
@@ -99,9 +124,9 @@ public interface TilemanModeConfig extends Config {
             name = "Draw tiles on minimap",
             section = settingsSection,
             description = "Configures whether marked tiles should be drawn on minimap",
-            position = 4
+            position = 6
     )
-    default boolean drawTilesOnMinimmap() {
+    default boolean drawTilesOnMinimap() {
         return false;
     }
 
@@ -174,5 +199,16 @@ public interface TilemanModeConfig extends Config {
     )
     default boolean excludeExp() {
         return false;
+    }
+
+    @ConfigItem(
+            keyName = "expPerTile",
+            name = "Exp per Tile",
+            description = "Determines how much exp you require per tile",
+            section = customGameModeSection,
+            position = 5
+    )
+    default int expPerTile() {
+        return 9;
     }
 }

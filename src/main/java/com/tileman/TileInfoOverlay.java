@@ -31,7 +31,6 @@ import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.LineComponent;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -98,10 +97,12 @@ class TileInfoOverlay extends OverlayPanel {
     }
 
     private Color getTextColor() {
-        if (plugin.getRemainingTiles() <= 0) {
-            return Color.RED;
-        } else if (plugin.getRemainingTiles() <= config.warningLimit()) {
-            return Color.ORANGE;
+        if(config.enableTileWarnings()) {
+            if (plugin.getRemainingTiles() <= 0) {
+                return Color.RED;
+            } else if (plugin.getRemainingTiles() <= config.warningLimit()) {
+                return Color.ORANGE;
+            }
         }
         return Color.WHITE;
     }

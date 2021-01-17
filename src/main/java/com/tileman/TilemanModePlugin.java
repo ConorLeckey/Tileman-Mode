@@ -356,7 +356,7 @@ public class TilemanModePlugin extends Plugin {
 
         // If including xp, add those tiles in
         if (!config.excludeExp()) {
-            earnedTiles += (int) client.getOverallExperience() / 1000;
+            earnedTiles += (int) client.getOverallExperience() / config.expPerTile();
         }
 
         // If including total level, add those tiles in
@@ -368,7 +368,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateXpUntilNextTile() {
-        xpUntilNextTile = 1000 - Integer.parseInt(StringUtils.right(Long.toString(client.getOverallExperience()), 3));
+        xpUntilNextTile = config.expPerTile() - Integer.parseInt(Long.toString(client.getOverallExperience() % config.expPerTile()));
     }
 
     private Collection<TilemanModeTile> getConfiguration(String configGroup, String key) {
@@ -626,7 +626,7 @@ public class TilemanModePlugin extends Plugin {
 
         if (markedValue) {
             // Try add tile
-            if (!tilemanModeTiles.contains(point) && remainingTiles > 0) {
+            if (!tilemanModeTiles.contains(point) && (config.allowTileDeficit() || remainingTiles > 0)) {
                 tilemanModeTiles.add(point);
             }
         } else {
