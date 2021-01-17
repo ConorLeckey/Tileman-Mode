@@ -201,6 +201,9 @@ public interface TilemanModeConfig extends Config {
         return false;
     }
 
+    @Range(
+            min = 500
+    )
     @ConfigItem(
             keyName = "expPerTile",
             name = "Exp per Tile",
@@ -209,6 +212,6 @@ public interface TilemanModeConfig extends Config {
             position = 5
     )
     default int expPerTile() {
-        return 9;
+        return 1000;
     }
 }

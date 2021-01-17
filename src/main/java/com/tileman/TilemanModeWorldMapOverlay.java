@@ -56,7 +56,7 @@ class TilemanModeWorldMapOverlay extends Overlay {
         this.plugin = plugin;
         setPosition(OverlayPosition.DYNAMIC);
         setPriority(OverlayPriority.HIGH);
-        setLayer(OverlayLayer.ABOVE_MAP);
+        setLayer(OverlayLayer.ALWAYS_ON_TOP);
     }
 
     @Override
