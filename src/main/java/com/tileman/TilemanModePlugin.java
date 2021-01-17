@@ -409,6 +409,11 @@ public class TilemanModePlugin extends Plugin {
 
         return points.stream()
                 .map(point -> WorldPoint.fromRegion(point.getRegionId(), point.getRegionX(), point.getRegionY(), point.getZ()))
+                .flatMap(worldPoint ->
+                {
+                    final Collection<WorldPoint> localWorldPoints = WorldPoint.toLocalInstance(client, worldPoint);
+                    return localWorldPoints.stream();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -429,8 +434,7 @@ public class TilemanModePlugin extends Plugin {
 
     private void handleWalkedToTile(LocalPoint currentPlayerPoint) {
         if (currentPlayerPoint == null ||
-                !config.automarkTiles() ||
-                client.isInInstancedRegion()) {
+                !config.automarkTiles()) {
             return;
         }
 
