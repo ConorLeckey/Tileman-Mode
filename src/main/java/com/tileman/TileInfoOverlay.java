@@ -65,9 +65,9 @@ class TileInfoOverlay extends OverlayPanel {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        String unspentTiles = String.valueOf(plugin.getRemainingTiles());
-        String unlockedTiles = String.valueOf(plugin.getTotalTiles());
-        String xpUntilNextTile = String.valueOf(plugin.getXpUntilNextTile());
+        String unspentTiles = addCommasToNumber(plugin.getRemainingTiles());
+        String unlockedTiles = addCommasToNumber(plugin.getTotalTiles());
+        String xpUntilNextTile = addCommasToNumber(plugin.getXpUntilNextTile());
 
         panelComponent.getChildren().add(LineComponent.builder()
                 .left(UNSPENT_TILES_STRING)
@@ -116,5 +116,18 @@ class TileInfoOverlay extends OverlayPanel {
             }
         }
         return longest;
+    }
+
+    private String addCommasToNumber(int number) {
+        String input = Integer.toString(number);
+        StringBuilder output = new StringBuilder();
+        for(int x = input.length() - 1; x >= 0; x--) {
+            int lastPosition = input.length() - x - 1;
+            if(lastPosition != 0 && lastPosition % 3 == 0) {
+                output.append(",");
+            }
+            output.append(input.charAt(x));
+        }
+        return output.reverse().toString();
     }
 }
