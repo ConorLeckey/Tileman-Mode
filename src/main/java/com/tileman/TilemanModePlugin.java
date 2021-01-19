@@ -124,9 +124,7 @@ public class TilemanModePlugin extends Plugin {
                     MovementFlag.BLOCK_MOVEMENT_WEST
             };
 
-    private final int[] tutorialIslandRegionIds = new int[] {
-            12079, 12080, 12335, 12336, 12592
-    };
+    private final HashSet<Integer> tutorialIslandRegionIds = new HashSet<Integer>();
 
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
@@ -203,6 +201,11 @@ public class TilemanModePlugin extends Plugin {
 
     @Override
     protected void startUp() {
+        tutorialIslandRegionIds.add(12079);
+        tutorialIslandRegionIds.add(12080);
+        tutorialIslandRegionIds.add(12335);
+        tutorialIslandRegionIds.add(12336);
+        tutorialIslandRegionIds.add(12592);
         overlayManager.add(overlay);
         overlayManager.add(minimapOverlay);
         overlayManager.add(worldMapOverlay);
@@ -223,6 +226,7 @@ public class TilemanModePlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        tutorialIslandRegionIds.clear();
         overlayManager.remove(overlay);
         overlayManager.remove(minimapOverlay);
         overlayManager.remove(worldMapOverlay);
@@ -596,12 +600,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private boolean regionIsOnTutorialIsland(int regionId) {
-        for(int tutorialIslandRegionId: tutorialIslandRegionIds) {
-            if (regionId == tutorialIslandRegionId) {
-                return true;
-            }
-        }
-        return false;
+        return tutorialIslandRegionIds.contains(regionId);
     }
 
     private void fillTile(LocalPoint localPoint){
