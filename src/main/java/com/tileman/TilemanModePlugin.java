@@ -37,10 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.MenuEntryAdded;
-import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -50,7 +47,6 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -130,6 +126,7 @@ public class TilemanModePlugin extends Plugin {
     private LocalPoint lastTile;
     private int lastPlane;
     private boolean lastAutoTilesConfig = false;
+    private boolean inHouse = false;
     private long totalXp;
 
     @Subscribe
@@ -185,6 +182,7 @@ public class TilemanModePlugin extends Plugin {
         }
         loadPoints();
         updateTileCounter();
+        inHouse = false;
     }
 
     @Subscribe
@@ -197,6 +195,16 @@ public class TilemanModePlugin extends Plugin {
         }
         lastAutoTilesConfig = config.automarkTiles();
         updateTileCounter();
+    }
+
+
+    @Subscribe
+    public void onGameObjectSpawned(GameObjectSpawned event) {
+        GameObject gameObject = event.getGameObject();
+
+        if (gameObject.getId() == 4525) {
+            inHouse = true;
+        }
     }
 
     @Override
@@ -421,6 +429,11 @@ public class TilemanModePlugin extends Plugin {
 
         return points.stream()
                 .map(point -> WorldPoint.fromRegion(point.getRegionId(), point.getRegionX(), point.getRegionY(), point.getZ()))
+                .flatMap(worldPoint ->
+                {
+                    final Collection<WorldPoint> localWorldPoints = WorldPoint.toLocalInstance(client, worldPoint);
+                    return localWorldPoints.stream();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -441,8 +454,8 @@ public class TilemanModePlugin extends Plugin {
 
     private void handleWalkedToTile(LocalPoint currentPlayerPoint) {
         if (currentPlayerPoint == null ||
-                !config.automarkTiles() ||
-                client.isInInstancedRegion()) {
+                inHouse ||
+                !config.automarkTiles()) {
             return;
         }
 
