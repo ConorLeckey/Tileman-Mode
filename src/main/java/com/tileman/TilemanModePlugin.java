@@ -124,6 +124,8 @@ public class TilemanModePlugin extends Plugin {
                     MovementFlag.BLOCK_MOVEMENT_WEST
             };
 
+    private final HashSet<Integer> tutorialIslandRegionIds = new HashSet<Integer>();
+
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
     private int lastPlane;
@@ -172,33 +174,7 @@ public class TilemanModePlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick tick) {
-        final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
-        if (playerPos == null) {
-            return;
-        }
-
-        final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
-        if (playerPosLocal == null) {
-            return;
-        }
-
-        long currentTotalXp = client.getOverallExperience();
-
-        // If we have no last tile, we probably just spawned in, so make sure we walk on our current tile
-        if (lastTile == null
-                || (lastTile.distanceTo(playerPosLocal) != 0 && lastPlane == playerPos.getPlane())
-                || lastPlane != playerPos.getPlane()) {
-            // Player moved
-            handleWalkedToTile(playerPosLocal);
-            lastTile = playerPosLocal;
-            lastPlane = client.getPlane();
-            updateTileCounter();
-            log.debug("player moved");
-            log.debug("last tile={}  distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
-        } else if (totalXp != currentTotalXp) {
-            updateTileCounter();
-            totalXp = currentTotalXp;
-        }
+        autoMark();
     }
 
     @Subscribe
@@ -225,6 +201,11 @@ public class TilemanModePlugin extends Plugin {
 
     @Override
     protected void startUp() {
+        tutorialIslandRegionIds.add(12079);
+        tutorialIslandRegionIds.add(12080);
+        tutorialIslandRegionIds.add(12335);
+        tutorialIslandRegionIds.add(12336);
+        tutorialIslandRegionIds.add(12592);
         overlayManager.add(overlay);
         overlayManager.add(minimapOverlay);
         overlayManager.add(worldMapOverlay);
@@ -245,11 +226,42 @@ public class TilemanModePlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        tutorialIslandRegionIds.clear();
         overlayManager.remove(overlay);
         overlayManager.remove(minimapOverlay);
         overlayManager.remove(worldMapOverlay);
         overlayManager.remove(infoOverlay);
         points.clear();
+    }
+
+    private void autoMark() {
+        final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
+        if (playerPos == null) {
+            return;
+        }
+
+        final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
+        if (playerPosLocal == null) {
+            return;
+        }
+
+        long currentTotalXp = client.getOverallExperience();
+
+        // If we have no last tile, we probably just spawned in, so make sure we walk on our current tile
+        if ((lastTile == null
+                || (lastTile.distanceTo(playerPosLocal) != 0 && lastPlane == playerPos.getPlane())
+                || lastPlane != playerPos.getPlane()) && !regionIsOnTutorialIsland(playerPos.getRegionID())) {
+            // Player moved
+            handleWalkedToTile(playerPosLocal);
+            lastTile = playerPosLocal;
+            lastPlane = client.getPlane();
+            updateTileCounter();
+            log.debug("player moved");
+            log.debug("last tile={}  distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
+        } else if (totalXp != currentTotalXp) {
+            updateTileCounter();
+            totalXp = currentTotalXp;
+        }
     }
 
     public void importGroundMarkerTiles() {
@@ -585,6 +597,10 @@ public class TilemanModePlugin extends Plugin {
             }
         }
         return false;
+    }
+
+    private boolean regionIsOnTutorialIsland(int regionId) {
+        return tutorialIslandRegionIds.contains(regionId);
     }
 
     private void fillTile(LocalPoint localPoint){
