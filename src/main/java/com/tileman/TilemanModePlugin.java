@@ -153,19 +153,16 @@ public class TilemanModePlugin extends Plugin {
                 return;
             }
 
-            MenuEntry[] menuEntries = client.getMenuEntries();
-            menuEntries = Arrays.copyOf(menuEntries, menuEntries.length + 1);
-            MenuEntry menuEntry = menuEntries[menuEntries.length - 1] = new MenuEntry();
 
             final WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, selectedSceneTile.getLocalLocation());
             final int regionId = worldPoint.getRegionID();
             final TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
 
-            menuEntry.setOption(getTiles(regionId).contains(point) ? UNMARK : MARK);
-            menuEntry.setTarget(event.getTarget());
-            menuEntry.setType(MenuAction.RUNELITE.getId());
+            client.createMenuEntry(-1)
+                    .setOption(getTiles(regionId).contains(point) ? UNMARK : MARK)
+                    .setTarget(event.getTarget())
+                    .setType(MenuAction.RUNELITE);
 
-            client.setMenuEntries(menuEntries);
         }
     }
 
