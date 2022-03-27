@@ -214,4 +214,13 @@ public interface TilemanModeConfig extends Config {
     default int expPerTile() {
         return 1000;
     }
+
+    @ConfigItem(
+            keyName = "settledMode",
+            name = "Settled Mode",
+            description = "Increases cost per tile by a multiple of the exp per tile very 1,000,000 xp",
+            section = customGameModeSection,
+            position = 6
+    )
+    default boolean settledMode() { return false; }
 }
