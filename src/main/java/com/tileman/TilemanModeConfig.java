@@ -202,7 +202,7 @@ public interface TilemanModeConfig extends Config {
     }
 
     @Range(
-            min = 500
+            min = 1
     )
     @ConfigItem(
             keyName = "expPerTile",
