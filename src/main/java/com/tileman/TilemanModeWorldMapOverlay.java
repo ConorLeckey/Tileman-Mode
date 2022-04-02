@@ -28,6 +28,7 @@
 package com.tileman;
 
 import java.awt.*;
+import java.util.List;
 import javax.inject.Inject;
 
 import net.runelite.api.Client;
@@ -97,7 +98,11 @@ class TilemanModeWorldMapOverlay extends Overlay {
         for (int x = xRegionMin; x < xRegionMax; x += REGION_SIZE) {
             for (int y = yRegionMin; y < yRegionMax; y += REGION_SIZE) {
                 int regionId = ((x >> 6) << 8) | (y >> 6);
-                for (final TilemanModeTile tile : plugin.getTiles(regionId)) {
+                List<TilemanModeTile> tiles = plugin.getTilesByRegion().get(regionId);
+                if (tiles == null) {
+                    continue;
+                }
+                for (final TilemanModeTile tile : tiles) {
                     if(tile.getZ() != client.getPlane()) {
                         continue;
                     }

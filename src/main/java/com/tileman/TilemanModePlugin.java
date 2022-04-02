@@ -68,7 +68,7 @@ public class TilemanModePlugin extends Plugin {
     private static final Gson GSON = new Gson();
 
     @Getter(AccessLevel.PACKAGE)
-    private final Map<Integer, List<TilemanModeTile>> pointsByRegion = new HashMap<>();
+    private final Map<Integer, List<TilemanModeTile>> tilesByRegion = new HashMap<>();
 
     @Inject
     private Client client;
@@ -159,7 +159,7 @@ public class TilemanModePlugin extends Plugin {
             final TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
 
             client.createMenuEntry(-1)
-                    .setOption(getTiles(regionId).contains(point) ? UNMARK : MARK)
+                    .setOption(tilesByRegion.getOrDefault(regionId, new ArrayList()).contains(point) ? UNMARK : MARK)
                     .setTarget(event.getTarget())
                     .setType(MenuAction.RUNELITE);
 
@@ -236,8 +236,8 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.remove(minimapOverlay);
         overlayManager.remove(worldMapOverlay);
         overlayManager.remove(infoOverlay);
-        pointsByRegion.forEach((key, val) -> val.clear());
-        pointsByRegion.clear();
+        tilesByRegion.forEach((key, val) -> val.clear());
+        tilesByRegion.clear();
     }
 
     private void autoMark() {
@@ -288,7 +288,7 @@ public class TilemanModePlugin extends Plugin {
             if (tilemanModeRegions.contains(region)) {
                 // Create Empty ArrayList for Region;
                 // Get Tileman Region's tiles and add them to the region array list
-                ArrayList<TilemanModeTile> regionTiles = new ArrayList<>(getTiles(region));
+                ArrayList<TilemanModeTile> regionTiles = new ArrayList<>(loadTilesByRegion(region));
 
                 // Create int for regionOriginalSize;
                 // Set regionOriginalSize to arraylists length
@@ -332,18 +332,17 @@ public class TilemanModePlugin extends Plugin {
         return region.substring(region.indexOf('_') + 1);
     }
 
-    List<TilemanModeTile> getTiles(int regionId) {
-        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+    private List<TilemanModeTile> loadTilesByRegion(int regionId) {
+        return loadTilesByRegion(String.valueOf(regionId));
     }
-
-    private Collection<TilemanModeTile> getTiles(String regionId) {
+    private List<TilemanModeTile> loadTilesByRegion(String regionId) {
         return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
     }
 
     private void updateTileCounter() {
         int totalTiles = 0;
-        for (Integer region : pointsByRegion.keySet()) {
-            List<TilemanModeTile> regionTiles = pointsByRegion.get(region);
+        for (Integer region : tilesByRegion.keySet()) {
+            List<TilemanModeTile> regionTiles = tilesByRegion.get(region);
             totalTiles += regionTiles.size();
         }
 
@@ -391,7 +390,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void loadPoints() {
-        pointsByRegion.clear();
+        tilesByRegion.clear();
 
         List<String> regionStrings = configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
         regionStrings = removeRegionPrefixes(regionStrings);
@@ -408,8 +407,8 @@ public class TilemanModePlugin extends Plugin {
         for (int regionId : regions) {
             // load points for region
             log.debug("Loading points for region {}", regionId);
-            List<TilemanModeTile> points = getTiles(regionId);
-            pointsByRegion.put(regionId, points);
+            List<TilemanModeTile> points = loadTilesByRegion(regionId);
+            tilesByRegion.put(regionId, points);
         }
         updateTileCounter();
     }
@@ -621,10 +620,10 @@ public class TilemanModePlugin extends Plugin {
         TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
         log.debug("Updating point: {} - {}", point, worldPoint);
 
-        List<TilemanModeTile> tilemanModeTiles = pointsByRegion.get(regionId);
+        List<TilemanModeTile> tilemanModeTiles = tilesByRegion.get(regionId);
         if (tilemanModeTiles == null) {
             tilemanModeTiles = new ArrayList<TilemanModeTile>();
-            pointsByRegion.put(regionId, tilemanModeTiles);
+            tilesByRegion.put(regionId, tilemanModeTiles);
         }
 
         if (markedValue) {

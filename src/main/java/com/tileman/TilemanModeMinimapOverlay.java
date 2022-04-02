@@ -35,7 +35,6 @@ import net.runelite.client.ui.overlay.*;
 import javax.inject.Inject;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +71,7 @@ class TilemanModeMinimapOverlay extends Overlay
 
 		Color color = getTileColor();
 		int[] loadedRegions = client.getMapRegions();
-		Map<Integer, List<TilemanModeTile>> tilesByRegion = plugin.getPointsByRegion();
+		Map<Integer, List<TilemanModeTile>> tilesByRegion = plugin.getTilesByRegion();
 
 		for (Integer region : loadedRegions)
 		{

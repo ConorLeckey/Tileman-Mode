@@ -36,7 +36,6 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class TilemanModeOverlay extends Overlay
 {
@@ -65,7 +64,7 @@ public class TilemanModeOverlay extends Overlay
 	{
 		Color color = getTileColor();
 		int[] loadedRegions = client.getMapRegions();
-		Map<Integer, List<TilemanModeTile>> tilesByRegion = plugin.getPointsByRegion();
+		Map<Integer, List<TilemanModeTile>> tilesByRegion = plugin.getTilesByRegion();
 
 		for (int region : loadedRegions)
 		{
