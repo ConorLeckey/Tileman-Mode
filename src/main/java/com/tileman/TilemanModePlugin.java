@@ -188,7 +188,7 @@ public class TilemanModePlugin extends Plugin {
         final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
         final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
         if (playerPosLocal != null && config.automarkTiles() && !lastAutoTilesConfig) {
-            handleWalkedToTile(playerPosLocal);
+            handleWalkedToTile(playerPos);
         }
         lastAutoTilesConfig = config.automarkTiles();
         updateTileCounter();
@@ -211,6 +211,7 @@ public class TilemanModePlugin extends Plugin {
         tutorialIslandRegionIds.add(12335);
         tutorialIslandRegionIds.add(12336);
         tutorialIslandRegionIds.add(12592);
+        tutorialIslandRegionIds.add(12436);
         overlayManager.add(overlay);
         overlayManager.add(minimapOverlay);
         overlayManager.add(worldMapOverlay);
@@ -253,11 +254,11 @@ public class TilemanModePlugin extends Plugin {
         long currentTotalXp = client.getOverallExperience();
 
         // If we have no last tile, we probably just spawned in, so make sure we walk on our current tile
-        if ((lastTile == null
+        if (lastTile == null
                 || (lastTile.distanceTo(playerPosLocal) != 0 && lastPlane == playerPos.getPlane())
-                || lastPlane != playerPos.getPlane()) && !regionIsOnTutorialIsland(playerPos.getRegionID())) {
+                || lastPlane != playerPos.getPlane()) {
             // Player moved
-            handleWalkedToTile(playerPosLocal);
+            handleWalkedToTile(playerPos);
             lastTile = playerPosLocal;
             lastPlane = client.getPlane();
             updateTileCounter();
@@ -449,27 +450,29 @@ public class TilemanModePlugin extends Plugin {
         updateTileMark(selectedPoint, markedValue);
     }
 
-    private void handleWalkedToTile(LocalPoint currentPlayerPoint) {
-        if (currentPlayerPoint == null ||
+    private void handleWalkedToTile(WorldPoint playerPos) {
+        LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
+        if (playerPosLocal == null ||
                 inHouse ||
-                !config.automarkTiles()) {
+                !config.automarkTiles() ||
+                regionIsOnTutorialIsland(playerPos.getRegionID())) {
             return;
         }
 
         // Mark the tile they walked to
-        updateTileMark(currentPlayerPoint, true);
+        updateTileMark(playerPosLocal, true);
 
         // If player moves 2 tiles in a straight line, fill in the middle tile
         // TODO Fill path between last point and current point. This will fix missing tiles that occur when you lag
         // TODO   and rendered frames are skipped. See if RL has an api that mimic's OSRS's pathing. If so, use that to
         // TODO   set all tiles between current tile and lastTile as marked
         if(lastTile != null){
-            int xDiff = currentPlayerPoint.getX() - lastTile.getX();
-            int yDiff = currentPlayerPoint.getY() - lastTile.getY();
+            int xDiff = playerPosLocal.getX() - lastTile.getX();
+            int yDiff = playerPosLocal.getY() - lastTile.getY();
             int yModifier = yDiff / 2;
             int xModifier = xDiff / 2;
 
-            switch(lastTile.distanceTo(currentPlayerPoint)) {
+            switch(lastTile.distanceTo(playerPosLocal)) {
                 case 0: // Haven't moved
                 case 128: // Moved 1 tile
                     return;
