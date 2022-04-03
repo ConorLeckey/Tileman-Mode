@@ -211,6 +211,7 @@ public class TilemanModePlugin extends Plugin {
         tutorialIslandRegionIds.add(12335);
         tutorialIslandRegionIds.add(12336);
         tutorialIslandRegionIds.add(12592);
+        tutorialIslandRegionIds.add(12436);
         overlayManager.add(overlay);
         overlayManager.add(minimapOverlay);
         overlayManager.add(worldMapOverlay);
@@ -253,9 +254,9 @@ public class TilemanModePlugin extends Plugin {
         long currentTotalXp = client.getOverallExperience();
 
         // If we have no last tile, we probably just spawned in, so make sure we walk on our current tile
-        if ((lastTile == null
+        if (lastTile == null
                 || (lastTile.distanceTo(playerPosLocal) != 0 && lastPlane == playerPos.getPlane())
-                || lastPlane != playerPos.getPlane()) && !regionIsOnTutorialIsland(playerPos.getRegionID())) {
+                || lastPlane != playerPos.getPlane()) {
             // Player moved
             handleWalkedToTile(playerPosLocal);
             lastTile = playerPosLocal;
@@ -621,11 +622,12 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateTileMark(LocalPoint localPoint, boolean markedValue) {
-        if(containsAnyOf(getTileMovementFlags(localPoint), fullBlock)) {
+        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
+        if(containsAnyOf(getTileMovementFlags(localPoint), fullBlock) ||
+                // prevent marking on tutorial island, but allow unmarking
+                (regionIsOnTutorialIsland(worldPoint.getRegionID()) && markedValue)) {
             return;
         }
-
-        WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
 
         int regionId = worldPoint.getRegionID();
         TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
