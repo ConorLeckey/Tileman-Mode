@@ -30,14 +30,11 @@ import net.runelite.client.config.*;
 
 import java.awt.*;
 
-@ConfigGroup("tilemanMode")
+import static com.tileman.TilemanModeConfig.CONFIG_GROUP;
+
+@ConfigGroup(CONFIG_GROUP)
 public interface TilemanModeConfig extends Config {
-    @ConfigSection(
-            name = "Game Mode",
-            description = "Select your Tileman game mode'",
-            position = 1
-    )
-    String gameModeSection = "gameMode";
+    public static final String CONFIG_GROUP = "tilemanMode";
 
     @ConfigSection(
             name = "Settings",
@@ -45,32 +42,6 @@ public interface TilemanModeConfig extends Config {
             position = 2
     )
     String settingsSection = "settings";
-
-    @ConfigSection(
-            name = "Custom Game Mode",
-            description = "Create a custom Tileman game mode. Be sure to 'Enable Custom Game Mode'",
-            position = 99,
-            closedByDefault = true
-    )
-    String customGameModeSection = "customGameMode";
-
-    public enum TilemanGameMode {
-        COMMUNITY,
-        STRICT,
-        ACCELERATED
-    }
-
-    @Alpha
-    @ConfigItem(
-            keyName = "gameMode",
-            name = "Game Mode",
-            section = gameModeSection,
-            description = "Select your Tileman game mode",
-            position = 1
-    )
-    default TilemanGameMode gameMode() {
-        return TilemanGameMode.COMMUNITY;
-    }
 
     @ConfigItem(
             keyName = "automarkTiles",
@@ -109,17 +80,6 @@ public interface TilemanModeConfig extends Config {
     }
 
     @ConfigItem(
-            keyName = "allowTileDeficit",
-            name = "Allow Tile Deficit",
-            section = settingsSection,
-            description = "Allows you to place tiles after you have none left.",
-            position = 5
-    )
-    default boolean allowTileDeficit() {
-        return false;
-    }
-
-    @ConfigItem(
             keyName = "drawOnMinimap",
             name = "Draw tiles on minimap",
             section = settingsSection,
@@ -153,65 +113,4 @@ public interface TilemanModeConfig extends Config {
         return Color.YELLOW;
     }
 
-    /***   Custom Game Mode section   ***/
-    @ConfigItem(
-            keyName = "enableCustomGameMode",
-            name = "Enable Custom Game Mode",
-            description = "Settings below will override Game Mode defaults",
-            section = customGameModeSection,
-            position = 1
-    )
-    default boolean enableCustomGameMode() {
-        return false;
-    }
-
-    @Range(
-            min = Integer.MIN_VALUE
-    )
-    @ConfigItem(
-            keyName = "tilesOffset",
-            name = "Bonus tiles",
-            description = "Add more tiles to your limit, set to 0 for off",
-            section = customGameModeSection,
-            position = 2
-    )
-    default int tilesOffset() {
-        return 9;
-    }
-
-    @ConfigItem(
-            keyName = "includeTotalLevels",
-            name = "Include total level",
-            description = "Includes total level in usable tiles",
-            section = customGameModeSection,
-            position = 3
-    )
-    default boolean includeTotalLevel() {
-        return false;
-    }
-
-    @ConfigItem(
-            keyName = "excludeExp",
-            name = "Exclude Experience",
-            description = "Includes experience / 1000 in usable tiles",
-            section = customGameModeSection,
-            position = 4
-    )
-    default boolean excludeExp() {
-        return false;
-    }
-
-    @Range(
-            min = 500
-    )
-    @ConfigItem(
-            keyName = "expPerTile",
-            name = "Exp per Tile",
-            description = "Determines how much exp you require per tile",
-            section = customGameModeSection,
-            position = 5
-    )
-    default int expPerTile() {
-        return 1000;
-    }
 }

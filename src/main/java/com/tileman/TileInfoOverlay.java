@@ -76,7 +76,7 @@ class TileInfoOverlay extends OverlayPanel {
                 .rightColor(getTextColor())
                 .build());
 
-        if(!(config.enableCustomGameMode() && config.excludeExp())) {
+        if(!(plugin.getGameRules().enableCustomGameMode && plugin.getGameRules().excludeExp)) {
             panelComponent.getChildren().add(LineComponent.builder()
                     .left(XP_UNTIL_NEXT_TILE)
                     .right(xpUntilNextTile)

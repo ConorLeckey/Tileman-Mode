@@ -129,6 +129,12 @@ public class TilemanModePlugin extends Plugin {
     private boolean inHouse = false;
     private long totalXp;
 
+    private TilemanProfileManager profileManager;
+
+    public TilemanGameRules getGameRules() {
+        return profileManager.getGameRules();
+    }
+
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
@@ -184,6 +190,9 @@ public class TilemanModePlugin extends Plugin {
 
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
+        if (client.getLocalPlayer() == null) {
+            return;
+        }
         // Check if automark tiles is on, and if so attempt to step on current tile
         final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
         final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
@@ -206,6 +215,8 @@ public class TilemanModePlugin extends Plugin {
 
     @Override
     protected void startUp() {
+        profileManager = new TilemanProfileManager(configManager);
+
         tutorialIslandRegionIds.add(12079);
         tutorialIslandRegionIds.add(12080);
         tutorialIslandRegionIds.add(12335);
@@ -218,7 +229,7 @@ public class TilemanModePlugin extends Plugin {
         loadPoints();
         updateTileCounter();
         log.debug("startup");
-        TilemanImportPanel panel = new TilemanImportPanel(this);
+        TilemanPluginPanel panel = new TilemanPluginPanel(this, profileManager);
         NavigationButton navButton = NavigationButton.builder()
                 .tooltip("Tileman Import")
                 .icon(ImageUtil.getResourceStreamFromClass(getClass(), "/icon.png"))
@@ -361,15 +372,15 @@ public class TilemanModePlugin extends Plugin {
 
     private void updateRemainingTiles(int placedTiles) {
         // Start with tiles offset. We always get these
-        int earnedTiles = config.tilesOffset();
+        int earnedTiles = getGameRules().tilesOffset;
 
         // If including xp, add those tiles in
-        if (!config.excludeExp()) {
-            earnedTiles += (int) client.getOverallExperience() / config.expPerTile();
+        if (!getGameRules().excludeExp) {
+            earnedTiles += (int) client.getOverallExperience() / getGameRules().expPerTile;
         }
 
         // If including total level, add those tiles in
-        if (config.includeTotalLevel()) {
+        if (getGameRules().includeTotalLevel) {
             earnedTiles += client.getTotalLevel();
         }
 
@@ -377,7 +388,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateXpUntilNextTile() {
-        xpUntilNextTile = config.expPerTile() - Integer.parseInt(Long.toString(client.getOverallExperience() % config.expPerTile()));
+        xpUntilNextTile = getGameRules().expPerTile - Integer.parseInt(Long.toString(client.getOverallExperience() % getGameRules().expPerTile));
     }
 
     private Collection<TilemanModeTile> getConfiguration(String configGroup, String key) {
@@ -635,7 +646,7 @@ public class TilemanModePlugin extends Plugin {
 
         if (markedValue) {
             // Try add tile
-            if (!tilemanModeTiles.contains(point) && (config.allowTileDeficit() || remainingTiles > 0)) {
+            if (!tilemanModeTiles.contains(point) && (getGameRules().allowTileDeficit || remainingTiles > 0)) {
                 tilemanModeTiles.add(point);
             }
         } else {
@@ -680,5 +691,4 @@ public class TilemanModePlugin extends Plugin {
                     .collect(Collectors.toSet());
         }
     }
-
 }

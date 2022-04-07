@@ -78,48 +78,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     }
 
     @Override
-    public int tilesOffset() {
-        if (config.enableCustomGameMode()) {
-            return config.tilesOffset();
-        } else {
-            return gameModeToTilesOffsetDefault.get(config.gameMode());
-        }
-    }
-
-    @Override
-    public boolean includeTotalLevel() {
-        if (config.enableCustomGameMode()) {
-            return config.includeTotalLevel();
-        } else {
-            return gameModeToIncludeTotalLevelDefault.get(config.gameMode());
-        }
-    }
-
-    @Override
-    public int expPerTile() {
-        if (config.enableCustomGameMode()) {
-            return config.expPerTile();
-        } else {
-            return 1000;
-        }
-    }
-
-    @Override
-    public boolean excludeExp() {
-        if(config.enableCustomGameMode()) {
-            return config.excludeExp();
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public boolean automarkTiles() {
         return config.automarkTiles();
-    }
-
-    @Override
-    public boolean allowTileDeficit() {
-        return config.allowTileDeficit();
     }
 }
