@@ -34,7 +34,8 @@ import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.util.Collection;
+import java.util.*;
+import java.util.List;
 
 public class TilemanModeOverlay extends Overlay
 {
@@ -42,6 +43,7 @@ public class TilemanModeOverlay extends Overlay
 
 	private final Client client;
 	private final TilemanModePlugin plugin;
+	private List<WorldPoint> worldPointBuffer = new ArrayList<>(250);
 
 	@Inject
 	private TilemanModeConfig config;
@@ -60,21 +62,32 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		final Collection<WorldPoint> points = plugin.getPoints();
-		for (final WorldPoint point : points)
-		{
-			if (point.getPlane() != client.getPlane())
-			{
-				continue;
-			}
+		Color color = getTileColor();
+		int[] loadedRegions = client.getMapRegions();
+		Map<Integer, List<TilemanModeTile>> tilesByRegion = plugin.getTilesByRegion();
 
-			drawTile(graphics, point);
+		for (int region : loadedRegions)
+		{
+			List<TilemanModeTile> tiles = tilesByRegion.get(region);
+			worldPointBuffer.clear();
+			TilemanModePlugin.translateTilesToWorldPoints(client, tiles, worldPointBuffer);
+
+			for (final WorldPoint point : worldPointBuffer)
+			{
+				if (point.getPlane() != client.getPlane())
+				{
+					continue;
+				}
+
+				drawTile(graphics, point, color);
+			}
 		}
+
 
 		return null;
 	}
 
-	private void drawTile(Graphics2D graphics, WorldPoint point)
+	private void drawTile(Graphics2D graphics, WorldPoint point, Color color)
 	{
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
@@ -95,7 +108,7 @@ public class TilemanModeOverlay extends Overlay
 			return;
 		}
 
-		OverlayUtil.renderPolygon(graphics, poly, getTileColor());
+		OverlayUtil.renderPolygon(graphics, poly, color);
 	}
 
 	private Color getTileColor() {

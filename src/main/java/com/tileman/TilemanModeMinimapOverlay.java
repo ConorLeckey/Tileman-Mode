@@ -34,7 +34,9 @@ import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 class TilemanModeMinimapOverlay extends Overlay
 {
@@ -45,6 +47,8 @@ class TilemanModeMinimapOverlay extends Overlay
 	private final Client client;
 	private final TilemanModeConfig config;
 	private final TilemanModePlugin plugin;
+
+	private List<WorldPoint> worldPointBuffer = new ArrayList<>(250);
 
 	@Inject
 	private TilemanModeMinimapOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin)
@@ -65,22 +69,30 @@ class TilemanModeMinimapOverlay extends Overlay
 			return null;
 		}
 
-		final Collection<WorldPoint> points = plugin.getPoints();
-		for (final WorldPoint point : points)
-		{
-			WorldPoint worldPoint = point;
-			if (worldPoint.getPlane() != client.getPlane())
-			{
-				continue;
-			}
+		Color color = getTileColor();
+		int[] loadedRegions = client.getMapRegions();
+		Map<Integer, List<TilemanModeTile>> tilesByRegion = plugin.getTilesByRegion();
 
-			drawOnMinimap(graphics, worldPoint);
+		for (Integer region : loadedRegions)
+		{
+			List<TilemanModeTile> tiles = tilesByRegion.get(region);
+			worldPointBuffer.clear();
+			TilemanModePlugin.translateTilesToWorldPoints(client, tiles, worldPointBuffer);
+
+			for (final WorldPoint point : worldPointBuffer)
+			{
+				if (point.getPlane() != client.getPlane())
+				{
+					continue;
+				}
+				drawOnMinimap(graphics, point, color);
+			}
 		}
 
 		return null;
 	}
 
-	private void drawOnMinimap(Graphics2D graphics, WorldPoint point)
+	private void drawOnMinimap(Graphics2D graphics, WorldPoint point, Color color)
 	{
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
@@ -101,7 +113,7 @@ class TilemanModeMinimapOverlay extends Overlay
 			return;
 		}
 
-		OverlayUtil.renderMinimapRect(client, graphics, posOnMinimap, TILE_WIDTH, TILE_HEIGHT, getTileColor());
+		OverlayUtil.renderMinimapRect(client, graphics, posOnMinimap, TILE_WIDTH, TILE_HEIGHT, color);
 	}
 
 	private Color getTileColor() {
