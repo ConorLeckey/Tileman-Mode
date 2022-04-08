@@ -69,32 +69,15 @@ public class TilemanModePlugin extends Plugin {
     @Getter(AccessLevel.PACKAGE)
     private final Map<Integer, List<TilemanModeTile>> tilesByRegion = new HashMap<>();
 
-    @Inject
-    private Client client;
-
-    @Inject
-    private TilemanModeConfigEvaluator config;
-
-    @Inject
-    private ConfigManager configManager;
-
-    @Inject
-    private OverlayManager overlayManager;
-
-    @Inject
-    private TilemanModeOverlay overlay;
-
-    @Inject
-    private TilemanModeMinimapOverlay minimapOverlay;
-
-    @Inject
-    private TilemanModeWorldMapOverlay worldMapOverlay;
-
-    @Inject
-    private TileInfoOverlay infoOverlay;
-
-    @Inject
-    private ClientToolbar clientToolbar;
+    @Inject private Client client;
+    @Inject private TilemanModeConfigEvaluator config;
+    @Inject private ConfigManager configManager;
+    @Inject private OverlayManager overlayManager;
+    @Inject private TilemanModeOverlay overlay;
+    @Inject private TilemanModeMinimapOverlay minimapOverlay;
+    @Inject private TilemanModeWorldMapOverlay worldMapOverlay;
+    @Inject private TileInfoOverlay infoOverlay;
+    @Inject private ClientToolbar clientToolbar;
 
     @Provides
     TilemanModeConfig provideConfig(ConfigManager configManager) {
