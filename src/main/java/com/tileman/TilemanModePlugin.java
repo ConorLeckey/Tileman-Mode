@@ -59,7 +59,6 @@ import java.util.stream.Collectors;
         tags = {"overlay", "tiles"}
 )
 public class TilemanModePlugin extends Plugin {
-    private static final String CONFIG_GROUP = "tilemanMode";
     private static final String MARK = "Unlock Tileman tile";
     private static final String UNMARK = "Clear Tileman tile";
     private static final String WALK_HERE = "Walk here";
@@ -215,13 +214,13 @@ public class TilemanModePlugin extends Plugin {
 
     @Override
     protected void startUp() {
-        profileManager = new TilemanProfileManager(configManager);
-
         tutorialIslandRegionIds.add(12079);
         tutorialIslandRegionIds.add(12080);
         tutorialIslandRegionIds.add(12335);
         tutorialIslandRegionIds.add(12336);
         tutorialIslandRegionIds.add(12592);
+
+        profileManager = new TilemanProfileManager(client, configManager);
         overlayManager.add(overlay);
         overlayManager.add(minimapOverlay);
         overlayManager.add(worldMapOverlay);
@@ -237,6 +236,8 @@ public class TilemanModePlugin extends Plugin {
                 .panel(panel)
                 .build();
 
+
+        profileManager.onProfileChanged.add(p -> panel.rebuild());
         clientToolbar.addNavigation(navButton);
     }
 
@@ -286,7 +287,7 @@ public class TilemanModePlugin extends Plugin {
         // If none, Exit function
 
         // Get and store array list of existing Tileman World Regions (like updateTileCounter does)
-        List<String> tilemanModeRegions = getAllRegionIds(CONFIG_GROUP);
+        List<String> tilemanModeRegions = getAllRegionIds(TilemanModeConfig.CONFIG_GROUP);
 
         // CONVERSION
         // Loop through Ground Marker Regions
@@ -343,15 +344,15 @@ public class TilemanModePlugin extends Plugin {
     }
 
     Collection<TilemanModeTile> getTiles(int regionId) {
-        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+        return getConfiguration(TilemanModeConfig.CONFIG_GROUP, REGION_PREFIX + regionId);
     }
 
     private Collection<TilemanModeTile> getTiles(String regionId) {
-        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+        return getConfiguration(TilemanModeConfig.CONFIG_GROUP, REGION_PREFIX + regionId);
     }
 
     private void updateTileCounter() {
-        List<String> regions = configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
+        List<String> regions = configManager.getConfigurationKeys(TilemanModeConfig.CONFIG_GROUP + ".region");
         int totalTiles = 0;
         for (String region : regions) {
             Collection<TilemanModeTile> regionTiles = getTiles(removeRegionPrefix(region));
@@ -422,12 +423,12 @@ public class TilemanModePlugin extends Plugin {
 
     private void savePoints(int regionId, Collection<TilemanModeTile> points) {
         if (points == null || points.isEmpty()) {
-            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+            configManager.unsetConfiguration(TilemanModeConfig.CONFIG_GROUP, REGION_PREFIX + regionId);
             return;
         }
 
         String json = GSON.toJson(points);
-        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
+        configManager.setConfiguration(TilemanModeConfig.CONFIG_GROUP, REGION_PREFIX + regionId, json);
     }
 
     private Collection<WorldPoint> translateToWorldPoint(Collection<TilemanModeTile> points) {
