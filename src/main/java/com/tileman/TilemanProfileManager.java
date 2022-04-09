@@ -2,6 +2,7 @@ package com.tileman;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import lombok.AccessLevel;
@@ -147,6 +148,33 @@ public class TilemanProfileManager {
         tilesByRegion = loadAllTiles(profile, configManager);
 
         onProfileChangedEvent.forEach(l -> l.accept(profile));
+    }
+
+    String exportProfile() {
+        if (!hasActiveProfile()) {
+            return "";
+        }
+        return GSON.toJson(new TilemanProfileExportData(activeProfile, tilesByRegion));
+    }
+
+    TilemanProfile importProfileAsNew(String maybeJson, long accountHash, String name) {
+        TilemanProfileExportData importedProfileData = null;
+        try {
+            importedProfileData = GSON.fromJson(maybeJson, TilemanProfileExportData.class);
+        } catch (JsonParseException e) {}
+
+        if (importedProfileData == null || importedProfileData.regionIds.size() != importedProfileData.regionTiles.size()) {
+            return TilemanProfile.NONE;
+        }
+
+        TilemanProfile profile = new TilemanProfile(accountHash, name);
+        saveProfile(profile);
+        for (int i = 0; i < importedProfileData.regionIds.size(); i++) {
+            int regionId = importedProfileData.regionIds.get(i);
+            List<TilemanModeTile> tiles = importedProfileData.regionTiles.get(i);
+            saveTiles(profile, regionId, tiles);
+        }
+        return profile;
     }
 
     private void saveAllTiles(TilemanProfile profile, Map<Integer, List<TilemanModeTile>> tileData) {

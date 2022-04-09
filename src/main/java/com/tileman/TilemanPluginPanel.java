@@ -8,10 +8,11 @@ import javax.inject.Singleton;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+
+import java.awt.datatransfer.StringSelection;
 
 @Slf4j
 @Singleton
@@ -59,10 +60,20 @@ public class TilemanPluginPanel extends PluginPanel {
             addVerticalLayout(bodyPanel);
             {
                 JPanel profilePanel = buildProfilePanel();
-                JPanel gameRulesPanel = buildGameRulesPanel();
-
                 bodyPanel.add(profilePanel);
+
+                JPanel gameRulesPanel = buildGameRulesPanel();
                 bodyPanel.add(gameRulesPanel);
+
+                JCollapsePanel advancedOptions = new JCollapsePanel("Advanced Options", true);
+
+                JButton exportProfileButton = new JButton("Export Profile");
+                exportProfileButton.addActionListener(l -> {
+                    showProfileExportPanel();
+                });
+                advancedOptions.add(exportProfileButton);
+
+                bodyPanel.add(advancedOptions);
             }
 
             add(titlePanel, BorderLayout.NORTH);
@@ -104,7 +115,7 @@ public class TilemanPluginPanel extends PluginPanel {
                     String profileName = JOptionPane.showInputDialog(null, "Profile name:", client.getLocalPlayer().getName());
                     TilemanProfile profile = TilemanProfile.NONE;
 
-                    Object[] options = new Object[] {"No, Fresh Profile", "Import Old Tile Data", "Import Ground Marker Data"};
+                    Object[] options = new Object[] {"No, Fresh Profile", "Import Old Tile Data", "Import Ground Marker Data", "Manual Import"};
                     int choice = JOptionPane.showOptionDialog(null, "Do you want to import existing tile data into this profile?", "New Profile", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, null);
                     if (choice == 0) {
                         profile = profileManager.createProfile(profileName);
@@ -112,6 +123,9 @@ public class TilemanPluginPanel extends PluginPanel {
                         profile = profileManager.createProfileWithLegacyData(profileName);
                     } else if (choice == 2) {
                         profile = profileManager.createProfileWithGroundMarkerData(profileName);
+                    } else if (choice == 3) {
+                        showProfileImportPanel(profileName);
+                        return;
                     }
                     profileManager.setActiveProfile(profile);
                 });
@@ -295,6 +309,108 @@ public class TilemanPluginPanel extends PluginPanel {
                 setJComponentEnabled((JPanel)child, state);
             }
             child.setEnabled(state);
+        }
+    }
+
+    private static void copyToClipboard(String text) {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(new StringSelection(text), null);
+    }
+
+    private void showProfileExportPanel() {
+        if (profileManager.hasActiveProfile()) {
+            JPanel panel = new JPanel();
+
+            JButton copyButton = new JButton("Copy Profile to Clipboard");
+            copyButton.addActionListener(l2 -> copyToClipboard(profileManager.exportProfile()));
+            panel.add(copyButton);
+
+            JOptionPane.showMessageDialog(null,
+                    panel,
+                    "Export Profile",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void showProfileImportPanel(String name) {
+        if (!profileManager.hasActiveProfile()) {
+            JPanel panel = new JPanel();
+
+            JTextArea importText = new JTextArea("");
+            importText.setLineWrap(true);
+            importText.setColumns(5);
+
+            JScrollPane scrollPane = new JScrollPane(importText);
+            scrollPane.setPreferredSize(new Dimension(225, 120));
+            scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+            scrollPane.setAlignmentX(CENTER_ALIGNMENT);
+
+            panel.add(scrollPane);
+
+            int choice = JOptionPane.showConfirmDialog(null,
+                    panel,
+                    "Import Profile",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (choice == 0) {
+                String maybeJson = importText.getText();
+                TilemanProfile profile = profileManager.importProfileAsNew(maybeJson, client.getAccountHash(), name);
+                profileManager.setActiveProfile(profile);
+            }
+        }
+    }
+
+
+    public class JCollapsePanel extends JPanel {
+
+        private String title;
+        private boolean isCollapsed = false;
+
+        private JPanel contentPanel;
+        private JButton toggleCollapseButton;
+
+        public JCollapsePanel(String title) {
+            this(title, false);
+        }
+
+        public JCollapsePanel(String title, boolean isCollapsed) {
+            super();
+            super.setLayout(new BorderLayout());
+
+            this.title = title;
+
+            this.contentPanel = new JPanel();
+            super.add(contentPanel, BorderLayout.CENTER);
+
+            toggleCollapseButton = new JButton();
+            toggleCollapseButton.setFocusPainted(false);
+            toggleCollapseButton.setHorizontalAlignment(SwingConstants.LEFT);
+            toggleCollapseButton.addActionListener(l -> {
+                setCollapsed(!this.isCollapsed);
+            });
+            super.add(toggleCollapseButton, BorderLayout.NORTH);
+
+            setCollapsed(isCollapsed);
+        }
+
+        @Override
+        public Component add(Component component) {
+            return contentPanel.add(component);
+        }
+
+        @Override
+        public void add(Component component, Object constraints) {
+            contentPanel.add(component, constraints);
+        }
+
+        public void setInnerLayout(LayoutManager layoutManager) {
+            contentPanel.setLayout(layoutManager);
+        }
+
+        public void setCollapsed(boolean isCollapsed) {
+            this.isCollapsed = isCollapsed;
+            contentPanel.setVisible(!isCollapsed);
+            toggleCollapseButton.setText((isCollapsed ? "▶" : "▼") + "    " + title);
         }
     }
 }
