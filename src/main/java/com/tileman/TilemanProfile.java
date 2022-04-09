@@ -8,11 +8,11 @@ public class TilemanProfile implements Serializable {
 
     public static final TilemanProfile NONE = new TilemanProfile(-1, "None");
 
-    @Getter private long accountHash;
+    @Getter private String accountHash;
     @Getter private String profileName;
 
     public TilemanProfile(long accountHash, String profileName) {
-        this.accountHash = accountHash;
+        this.accountHash = String.valueOf(accountHash);
         this.profileName = profileName;
     }
 
@@ -25,7 +25,7 @@ public class TilemanProfile implements Serializable {
         return getProfileKey(accountHash);
     }
 
-    public static String getProfileKey(long accountHash) {
+    public static String getProfileKey(String accountHash) {
         return accountHash + "_profile";
     }
 

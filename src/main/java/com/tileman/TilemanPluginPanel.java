@@ -277,7 +277,6 @@ public class TilemanPluginPanel extends PluginPanel {
 
     private static void addFlowLayout(JComponent element) {
         element.setLayout(new FlowLayout());
-        element.setBorder(BorderFactory.createLineBorder(Color.black));
     }
 
     private static void addSpacer(JComponent element) {

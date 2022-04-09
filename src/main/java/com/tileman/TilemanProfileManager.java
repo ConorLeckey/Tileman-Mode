@@ -88,7 +88,7 @@ public class TilemanProfileManager {
     }
 
     private void saveGameRules(TilemanProfile profile, TilemanGameRules rules) {
-        if (profile.getAccountHash() == -1) {
+        if (profile == TilemanProfile.NONE) {
             return;
         }
         String rulesKey = profile.getGameRulesKey();
@@ -96,14 +96,14 @@ public class TilemanProfileManager {
     }
 
     private void saveProfile(TilemanProfile profile) {
-        if (profile.getAccountHash() == -1) {
+        if (profile == TilemanProfile.NONE) {
             return;
         }
         configManager.setConfiguration(TilemanModeConfig.CONFIG_GROUP, TilemanProfile.getProfileKey(profile.getAccountHash()), GSON.toJson(profile));
     }
 
     private TilemanProfile getProfileForAccount(long accountHash) {
-        String key = TilemanProfile.getProfileKey(accountHash);
+        String key = TilemanProfile.getProfileKey(String.valueOf(accountHash));
         return getJsonFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, key, TilemanProfile.class, TilemanProfile.NONE);
     }
 
@@ -156,7 +156,7 @@ public class TilemanProfileManager {
     }
 
     public void saveTiles(TilemanProfile profile, int regionId, Collection<TilemanModeTile> tiles) {
-        if (profile.getAccountHash() == -1) {
+        if (profile == TilemanProfile.NONE) {
             return;
         }
         String regionKey = profile.getRegionKey(regionId);
