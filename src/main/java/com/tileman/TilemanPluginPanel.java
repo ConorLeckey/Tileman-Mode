@@ -1,5 +1,6 @@
 package com.tileman;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 
@@ -7,6 +8,9 @@ import javax.inject.Singleton;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -21,9 +25,11 @@ public class TilemanPluginPanel extends PluginPanel {
 
     private final TilemanModePlugin plugin;
     private final TilemanProfileManager profileManager;
+    private final Client client;
 
-    public TilemanPluginPanel(TilemanModePlugin plugin, TilemanProfileManager profileManager) {
+    public TilemanPluginPanel(TilemanModePlugin plugin, Client client, TilemanProfileManager profileManager) {
         this.plugin = plugin;
+        this.client = client;
         this.profileManager = profileManager;
         build();
     }
@@ -36,10 +42,6 @@ public class TilemanPluginPanel extends PluginPanel {
     }
 
     private void build() {
-        TilemanGameRules gameRules = profileManager.getGameRules();
-        TilemanProfile activeProfile = profileManager.getActiveProfile();
-        boolean profileSelected = !activeProfile.equals(TilemanProfile.NONE);
-
         this.removeAll();
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -56,180 +58,242 @@ public class TilemanPluginPanel extends PluginPanel {
             JPanel bodyPanel = new JPanel();
             addVerticalLayout(bodyPanel);
             {
-                JPanel profilePanel = new JPanel();
-                addVerticalLayout(profilePanel);
-                {
-                    JLabel profileSelectLabel = new JLabel("Select a profile:");
-                    profileSelectLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-                    JPanel profileSelectRow = new JPanel();
-                    addFlowLayout(profileSelectRow);
-                    {
-                        JComboBox profileSelect = new JComboBox();
-                        List<TilemanProfile> profiles = profileManager.getProfiles();
-                        profiles.add(TilemanProfile.NONE);
-                        for (TilemanProfile profile : profiles) {
-                            profileSelect.addItem(profile);
-                        }
-                        profileSelect.setSelectedItem(activeProfile);
-                        profileSelect.addActionListener(l -> profileManager.setActiveProfile((TilemanProfile) profileSelect.getSelectedItem()));
-
-                        JButton createProfileButton = new JButton("+");
-                        createProfileButton.addActionListener(l -> profileManager.createProfile());
-
-                        JButton deleteProfileButton = new JButton("X");
-
-                        profileSelectRow.add(profileSelect);
-                        if (activeProfile.equals(TilemanProfile.NONE)) {
-                            profileSelectRow.add(createProfileButton);
-                        } else {
-                            profileSelectRow.add(deleteProfileButton);
-                        }
-                    }
-
-                    profilePanel.add(profileSelectLabel, BorderLayout.WEST);
-                    profilePanel.add(profileSelectRow);
-                    addSpacer(profilePanel);
-                }
-
-                JPanel gameRulesPanel = new JPanel();
-                gameRulesPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-                addVerticalLayout(gameRulesPanel);
-                {
-                    JPanel gameModeSelectPanel = new JPanel();
-                    addHorizontalLayout(gameModeSelectPanel);
-                    {
-                        JLabel gameModeSelectLabel = new JLabel("Game Mode");
-
-                        JComboBox gameModeSelect = new JComboBox(TilemanGameMode.values());
-                        gameModeSelect.setSelectedItem(gameRules.gameMode);
-                        gameModeSelect.addActionListener(l -> profileManager.setGameMode((TilemanGameMode) gameModeSelect.getSelectedItem()));
-
-                        gameModeSelectPanel.add(gameModeSelectLabel);
-                        gameModeSelectPanel.add(gameModeSelect);
-                    }
-
-
-                    JCheckBox customGameMode = new JCheckBox("Enable Custom Game Mode");
-                    customGameMode.setSelected(gameRules.enableCustomGameMode);
-                    customGameMode.addActionListener(l -> profileManager.setCustomGameMode(customGameMode.isSelected()));
-
-                    // spacer
-
-                    JCheckBox allowTileDeficit = new JCheckBox("Allow Tile Deficit");
-                    allowTileDeficit.setSelected(gameRules.allowTileDeficit);
-                    allowTileDeficit.addActionListener(l -> profileManager.setAllowTileDeficit(allowTileDeficit.isSelected()));
-
-                    JCheckBox includeTotalLevel = new JCheckBox("Tiles From Total Level");
-                    includeTotalLevel.setSelected(gameRules.includeTotalLevel);
-                    includeTotalLevel.addActionListener(l -> profileManager.setIncludeTotalLevel(includeTotalLevel.isSelected()));
-
-                    JCheckBox excludeExp = new JCheckBox("Exclude XP Tiles");
-                    excludeExp.setSelected(gameRules.excludeExp);
-                    excludeExp.addActionListener(l -> profileManager.setExcludeExp(excludeExp.isSelected()));
-
-                    JPanel tileOffsetPanel = new JPanel();
-                    addFlowLayout(tileOffsetPanel);
-                    {
-                        JLabel tileOffsetLabel = new JLabel("Tile Offset");
-
-                        SpinnerNumberModel numberModel = new SpinnerNumberModel(gameRules.tilesOffset, MIN_TILE_OFFSET, MAX_TILE_OFFSET, 1);
-                        JSpinner tilesOffsetSpinner = new JSpinner(numberModel);
-                        tilesOffsetSpinner.addChangeListener(l -> profileManager.setTileOffset(numberModel.getNumber().intValue()));
-
-                        tileOffsetPanel.add(tileOffsetLabel);
-                        tileOffsetPanel.add(tilesOffsetSpinner);
-                    }
-
-                    JPanel xpPanel = new JPanel();
-                    addFlowLayout(xpPanel);
-                    {
-                        JLabel expPerTileLabel = new JLabel("Exp Per Tile");
-
-                        SpinnerNumberModel numberModel = new SpinnerNumberModel(gameRules.expPerTile, MIN_EXP_PER_TILE, MAX_EXP_PER_TILE, 1);
-                        JSpinner expPerTileSpinner = new JSpinner(numberModel);
-                        expPerTileSpinner.addChangeListener(l -> profileManager.setExpPerTile(numberModel.getNumber().intValue()));
-
-                        xpPanel.add(expPerTileLabel);
-                        xpPanel.add(expPerTileSpinner);
-                    }
-
-                    gameRulesPanel.add(gameModeSelectPanel);
-                    gameRulesPanel.add(customGameMode);
-                    gameRulesPanel.add(allowTileDeficit);
-                    gameRulesPanel.add(includeTotalLevel);
-                    gameRulesPanel.add(excludeExp);
-                    gameRulesPanel.add(tileOffsetPanel);
-                    gameRulesPanel.add(xpPanel);
-                }
-                setJPanelEnabled(gameRulesPanel, profileSelected);
+                JPanel profilePanel = buildProfilePanel();
+                JPanel gameRulesPanel = buildGameRulesPanel();
 
                 bodyPanel.add(profilePanel);
                 bodyPanel.add(gameRulesPanel);
             }
 
-            JPanel importPanel = new JPanel();
-            {
-                importPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-                importPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-                importPanel.setLayout(new BoxLayout(importPanel, BoxLayout.PAGE_AXIS));
-
-                JLabel info = new JLabel(htmlLabel("Clicking the Import button below will migrate all tiles marked with the Ground Marker plugin into the Tileman Mode plugin. They will NOT be removed from the Ground Marker Plugin.", "#FFFFFF"));
-
-                JButton importButton = new JButton("Import");
-                importButton.setToolTipText("Import Ground Markers");
-                importButton.addActionListener(l -> {
-                    int input = JOptionPane.showConfirmDialog(null, "WARNING: This directly modifies RuneLite's settings.properties file. You should make a back up before importing.", "Import Data?", JOptionPane.YES_NO_OPTION);
-                    if (input == JOptionPane.YES_OPTION) {
-                        plugin.importGroundMarkerTiles();
-                    }
-                });
-
-                importPanel.add(info);
-                importPanel.add(importButton);
-            }
-
             add(titlePanel, BorderLayout.NORTH);
             add(bodyPanel, BorderLayout.CENTER);
-            add(importPanel, BorderLayout.SOUTH);
-
         }
     }
 
-    private static String htmlLabel(String key, String color)
-    {
-        return "<html><body style = 'color:" + color + "'>" + key + "</body></html>";
+    private JPanel buildProfilePanel() {
+        TilemanProfile activeProfile = profileManager.getActiveProfile();
+        boolean isLoggedIn = plugin.isLoggedIn();
+
+        JPanel profilePanel = new JPanel();
+        addVerticalLayout(profilePanel);
+        {
+            //JLabel profileSelectLabel = new JLabel("Select a profile:");
+            //profileSelectLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            //profilePanel.add(profileSelectLabel, BorderLayout.WEST);
+
+            JLabel profileLabel = new JLabel();
+            profileLabel.setAlignmentX(CENTER_ALIGNMENT);
+
+            addSpacer(profilePanel);
+
+            if (!isLoggedIn) {
+                profileLabel.setText("Login to start");
+            } else {
+                if (activeProfile != TilemanProfile.NONE) {
+                    profileLabel.setText(activeProfile.getProfileName());
+                } else {
+                    profileLabel.setText("Create a profile to start");
+                }
+            }
+            profilePanel.add(profileLabel);
+
+            if (activeProfile == TilemanProfile.NONE && isLoggedIn) {
+                JButton createProfileButton = new JButton("Create");
+                createProfileButton.setAlignmentX(CENTER_ALIGNMENT);
+                createProfileButton.addActionListener(l -> {
+                    String profileName = JOptionPane.showInputDialog(null, "Profile name:", client.getLocalPlayer().getName());
+                    TilemanProfile profile = TilemanProfile.NONE;
+
+                    Object[] options = new Object[] {"No, Fresh Profile", "Import Old Tile Data", "Import Ground Marker Data"};
+                    int choice = JOptionPane.showOptionDialog(null, "Do you want to import existing tile data into this profile?", "New Profile", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, null);
+                    if (choice == 0) {
+                        profile = profileManager.createProfile(profileName);
+                    } else if (choice == 1) {
+                        profile = profileManager.createProfileWithLegacyData(profileName);
+                    } else if (choice == 2) {
+                        profile = profileManager.createProfileWithGroundMarkerData(profileName);
+                    }
+                    profileManager.setActiveProfile(profile);
+                });
+                profilePanel.add(createProfileButton);
+            }
+            addSpacer(profilePanel);
+        }
+        return profilePanel;
     }
 
-    private static void addHorizontalLayout(JPanel element) {
+    private JPanel buildProfileSelectionPanel() {
+        TilemanProfile activeProfile = profileManager.getActiveProfile();
+
+        JPanel profileSelectionPanel = new JPanel();
+        addFlowLayout(profileSelectionPanel);
+        {
+            JComboBox profileSelect = new JComboBox();
+            //List<TilemanProfile> profiles = profileManager.getProfiles();
+            //profiles.add(TilemanProfile.NONE);
+            //for (TilemanProfile profile : profiles) {
+            //    profileSelect.addItem(profile);
+            //}
+            profileSelect.setSelectedItem(activeProfile);
+            profileSelect.addActionListener(l -> profileManager.setActiveProfile((TilemanProfile) profileSelect.getSelectedItem()));
+
+            JButton deleteProfileButton = new JButton("X");
+
+            //profileSelectionPanel.add(profileSelect);
+            if (activeProfile.equals(TilemanProfile.NONE)) {
+                //profileSelectionPanel.add(createProfileButton);
+            } else {
+                profileSelectionPanel.add(deleteProfileButton);
+            }
+        }
+
+        return profileSelectionPanel;
+    }
+
+    private JPanel buildGameRulesPanel() {
+        // Callback queue that gets run in reverse order. Mainly so we can properly manage enabling/disabling interactions
+        List<Runnable> callbacks = new ArrayList<>();
+
+        TilemanGameRules gameRules = profileManager.getGameRules();
+        boolean hasActiveProfile = !profileManager.getActiveProfile().equals(TilemanProfile.NONE);
+
+        JPanel gameRulesPanel = new JPanel();
+        {
+            gameRulesPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+            addVerticalLayout(gameRulesPanel);
+            callbacks.add(() -> setJComponentEnabled(gameRulesPanel, hasActiveProfile));
+
+            {
+                JPanel gameModeSelectPanel = new JPanel();
+                addVerticalLayout(gameModeSelectPanel);
+
+                JPanel gameModeDropdownPanel = new JPanel();
+                addFlowLayout(gameModeDropdownPanel);
+
+                {
+                    JLabel gameModeSelectLabel = new JLabel("Game Mode");
+
+                    JComboBox gameModeSelect = new JComboBox(TilemanGameMode.values());
+                    gameModeSelect.setSelectedItem(gameRules.getGameMode());
+                    gameModeSelect.addActionListener(l -> profileManager.setGameMode((TilemanGameMode) gameModeSelect.getSelectedItem()));
+
+                    gameModeDropdownPanel.add(gameModeSelectLabel);
+                    gameModeDropdownPanel.add(gameModeSelect);
+                }
+
+                JCheckBox customGameMode = new JCheckBox("Enable Custom Game Mode");
+                customGameMode.setAlignmentX(CENTER_ALIGNMENT);
+                customGameMode.setSelected(gameRules.isEnableCustomGameMode());
+                customGameMode.addActionListener(l ->  {
+                    profileManager.setCustomGameMode(customGameMode.isSelected());
+                    rebuild();
+                });
+
+                gameModeSelectPanel.add(gameModeDropdownPanel);
+                gameModeSelectPanel.add(customGameMode);
+
+                gameRulesPanel.add(gameModeSelectPanel);
+            }
+
+            {
+                JPanel rulesPanel = new JPanel();
+                addVerticalLayout(rulesPanel);
+                callbacks.add(() -> setJComponentEnabled(rulesPanel, gameRules.isEnableCustomGameMode()));
+
+                {
+                    JCheckBox allowTileDeficit = new JCheckBox("Allow Tile Deficit");
+                    allowTileDeficit.setAlignmentX(CENTER_ALIGNMENT);
+                    allowTileDeficit.setSelected(gameRules.isAllowTileDeficit());
+                    allowTileDeficit.addActionListener(l -> profileManager.setAllowTileDeficit(allowTileDeficit.isSelected()));
+                    rulesPanel.add(allowTileDeficit);
+                }
+
+                {
+                    JCheckBox includeTotalLevel = new JCheckBox("Tiles From Levels");
+                    includeTotalLevel.setAlignmentX(CENTER_ALIGNMENT);
+                    includeTotalLevel.setSelected(gameRules.isIncludeTotalLevel());
+                    includeTotalLevel.addActionListener(l -> profileManager.setIncludeTotalLevel(includeTotalLevel.isSelected()));
+                    rulesPanel.add(includeTotalLevel);
+                }
+
+                {
+                    JCheckBox excludeExp = new JCheckBox("Exclude XP Tiles");
+                    excludeExp.setAlignmentX(CENTER_ALIGNMENT);
+                    excludeExp.setSelected(gameRules.isExcludeExp());
+                    excludeExp.addActionListener(l -> profileManager.setExcludeExp(excludeExp.isSelected()));
+                    rulesPanel.add(excludeExp);
+                }
+
+
+
+                {
+                    JPanel tileOffsetPanel = new JPanel();
+                    addFlowLayout(tileOffsetPanel);
+
+                    JLabel tileOffsetLabel = new JLabel("Tile Offset");
+                    tileOffsetPanel.add(tileOffsetLabel);
+
+                    SpinnerNumberModel numberModel = new SpinnerNumberModel(gameRules.getTilesOffset(), MIN_TILE_OFFSET, MAX_TILE_OFFSET, 1);
+                    JSpinner tilesOffsetSpinner = new JSpinner(numberModel);
+                    tilesOffsetSpinner.addChangeListener(l -> profileManager.setTileOffset(numberModel.getNumber().intValue()));
+                    tileOffsetPanel.add(tilesOffsetSpinner);
+                    rulesPanel.add(tileOffsetPanel);
+                }
+
+
+                {
+                    JPanel xpPanel = new JPanel();
+                    addFlowLayout(xpPanel);
+
+                    JLabel expPerTileLabel = new JLabel("Exp Per Tile");
+
+                    SpinnerNumberModel numberModel = new SpinnerNumberModel(gameRules.getExpPerTile(), MIN_EXP_PER_TILE, MAX_EXP_PER_TILE, 1);
+                    JSpinner expPerTileSpinner = new JSpinner(numberModel);
+                    expPerTileSpinner.addChangeListener(l -> profileManager.setExpPerTile(numberModel.getNumber().intValue()));
+
+                    xpPanel.add(expPerTileLabel);
+                    xpPanel.add(expPerTileSpinner);
+
+                    rulesPanel.add(xpPanel);
+                }
+
+                gameRulesPanel.add(rulesPanel);
+            }
+        }
+
+        callbacks.forEach(func -> func.run());
+        return gameRulesPanel;
+    }
+
+    private static void addHorizontalLayout(JComponent element) {
         element.setLayout(new BoxLayout(element, BoxLayout.X_AXIS));
         element.setBorder(BorderFactory.createLineBorder(Color.black));
     }
 
-    private static void addVerticalLayout(JPanel element) {
+    private static void addVerticalLayout(JComponent element) {
         element.setLayout(new BoxLayout(element, BoxLayout.PAGE_AXIS));
         element.setBorder(BorderFactory.createLineBorder(Color.black));
     }
 
-    private static void addFlowLayout(JPanel element) {
+    private static void addFlowLayout(JComponent element) {
         element.setLayout(new FlowLayout());
         element.setBorder(BorderFactory.createLineBorder(Color.black));
     }
 
-    private static void addSpacer(JPanel element) {
+    private static void addSpacer(JComponent element) {
         addSpacer(element, 10);
     }
 
-    private static void addSpacer(JPanel element, int height) {
+    private static void addSpacer(JComponent element, int height) {
         element.add(Box.createVerticalStrut(height));
     }
 
-    private void setJPanelEnabled(JPanel element, boolean state) {
+    private void setJComponentEnabled(JComponent element, boolean state) {
         element.setEnabled(state);
         Component[] children = element.getComponents();
         for (Component child : children) {
             if (child instanceof JPanel) {
-                setJPanelEnabled((JPanel)child, state);
+                setJComponentEnabled((JPanel)child, state);
             }
             child.setEnabled(state);
         }

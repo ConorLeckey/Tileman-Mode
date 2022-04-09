@@ -26,59 +26,15 @@
 
 package com.tileman;
 
-import lombok.extern.slf4j.Slf4j;
-
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
 
 /***
  * This class handles evaluating the config basedon which game mode is selected, and whether or not the user
  * has selected to customize their game mode.
  */
-@Slf4j
 class TilemanModeConfigEvaluator implements TilemanModeConfig {
-
-    /***
-     * Instead of injecting TilemanModeConfig into TilemanModePlugin, we inject it here and use it to evaluate
-     * what the final permissions should be. Then we should instead inject this class into TilemanModePlugin.
-     * Because this class also implements TilemanModeConfig, we only need to override the methods we care about ie.
-     * the ones controlled by the Game Mode dropdown.
-     */
-    @Inject
-    private TilemanModeConfig config;
-
-    // Tileman Game Mode
-    private static final int TILEMAN_TILE_OFFSET = 9;
-    private static final boolean TILEMAN_INCLUDE_TOTAL_LEVEL = false;
-
-    // Strict Tileman Game Mode
-    private static final int STRICT_TILEMAN_TILE_OFFSET = 0;
-    private static final boolean STRICT_TILEMAN_INCLUDE_TOTAL_LEVEL = false;
-
-    // Expeditious Tileman Game Mode
-    private static final int EXPEDITIOUS_TILEMAN_TILE_OFFSET = 0;
-    private static final boolean EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL = true;
-
-    private static Map<TilemanGameMode, Integer> gameModeToTilesOffsetDefault;
-    private static Map<TilemanGameMode, Boolean> gameModeToIncludeTotalLevelDefault;
-
-    static {
-        // Load Game Mode defaults for Tiles Offset
-        gameModeToTilesOffsetDefault = new HashMap<>();
-        gameModeToTilesOffsetDefault.put(TilemanGameMode.COMMUNITY, TILEMAN_TILE_OFFSET);
-        gameModeToTilesOffsetDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_TILE_OFFSET);
-        gameModeToTilesOffsetDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_TILE_OFFSET);
-
-        // Load Game Mode defaults for Include Total Levels
-        gameModeToIncludeTotalLevelDefault = new HashMap<>();
-        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.COMMUNITY, TILEMAN_INCLUDE_TOTAL_LEVEL);
-        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_INCLUDE_TOTAL_LEVEL);
-        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL);
-    }
-
-    @Override
-    public boolean automarkTiles() {
+    @Inject private TilemanModeConfig config;
+    @Override public boolean automarkTiles() {
         return config.automarkTiles();
     }
 }

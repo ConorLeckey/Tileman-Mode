@@ -16,12 +16,28 @@ public class TilemanProfile implements Serializable {
         this.profileName = profileName;
     }
 
-    public String getGuid() {
-        return String.valueOf(accountHash);
-    }
-
     @Override
     public String toString() {
         return profileName;
+    }
+
+    public String getProfileKey() {
+        return getProfileKey(accountHash);
+    }
+
+    public static String getProfileKey(long accountHash) {
+        return accountHash + "_profile";
+    }
+
+    public String getGameRulesKey() {
+        return accountHash + "_gamerules";
+    }
+
+    public String getRegionKey(int regionId) {
+        return getRegionPrefix() + regionId;
+    }
+
+    public String getRegionPrefix() {
+        return accountHash + "_region_";
     }
 }
