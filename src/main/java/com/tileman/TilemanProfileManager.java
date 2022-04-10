@@ -309,7 +309,7 @@ public class TilemanProfileManager {
         rules.setEnableCustomGameMode(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "enableCustomGameMode", boolean.class, defaults.isEnableCustomGameMode()));
         rules.setTilesOffset(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "tilesOffset", int.class, defaults.getTilesOffset()));
         rules.setTilesFromTotalLevel(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "includeTotalLevels", boolean.class, defaults.isTilesFromTotalLevel()));
-        rules.setTilesFromExp(!getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "excludeExp", boolean.class, defaults.isTilesFromExp()));
+        rules.setTilesFromExp(!getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "excludeExp", boolean.class, !defaults.isTilesFromExp())); // Negations are intentional due to the option being renamed to the opposite meaning
         rules.setExpPerTile(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "expPerTile", int.class, defaults.getExpPerTile()));
         return rules;
     }
