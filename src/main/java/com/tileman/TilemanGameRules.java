@@ -6,58 +6,66 @@ import lombok.Setter;
 import java.io.Serializable;
 
 public class TilemanGameRules implements Serializable {
-    public static final TilemanGameRules DEFAULT_RULES = new TilemanGameRules(
-            TilemanGameMode.COMMUNITY,
-            false,
-            false,
-            false,
-            false,
-            9,
-            1000
-    );
+
+    @Getter @Setter private TilemanGameMode gameMode;
+    @Getter @Setter private boolean enableCustomGameMode;
+
+    @Setter private boolean allowTileDeficit;
+    @Setter private boolean tilesFromExp;
+    @Setter private int expPerTile;
+    @Setter private boolean tilesFromTotalLevel;
+    @Setter private int tilesOffset;
 
     public TilemanGameRules(){}
-    public TilemanGameRules(TilemanGameMode gameMode, boolean enableCustomGameMode, boolean allowTileDeficit, boolean includeTotalLevel, boolean excludeExp, int tilesOffset, int expPerTile) {
+
+    public TilemanGameRules(TilemanGameMode gameMode, boolean enableCustomGameMode, boolean allowTileDeficit, boolean tilesFromTotalLevel, boolean tilesFromExp, int tilesOffset, int expPerTile) {
         this.gameMode = gameMode;
         this.enableCustomGameMode = enableCustomGameMode;
         this.allowTileDeficit = allowTileDeficit;
-        this.includeTotalLevel = includeTotalLevel;
-        this.excludeExp = excludeExp;
+        this.tilesFromTotalLevel = tilesFromTotalLevel;
+        this.tilesFromExp = tilesFromExp;
         this.tilesOffset = tilesOffset;
         this.expPerTile = expPerTile;
     }
 
-    @Getter @Setter private TilemanGameMode gameMode;
-    @Getter @Setter private boolean enableCustomGameMode;
-    @Getter @Setter private boolean allowTileDeficit;
-    @Getter @Setter private boolean excludeExp;
-    @Getter @Setter private int expPerTile;
-
-    @Setter private boolean includeTotalLevel;
-    @Setter private int tilesOffset;
-
-    public boolean isIncludeTotalLevel() {
-        if (enableCustomGameMode) {
-            return includeTotalLevel;
-        } else {
-            return isIncludeTotalLevelByGameMode();
-        }
+    public static TilemanGameRules GetDefaultRules() {
+        return new TilemanGameRules(
+                TilemanGameMode.COMMUNITY,
+                false,
+                false,
+                false,
+                true,
+                9,
+                1000
+        );
     }
 
-    private boolean isIncludeTotalLevelByGameMode() {
+    public boolean isTilesFromTotalLevel() {
+        return enableCustomGameMode ? tilesFromTotalLevel : getTilesFromTotalLevelByGameMode();
+    }
+
+    public int getTilesOffset() {
+        return enableCustomGameMode ? tilesOffset : getTilesOffsetByGameMode();
+    }
+
+    public boolean isAllowTileDeficit() {
+        return enableCustomGameMode ? allowTileDeficit : false;
+    }
+
+    public boolean isTilesFromExp() {
+        return enableCustomGameMode ? tilesFromExp : true;
+    }
+
+    public int getExpPerTile() {
+        return enableCustomGameMode ? expPerTile : 1000;
+    }
+
+    private boolean getTilesFromTotalLevelByGameMode() {
         switch (gameMode) {
             case ACCELERATED:
                 return true;
             default:
                 return false;
-        }
-    }
-
-    public int getTilesOffset() {
-        if (enableCustomGameMode) {
-            return tilesOffset;
-        } else {
-            return getTilesOffsetByGameMode();
         }
     }
 

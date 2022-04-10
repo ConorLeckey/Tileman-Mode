@@ -25,7 +25,7 @@ public class TilemanProfileManager {
     private Client client;
 
     @Getter
-    private TilemanGameRules gameRules = TilemanGameRules.DEFAULT_RULES;
+    private TilemanGameRules gameRules = TilemanGameRules.GetDefaultRules();
     private TilemanProfile activeProfile = TilemanProfile.NONE;
 
     @Getter(AccessLevel.PACKAGE)
@@ -63,13 +63,13 @@ public class TilemanProfileManager {
         saveGameRules(activeProfile, gameRules);
     }
 
-    public void setIncludeTotalLevel(boolean state) {
-        gameRules.setIncludeTotalLevel(state);
+    public void setTilesFromTotalLevel(boolean state) {
+        gameRules.setTilesFromTotalLevel(state);
         saveGameRules(activeProfile, gameRules);
     }
 
-    public void setExcludeExp(boolean state) {
-        gameRules.setExcludeExp(state);
+    public void setTilesFromExp(boolean state) {
+        gameRules.setTilesFromExp(state);
         saveGameRules(activeProfile, gameRules);
     }
 
@@ -85,7 +85,7 @@ public class TilemanProfileManager {
 
     private TilemanGameRules loadGameRules(TilemanProfile profile) {
         String rulesKey = profile.getGameRulesKey();
-        return getJsonFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, rulesKey, TilemanGameRules.class, TilemanGameRules.DEFAULT_RULES);
+        return getJsonFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, rulesKey, TilemanGameRules.class, TilemanGameRules.GetDefaultRules());
     }
 
     private void saveGameRules(TilemanProfile profile, TilemanGameRules rules) {
@@ -175,6 +175,26 @@ public class TilemanProfileManager {
             saveTiles(profile, regionId, tiles);
         }
         return profile;
+    }
+
+    void deleteActiveProfile() {
+        if (activeProfile == TilemanProfile.NONE) {
+            return;
+        }
+
+        String groupPrefix = TilemanModeConfig.CONFIG_GROUP + ".";
+
+        List<String> regionKeys = configManager.getConfigurationKeys(groupPrefix + activeProfile.getRegionPrefix());
+        for (int i = 0; i < regionKeys.size(); i++) {
+            regionKeys.set(i, regionKeys.get(i).replace(groupPrefix, ""));
+        }
+        for (String key : regionKeys) {
+            configManager.unsetConfiguration(TilemanModeConfig.CONFIG_GROUP, key);
+        }
+        configManager.unsetConfiguration(TilemanModeConfig.CONFIG_GROUP, activeProfile.getProfileKey());
+        configManager.unsetConfiguration(TilemanModeConfig.CONFIG_GROUP, activeProfile.getGameRulesKey());
+
+        setActiveProfile(TilemanProfile.NONE);
     }
 
     private void saveAllTiles(TilemanProfile profile, Map<Integer, List<TilemanModeTile>> tileData) {
@@ -282,14 +302,14 @@ public class TilemanProfileManager {
     }
 
     private TilemanGameRules loadGameRulesFromLegacySaveDataOrUseDefaults() {
-        TilemanGameRules defaults = TilemanGameRules.DEFAULT_RULES;
+        TilemanGameRules defaults = TilemanGameRules.GetDefaultRules();
         TilemanGameRules rules = new TilemanGameRules();
         rules.setGameMode(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "gameMode", TilemanGameMode.class, defaults.getGameMode()));
         rules.setAllowTileDeficit(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "allowTileDeficit", boolean.class, defaults.isAllowTileDeficit()));
         rules.setEnableCustomGameMode(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "enableCustomGameMode", boolean.class, defaults.isEnableCustomGameMode()));
         rules.setTilesOffset(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "tilesOffset", int.class, defaults.getTilesOffset()));
-        rules.setIncludeTotalLevel(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "includeTotalLevels", boolean.class, defaults.isIncludeTotalLevel()));
-        rules.setExcludeExp(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "excludeExp", boolean.class, defaults.isExcludeExp()));
+        rules.setTilesFromTotalLevel(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "includeTotalLevels", boolean.class, defaults.isTilesFromTotalLevel()));
+        rules.setTilesFromExp(!getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "excludeExp", boolean.class, defaults.isTilesFromExp()));
         rules.setExpPerTile(getFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, "expPerTile", int.class, defaults.getExpPerTile()));
         return rules;
     }

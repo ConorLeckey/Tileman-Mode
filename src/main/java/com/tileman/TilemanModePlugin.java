@@ -305,12 +305,12 @@ public class TilemanModePlugin extends Plugin {
         int earnedTiles = getGameRules().getTilesOffset();
 
         // If including xp, add those tiles in
-        if (!getGameRules().isExcludeExp()) {
+        if (getGameRules().isTilesFromExp()) {
             earnedTiles += (int) client.getOverallExperience() / getGameRules().getExpPerTile();
         }
 
         // If including total level, add those tiles in
-        if (getGameRules().isIncludeTotalLevel()) {
+        if (getGameRules().isTilesFromTotalLevel()) {
             earnedTiles += client.getTotalLevel();
         }
 
