@@ -140,7 +140,7 @@ public class TilemanPluginPanel extends PluginPanel {
     }
 
     private JPanel buildGameRulesPanel() {
-        // Callback queue so we can properly manage enabling/disabling interactions without worrying about component build order.
+        // Callback queue, so we can properly manage enabling/disabling interactions without worrying about component build order.
         List<Runnable> callbacks = new ArrayList<>();
 
         TilemanGameRules gameRules = profileManager.getGameRules();

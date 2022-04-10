@@ -2,6 +2,7 @@
  * Copyright (c) 2018, TheLonelyDev <https://github.com/TheLonelyDev>
  * Copyright (c) 2018, Adam <Adam@sigterm.info>
  * Copyright (c) 2020, ConorLeckey <https://github.com/ConorLeckey>
+ * Copyright (c) 2022, Colton Campbell <https://github.com/Notloc>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
