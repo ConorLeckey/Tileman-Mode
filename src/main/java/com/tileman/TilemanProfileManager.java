@@ -36,10 +36,10 @@ public class TilemanProfileManager {
     public  TilemanProfileManager(TilemanModePlugin plugin, Client client, ConfigManager configManager) {
         this.client = client;
         this.configManager = configManager;
-        plugin.onGameStateChangedEvent.add(gs -> onGameStateChanged(gs));
+        plugin.onLoginStateChangedEvent.add(state -> onLoginStateChanged(state));
     }
 
-    private void onGameStateChanged(GameState gameState) {
+    private void onLoginStateChanged(GameState gameState) {
         if (gameState == GameState.LOGGED_IN) {
             TilemanProfile profile = getProfileForAccount(client.getAccountHash());
             setActiveProfile(profile);

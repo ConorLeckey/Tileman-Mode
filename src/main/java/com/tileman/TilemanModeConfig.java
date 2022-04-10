@@ -113,4 +113,15 @@ public interface TilemanModeConfig extends Config {
         return Color.YELLOW;
     }
 
+    @ConfigItem(
+            keyName = "showAdvancedOptions",
+            name = "Show Advanced Options",
+            section = settingsSection,
+            description = "Show advanced options in the plugin panel",
+            position = 7
+    )
+    default boolean showAdvancedOptions() {
+        return false;
+    }
+
 }

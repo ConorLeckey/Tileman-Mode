@@ -40,6 +40,11 @@ public class TilemanPluginPanel extends PluginPanel {
         build();
     }
 
+    @Override
+    public void onActivate() {
+        rebuild();
+    }
+
     public void rebuild() {
         SwingUtilities.invokeLater(() -> {
             build();
@@ -52,31 +57,29 @@ public class TilemanPluginPanel extends PluginPanel {
         this.removeAll();
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(10, 10, 10, 10));
+
         {
             JPanel titlePanel = new JPanel(new BorderLayout());
+            titlePanel.setBorder(BorderFactory.createLineBorder(Color.black));
             titlePanel.setBorder(new EmptyBorder(1, 0, 10, 0));
-            {
-                JLabel title = new JLabel();
-                title.setText("Tileman Mode");
-                title.setForeground(Color.WHITE);
-                titlePanel.add(title, BorderLayout.NORTH);
-            }
 
+            JLabel title = new JLabel();
+            title.setText("Tileman Mode");
+            title.setForeground(Color.WHITE);
+            titlePanel.add(title, BorderLayout.NORTH);
+
+            this.add(titlePanel, BorderLayout.NORTH);
+        }
+
+        {
             JPanel bodyPanel = new JPanel();
             addVerticalLayout(bodyPanel);
-            {
-                JPanel profilePanel = buildProfilePanel();
-                bodyPanel.add(profilePanel);
 
-                JPanel gameRulesPanel = buildGameRulesPanel();
-                bodyPanel.add(gameRulesPanel);
+            bodyPanel.add(buildProfilePanel());
+            bodyPanel.add(buildGameRulesPanel());
+            bodyPanel.add(buildAdvancedOptionsPanel());
 
-                JPanel advancedOptions = buildAdvancedOptionsPanel();
-                bodyPanel.add(advancedOptions);
-            }
-
-            add(titlePanel, BorderLayout.NORTH);
-            add(bodyPanel, BorderLayout.CENTER);
+            this.add(bodyPanel, BorderLayout.CENTER);
         }
     }
 
@@ -85,12 +88,9 @@ public class TilemanPluginPanel extends PluginPanel {
         boolean isLoggedIn = plugin.isLoggedIn();
 
         JPanel profilePanel = new JPanel();
+        profilePanel.setBorder(BorderFactory.createLineBorder(Color.black));
         addVerticalLayout(profilePanel);
         {
-            //JLabel profileSelectLabel = new JLabel("Select a profile:");
-            //profileSelectLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            //profilePanel.add(profileSelectLabel, BorderLayout.WEST);
-
             JLabel profileLabel = new JLabel();
             profileLabel.setAlignmentX(CENTER_ALIGNMENT);
 
@@ -114,17 +114,22 @@ public class TilemanPluginPanel extends PluginPanel {
                     String profileName = JOptionPane.showInputDialog(null, "Profile name:", client.getLocalPlayer().getName());
                     TilemanProfile profile = TilemanProfile.NONE;
 
-                    Object[] options = new Object[] {"No, Fresh Profile", "Import Old Tile Data", "Import Ground Marker Data", "Manual Import"};
-                    int choice = JOptionPane.showOptionDialog(null, "Do you want to import existing tile data into this profile?", "New Profile", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, null);
+                    Object[] options = new Object[] {"New Profile", "Import Existing Data"};
+                    int choice = JOptionPane.showOptionDialog(null, "Create a profile:", "Create Profile", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, null);
+
                     if (choice == 0) {
                         profile = profileManager.createProfile(profileName);
                     } else if (choice == 1) {
-                        profile = profileManager.createProfileWithLegacyData(profileName);
-                    } else if (choice == 2) {
-                        profile = profileManager.createProfileWithGroundMarkerData(profileName);
-                    } else if (choice == 3) {
-                        showProfileImportPanel(profileName);
-                        return;
+                        options = new Object[] {"Import Old Tile Data", "Import Ground Marker Data", "Manual Import"};
+                        choice = JOptionPane.showOptionDialog(null, "Choose how to import existing tile data:", "Import Existing Data", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, null);
+                        if (choice == 0) {
+                            profile = profileManager.createProfileWithLegacyData(profileName);
+                        } else if (choice == 1) {
+                            profile = profileManager.createProfileWithGroundMarkerData(profileName);
+                        } else if (choice == 2) {
+                            showProfileImportPanel(profileName);
+                            return;
+                        }
                     }
                     profileManager.setActiveProfile(profile);
                 });
@@ -136,13 +141,14 @@ public class TilemanPluginPanel extends PluginPanel {
     }
 
     private JPanel buildGameRulesPanel() {
-        // Callback queue that gets run in reverse order. Mainly so we can properly manage enabling/disabling interactions
+        // Callback queue so we can properly manage enabling/disabling interactions without worrying about component build order.
         List<Runnable> callbacks = new ArrayList<>();
 
         TilemanGameRules gameRules = profileManager.getGameRules();
         boolean hasActiveProfile = !profileManager.getActiveProfile().equals(TilemanProfile.NONE);
 
         JPanel gameRulesPanel = new JPanel();
+        gameRulesPanel.setBorder(BorderFactory.createLineBorder(Color.black));
         {
             gameRulesPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
             addVerticalLayout(gameRulesPanel);
@@ -173,8 +179,10 @@ public class TilemanPluginPanel extends PluginPanel {
 
             {
                 JCollapsePanel customGameModeCollapsable = new JCollapsePanel("Custom Game Mode", gameModeOpen, (Boolean state) -> this.gameModeOpen = state);
-                gameRulesPanel.add(customGameModeCollapsable);
+                customGameModeCollapsable.setBorder(BorderFactory.createLineBorder(Color.black));
                 customGameModeCollapsable.setInnerLayout(new BorderLayout());
+
+                gameRulesPanel.add(customGameModeCollapsable);
 
                 {
                     JCheckBox customGameMode = new JCheckBox("Enable Custom Game Mode");
@@ -190,10 +198,10 @@ public class TilemanPluginPanel extends PluginPanel {
 
                 {
                     JPanel rulesPanel = new JPanel();
-                    customGameModeCollapsable.add(rulesPanel, BorderLayout.CENTER);
-
                     addVerticalLayout(rulesPanel);
                     callbacks.add(() -> setJComponentEnabled(rulesPanel, gameRules.isEnableCustomGameMode()));
+
+                    customGameModeCollapsable.add(rulesPanel, BorderLayout.CENTER);
 
                     {
                         JCheckBox allowTileDeficit = new JCheckBox("Allow Tile Deficit");
@@ -257,8 +265,13 @@ public class TilemanPluginPanel extends PluginPanel {
         return gameRulesPanel;
     }
 
-    private JCollapsePanel buildAdvancedOptionsPanel() {
+    private JPanel buildAdvancedOptionsPanel() {
+        if (!plugin.isShowAdvancedOptions()) {
+            return new JPanel();
+        }
+
         JCollapsePanel advancedOptions = new JCollapsePanel("Advanced Options", advancedOpen, (Boolean isOpen) -> this.advancedOpen = isOpen);
+        advancedOptions.setBorder(BorderFactory.createLineBorder(Color.black));
         addVerticalLayout(advancedOptions.getContentPanel());
         {
             JButton exportProfileButton = new JButton("Export Profile");
@@ -301,44 +314,6 @@ public class TilemanPluginPanel extends PluginPanel {
         return advancedOptions;
     }
 
-    private static void addHorizontalLayout(JComponent element) {
-        element.setLayout(new BoxLayout(element, BoxLayout.X_AXIS));
-        element.setBorder(BorderFactory.createLineBorder(Color.black));
-    }
-
-    private static void addVerticalLayout(JComponent element) {
-        element.setLayout(new BoxLayout(element, BoxLayout.PAGE_AXIS));
-        element.setBorder(BorderFactory.createLineBorder(Color.black));
-    }
-
-    private static void addFlowLayout(JComponent element) {
-        element.setLayout(new FlowLayout());
-    }
-
-    private static void addSpacer(JComponent element) {
-        addSpacer(element, 10);
-    }
-
-    private static void addSpacer(JComponent element, int height) {
-        element.add(Box.createVerticalStrut(height));
-    }
-
-    private void setJComponentEnabled(JComponent element, boolean state) {
-        element.setEnabled(state);
-        Component[] children = element.getComponents();
-        for (Component child : children) {
-            if (child instanceof JPanel) {
-                setJComponentEnabled((JPanel)child, state);
-            }
-            child.setEnabled(state);
-        }
-    }
-
-    private static void copyToClipboard(String text) {
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        clipboard.setContents(new StringSelection(text), null);
-    }
-
     private void showProfileImportPanel(String name) {
         if (!profileManager.hasActiveProfile()) {
             JPanel panel = new JPanel();
@@ -371,6 +346,37 @@ public class TilemanPluginPanel extends PluginPanel {
         }
     }
 
+    private static void addVerticalLayout(JComponent element) {
+        element.setLayout(new BoxLayout(element, BoxLayout.PAGE_AXIS));
+    }
+
+    private static void addFlowLayout(JComponent element) {
+        element.setLayout(new FlowLayout());
+    }
+
+    private static void addSpacer(JComponent element) {
+        addSpacer(element, 10);
+    }
+
+    private static void addSpacer(JComponent element, int height) {
+        element.add(Box.createVerticalStrut(height));
+    }
+
+    private void setJComponentEnabled(JComponent element, boolean state) {
+        element.setEnabled(state);
+        Component[] children = element.getComponents();
+        for (Component child : children) {
+            if (child instanceof JPanel) {
+                setJComponentEnabled((JPanel)child, state);
+            }
+            child.setEnabled(state);
+        }
+    }
+
+    private static void copyToClipboard(String text) {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(new StringSelection(text), null);
+    }
 
     public class JCollapsePanel extends JPanel {
 

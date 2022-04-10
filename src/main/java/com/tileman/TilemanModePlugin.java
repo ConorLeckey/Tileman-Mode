@@ -61,7 +61,7 @@ public class TilemanModePlugin extends Plugin {
     private static final String WALK_HERE = "Walk here";
 
     @Inject private Client client;
-    @Inject private TilemanModeConfigEvaluator config;
+    @Inject private TilemanModeConfig config;
     @Inject private ConfigManager configManager;
     @Inject private OverlayManager overlayManager;
     @Inject private TilemanModeOverlay overlay;
@@ -109,10 +109,13 @@ public class TilemanModePlugin extends Plugin {
     @Getter
     private TilemanProfileManager profileManager;
 
-    public List<Consumer<GameState>> onGameStateChangedEvent = new ArrayList<>();
+    public List<Consumer<GameState>> onLoginStateChangedEvent = new ArrayList<>();
 
     public TilemanGameRules getGameRules() {
         return profileManager.getGameRules();
+    }
+    public boolean isShowAdvancedOptions() {
+        return config.showAdvancedOptions();
     }
 
     public Map<Integer, List<TilemanModeTile>> getTilesByRegion() {
@@ -175,11 +178,11 @@ public class TilemanModePlugin extends Plugin {
         if (gameState == GameState.LOGGED_IN && lastSeenGameState != GameState.LOGGED_IN) {
             isLoggedIn = true;
             lastSeenGameState = GameState.LOGGED_IN;
-            onGameStateChangedEvent.forEach(func -> func.accept(lastSeenGameState));
+            onLoginStateChangedEvent.forEach(func -> func.accept(lastSeenGameState));
         } else if (gameState == GameState.LOGIN_SCREEN && lastSeenGameState != GameState.LOGIN_SCREEN) {
             isLoggedIn = false;
             lastSeenGameState = GameState.LOGIN_SCREEN;
-            onGameStateChangedEvent.forEach(func -> func.accept(lastSeenGameState));
+            onLoginStateChangedEvent.forEach(func -> func.accept(lastSeenGameState));
         }
     }
 
