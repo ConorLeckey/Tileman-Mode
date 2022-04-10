@@ -28,14 +28,12 @@ package com.tileman;
 
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
-import net.runelite.api.World;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.util.*;
 import java.util.List;
 
 public class TilemanModeOverlay extends Overlay

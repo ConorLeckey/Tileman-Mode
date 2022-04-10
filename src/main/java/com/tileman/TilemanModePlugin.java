@@ -536,8 +536,8 @@ public class TilemanModePlugin extends Plugin {
         WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
 
         int regionId = worldPoint.getRegionID();
-        TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
-        log.debug("Updating point: {} - {}", point, worldPoint);
+        TilemanModeTile tile = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
+        log.debug("Updating point: {} - {}", tile, worldPoint);
 
         Map<Integer, List<TilemanModeTile>> tilesByRegion = profileManager.getTilesByRegion();
 
@@ -549,12 +549,15 @@ public class TilemanModePlugin extends Plugin {
 
         if (markedValue) {
             // Try add tile
-            if (!tilemanModeTiles.contains(point) && (getGameRules().isAllowTileDeficit() || remainingTiles > 0)) {
-                tilemanModeTiles.add(point);
+            if (!tilemanModeTiles.contains(tile) && (getGameRules().isAllowTileDeficit() || remainingTiles > 0)) {
+                tilemanModeTiles.add(tile);
+                visiblePoints.add(worldPoint);
             }
         } else {
             // Try remove tile
-            tilemanModeTiles.remove(point);
+            tilemanModeTiles.remove(tile);
+            visiblePoints.remove(worldPoint);
+
         }
 
         profileManager.saveTiles(profileManager.getActiveProfile(), regionId, tilemanModeTiles);
