@@ -111,23 +111,22 @@ public class TilemanPluginPanel extends PluginPanel {
                 JButton createProfileButton = new JButton("Create");
                 createProfileButton.setAlignmentX(CENTER_ALIGNMENT);
                 createProfileButton.addActionListener(l -> {
-                    String profileName = JOptionPane.showInputDialog(null, "Profile name:", client.getLocalPlayer().getName());
                     TilemanProfile profile = TilemanProfile.NONE;
 
                     Object[] options = new Object[] {"New Profile", "Import Existing Data"};
                     int choice = JOptionPane.showOptionDialog(null, "Create a profile:", "Create Profile", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, null);
 
                     if (choice == 0) {
-                        profile = profileManager.createProfile(profileName);
+                        profile = profileManager.createProfile();
                     } else if (choice == 1) {
                         options = new Object[] {"Import Old Tile Data", "Import Ground Marker Data", "Manual Import"};
                         choice = JOptionPane.showOptionDialog(null, "Choose how to import existing tile data:", "Import Existing Data", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, null);
                         if (choice == 0) {
-                            profile = profileManager.createProfileWithLegacyData(profileName);
+                            profile = profileManager.createProfileWithLegacyData();
                         } else if (choice == 1) {
-                            profile = profileManager.createProfileWithGroundMarkerData(profileName);
+                            profile = profileManager.createProfileWithGroundMarkerData();
                         } else if (choice == 2) {
-                            showProfileImportPanel(profileName);
+                            showProfileImportPanel();
                             return;
                         }
                     }
@@ -314,7 +313,7 @@ public class TilemanPluginPanel extends PluginPanel {
         return advancedOptions;
     }
 
-    private void showProfileImportPanel(String name) {
+    private void showProfileImportPanel() {
         if (!profileManager.hasActiveProfile()) {
             JPanel panel = new JPanel();
             panel.setLayout(new BorderLayout());
@@ -340,7 +339,7 @@ public class TilemanPluginPanel extends PluginPanel {
 
             if (choice == 0) {
                 String maybeJson = importText.getText();
-                TilemanProfile profile = profileManager.importProfileAsNew(maybeJson, client.getAccountHash(), name);
+                TilemanProfile profile = profileManager.importProfileAsNew(maybeJson, client.getAccountHash());
                 profileManager.setActiveProfile(profile);
             }
         }

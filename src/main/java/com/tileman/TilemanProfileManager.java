@@ -108,26 +108,26 @@ public class TilemanProfileManager {
         return getJsonFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, key, TilemanProfile.class, TilemanProfile.NONE);
     }
 
-    TilemanProfile createProfile(String name) {
+    TilemanProfile createProfile() {
         long accountHash = client.getAccountHash();
         if (accountHash == -1) {
             return TilemanProfile.NONE;
         }
 
-        TilemanProfile profile = new TilemanProfile(accountHash, name);
+        TilemanProfile profile = new TilemanProfile(accountHash, client.getLocalPlayer().getName());
         saveProfile(profile);
         return profile;
     }
 
-    TilemanProfile createProfileWithLegacyData(String name) {
-        TilemanProfile profile = createProfile(name);
+    TilemanProfile createProfileWithLegacyData() {
+        TilemanProfile profile = createProfile();
         saveAllTiles(profile, loadAllLegacyTilesFromConfig(configManager));
         saveGameRules(profile, loadGameRulesFromLegacySaveDataOrUseDefaults());
         return profile;
     }
 
-    TilemanProfile createProfileWithGroundMarkerData(String name) {
-        TilemanProfile profile = createProfile(name);
+    TilemanProfile createProfileWithGroundMarkerData() {
+        TilemanProfile profile = createProfile();
         importGroundMarkerTilesToProfile(profile);
         return profile;
     }
@@ -157,7 +157,7 @@ public class TilemanProfileManager {
         return GSON.toJson(new TilemanProfileExportData(activeProfile, tilesByRegion));
     }
 
-    TilemanProfile importProfileAsNew(String maybeJson, long accountHash, String name) {
+    TilemanProfile importProfileAsNew(String maybeJson, long accountHash) {
         TilemanProfileExportData importedProfileData = null;
         try {
             importedProfileData = GSON.fromJson(maybeJson, TilemanProfileExportData.class);
@@ -167,7 +167,7 @@ public class TilemanProfileManager {
             return TilemanProfile.NONE;
         }
 
-        TilemanProfile profile = new TilemanProfile(accountHash, name);
+        TilemanProfile profile = new TilemanProfile(accountHash, client.getLocalPlayer().getName());
         saveProfile(profile);
         for (int i = 0; i < importedProfileData.regionIds.size(); i++) {
             int regionId = importedProfileData.regionIds.get(i);
