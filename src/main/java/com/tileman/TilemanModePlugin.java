@@ -110,6 +110,9 @@ public class TilemanModePlugin extends Plugin {
     @Getter
     private TilemanProfileManager profileManager;
 
+    @Getter
+    private List<WorldPoint> visiblePoints = new ArrayList<>();
+
     public List<Consumer<GameState>> onLoginStateChangedEvent = new ArrayList<>();
 
     public TilemanGameRules getGameRules() {
@@ -171,6 +174,7 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
+        updateVisiblePoints();
         updateTileInfoDisplay();
         inHouse = false;
     }
@@ -252,6 +256,19 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.remove(minimapOverlay);
         overlayManager.remove(worldMapOverlay);
         overlayManager.remove(infoOverlay);
+    }
+
+    private void updateVisiblePoints() {
+        visiblePoints.clear();
+
+        int[] regionIds = client.getMapRegions();
+        for (int region : regionIds) {
+            List<TilemanModeTile> tiles = profileManager.getTilesByRegion().get(region);
+            if (tiles == null) {
+                continue;
+            }
+            translateTilesToWorldPoints(client, tiles, visiblePoints);
+        }
     }
 
     private void autoMark() {
@@ -511,8 +528,6 @@ public class TilemanModePlugin extends Plugin {
         updateTileMark(localPoint, true);
     }
 
-
-    // TODO: Move this to profile manager?
     private void updateTileMark(LocalPoint localPoint, boolean markedValue) {
         if(containsAnyOf(getTileMovementFlags(localPoint), fullBlock)) {
             return;
@@ -579,7 +594,7 @@ public class TilemanModePlugin extends Plugin {
         }
     }
 
-    public static void translateTilesToWorldPoints(Client client, Collection<TilemanModeTile> tiles, List<WorldPoint> worldPointsOut) {
+    private static void translateTilesToWorldPoints(Client client, Collection<TilemanModeTile> tiles, List<WorldPoint> worldPointsOut) {
         if (tiles == null) {
             return;
         }

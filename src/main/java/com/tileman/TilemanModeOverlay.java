@@ -28,6 +28,7 @@ package com.tileman;
 
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
+import net.runelite.api.World;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.*;
@@ -43,7 +44,6 @@ public class TilemanModeOverlay extends Overlay
 
 	private final Client client;
 	private final TilemanModePlugin plugin;
-	private List<WorldPoint> worldPointBuffer = new ArrayList<>(250);
 
 	@Inject
 	private TilemanModeConfig config;
@@ -63,26 +63,16 @@ public class TilemanModeOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		Color color = getTileColor();
-		int[] loadedRegions = client.getMapRegions();
-		Map<Integer, List<TilemanModeTile>> tilesByRegion = plugin.getTilesByRegion();
+		List<WorldPoint> visibleTilePoints = plugin.getVisiblePoints();
 
-		for (int region : loadedRegions)
+		for (WorldPoint point : visibleTilePoints)
 		{
-			List<TilemanModeTile> tiles = tilesByRegion.get(region);
-			worldPointBuffer.clear();
-			TilemanModePlugin.translateTilesToWorldPoints(client, tiles, worldPointBuffer);
-
-			for (final WorldPoint point : worldPointBuffer)
+			if (point.getPlane() != client.getPlane())
 			{
-				if (point.getPlane() != client.getPlane())
-				{
-					continue;
-				}
-
-				drawTile(graphics, point, color);
+				continue;
 			}
+			drawTile(graphics, point, color);
 		}
-
 
 		return null;
 	}
