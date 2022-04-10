@@ -19,11 +19,11 @@ import java.util.function.Consumer;
 @Singleton
 public class TilemanPluginPanel extends PluginPanel {
 
-    private static final int MIN_EXP_PER_TILE = 500;
+    private static final int MIN_EXP_PER_TILE = 250;
     private static final int MAX_EXP_PER_TILE = 100000;
 
-    private static final int MIN_TILE_OFFSET = 0;
-    private static final int MAX_TILE_OFFSET = 50000;
+    private static final int MIN_TILE_OFFSET = Integer.MIN_VALUE;
+    private static final int MAX_TILE_OFFSET = Integer.MAX_VALUE;
 
     private final TilemanModePlugin plugin;
     private final TilemanProfileManager profileManager;
