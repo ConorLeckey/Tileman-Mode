@@ -55,8 +55,8 @@ class TileInfoOverlay extends OverlayPanel {
     @Inject
     private TileInfoOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
         super(plugin);
-        this.plugin = plugin;
         this.client = client;
+        this.plugin = plugin;
         this.config = config;
         setPosition(OverlayPosition.TOP_LEFT);
         setPriority(OverlayPriority.MED);
@@ -80,7 +80,8 @@ class TileInfoOverlay extends OverlayPanel {
                 .rightColor(getTextColor())
                 .build());
 
-        if(!(plugin.getGameRules().isEnableCustomGameMode() && !plugin.getGameRules().isTilesFromExp())) {
+        TilemanProfileManager profileManager = plugin.getProfileManager();
+        if(!(profileManager.isEnableCustomGameMode() && !profileManager.isTilesFromExp())) {
             panelComponent.getChildren().add(LineComponent.builder()
                     .left(XP_UNTIL_NEXT_TILE)
                     .right(xpUntilNextTile)

@@ -16,7 +16,7 @@ public class TilemanGameRules implements Serializable {
     @Setter private boolean tilesFromTotalLevel;
     @Setter private int tilesOffset;
 
-    public TilemanGameRules(){}
+    public TilemanGameRules() {}
 
     public TilemanGameRules(TilemanGameMode gameMode, boolean enableCustomGameMode, boolean allowTileDeficit, boolean tilesFromTotalLevel, boolean tilesFromExp, int tilesOffset, int expPerTile) {
         this.gameMode = gameMode;

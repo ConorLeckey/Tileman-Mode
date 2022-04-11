@@ -142,8 +142,6 @@ public class TilemanPluginPanel extends PluginPanel {
     private JPanel buildGameRulesPanel() {
         // Callback queue, so we can properly manage enabling/disabling interactions without worrying about component build order.
         List<Runnable> callbacks = new ArrayList<>();
-
-        TilemanGameRules gameRules = profileManager.getGameRules();
         boolean hasActiveProfile = !profileManager.getActiveProfile().equals(TilemanProfile.NONE);
 
         JPanel gameRulesPanel = new JPanel();
@@ -164,7 +162,7 @@ public class TilemanPluginPanel extends PluginPanel {
                     JLabel gameModeSelectLabel = new JLabel("Game Mode");
 
                     JComboBox gameModeSelect = new JComboBox(TilemanGameMode.values());
-                    gameModeSelect.setSelectedItem(gameRules.getGameMode());
+                    gameModeSelect.setSelectedItem(profileManager.getGameMode());
                     gameModeSelect.addActionListener(l -> profileManager.setGameMode((TilemanGameMode) gameModeSelect.getSelectedItem()));
 
                     gameModeDropdownPanel.add(gameModeSelectLabel);
@@ -188,9 +186,9 @@ public class TilemanPluginPanel extends PluginPanel {
                     customGameModeCollapsable.add(customGameMode, BorderLayout.NORTH);
 
                     customGameMode.setAlignmentX(CENTER_ALIGNMENT);
-                    customGameMode.setSelected(gameRules.isEnableCustomGameMode());
+                    customGameMode.setSelected(profileManager.isEnableCustomGameMode());
                     customGameMode.addActionListener(l ->  {
-                        profileManager.setCustomGameMode(customGameMode.isSelected());
+                        profileManager.setEnableCustomGameMode(customGameMode.isSelected());
                         rebuild();
                     });
                 }
@@ -198,14 +196,14 @@ public class TilemanPluginPanel extends PluginPanel {
                 {
                     JPanel rulesPanel = new JPanel();
                     addVerticalLayout(rulesPanel);
-                    callbacks.add(() -> setJComponentEnabled(rulesPanel, gameRules.isEnableCustomGameMode()));
+                    callbacks.add(() -> setJComponentEnabled(rulesPanel, profileManager.isEnableCustomGameMode()));
 
                     customGameModeCollapsable.add(rulesPanel, BorderLayout.CENTER);
 
                     {
                         JCheckBox allowTileDeficit = new JCheckBox("Allow Tile Deficit");
                         allowTileDeficit.setAlignmentX(CENTER_ALIGNMENT);
-                        allowTileDeficit.setSelected(gameRules.isAllowTileDeficit());
+                        allowTileDeficit.setSelected(profileManager.isAllowTileDeficit());
                         allowTileDeficit.addActionListener(l -> profileManager.setAllowTileDeficit(allowTileDeficit.isSelected()));
                         rulesPanel.add(allowTileDeficit);
                     }
@@ -213,7 +211,7 @@ public class TilemanPluginPanel extends PluginPanel {
                     {
                         JCheckBox tilesFromLevels = new JCheckBox("Tiles From Levels");
                         tilesFromLevels.setAlignmentX(CENTER_ALIGNMENT);
-                        tilesFromLevels.setSelected(gameRules.isTilesFromTotalLevel());
+                        tilesFromLevels.setSelected(profileManager.isTilesFromTotalLevel());
                         tilesFromLevels.addActionListener(l -> profileManager.setTilesFromTotalLevel(tilesFromLevels.isSelected()));
                         rulesPanel.add(tilesFromLevels);
                     }
@@ -221,7 +219,7 @@ public class TilemanPluginPanel extends PluginPanel {
                     {
                         JCheckBox tilesFromExp = new JCheckBox("Tiles From Exp");
                         tilesFromExp.setAlignmentX(CENTER_ALIGNMENT);
-                        tilesFromExp.setSelected(gameRules.isTilesFromExp());
+                        tilesFromExp.setSelected(profileManager.isTilesFromExp());
                         tilesFromExp.addActionListener(l -> profileManager.setTilesFromExp(tilesFromExp.isSelected()));
                         rulesPanel.add(tilesFromExp);
                     }
@@ -233,10 +231,10 @@ public class TilemanPluginPanel extends PluginPanel {
                         JLabel tileOffsetLabel = new JLabel("Tile Offset");
                         tileOffsetPanel.add(tileOffsetLabel);
 
-                        SpinnerNumberModel numberModel = new SpinnerNumberModel(gameRules.getTilesOffset(), MIN_TILE_OFFSET, MAX_TILE_OFFSET, 1);
+                        SpinnerNumberModel numberModel = new SpinnerNumberModel(profileManager.getTilesOffset(), MIN_TILE_OFFSET, MAX_TILE_OFFSET, 1);
                         JSpinner tilesOffsetSpinner = new JSpinner(numberModel);
                         ((JSpinner.DefaultEditor)tilesOffsetSpinner.getEditor()).getTextField().setColumns(7); // Makes the width of the spinner reasonable
-                        tilesOffsetSpinner.addChangeListener(l -> profileManager.setTileOffset(numberModel.getNumber().intValue()));
+                        tilesOffsetSpinner.addChangeListener(l -> profileManager.setTilesOffset(numberModel.getNumber().intValue()));
                         tileOffsetPanel.add(tilesOffsetSpinner);
                         rulesPanel.add(tileOffsetPanel);
                     }
@@ -247,7 +245,7 @@ public class TilemanPluginPanel extends PluginPanel {
 
                         JLabel expPerTileLabel = new JLabel("Exp Per Tile");
 
-                        SpinnerNumberModel numberModel = new SpinnerNumberModel(gameRules.getExpPerTile(), MIN_EXP_PER_TILE, MAX_EXP_PER_TILE, 1);
+                        SpinnerNumberModel numberModel = new SpinnerNumberModel(profileManager.getExpPerTile(), MIN_EXP_PER_TILE, MAX_EXP_PER_TILE, 1);
                         JSpinner expPerTileSpinner = new JSpinner(numberModel);
                         expPerTileSpinner.addChangeListener(l -> profileManager.setExpPerTile(numberModel.getNumber().intValue()));
 

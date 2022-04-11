@@ -115,9 +115,6 @@ public class TilemanModePlugin extends Plugin {
 
     public List<Consumer<GameState>> onLoginStateChangedEvent = new ArrayList<>();
 
-    public TilemanGameRules getGameRules() {
-        return profileManager.getGameRules();
-    }
     public boolean isShowAdvancedOptions() {
         return config.showAdvancedOptions();
     }
@@ -323,15 +320,15 @@ public class TilemanModePlugin extends Plugin {
 
     private void updateRemainingTiles(int placedTiles) {
         // Start with tiles offset. We always get these
-        int earnedTiles = getGameRules().getTilesOffset();
+        int earnedTiles = profileManager.getTilesOffset();
 
         // If including xp, add those tiles in
-        if (getGameRules().isTilesFromExp()) {
-            earnedTiles += (int) client.getOverallExperience() / getGameRules().getExpPerTile();
+        if (profileManager.isTilesFromExp()) {
+            earnedTiles += (int) client.getOverallExperience() / profileManager.getExpPerTile();
         }
 
         // If including total level, add those tiles in
-        if (getGameRules().isTilesFromTotalLevel()) {
+        if (profileManager.isTilesFromTotalLevel()) {
             earnedTiles += client.getTotalLevel();
         }
 
@@ -339,7 +336,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateXpUntilNextTile() {
-        xpUntilNextTile = getGameRules().getExpPerTile() - Integer.parseInt(Long.toString(client.getOverallExperience() % getGameRules().getExpPerTile()));
+        xpUntilNextTile = profileManager.getExpPerTile() - Integer.parseInt(Long.toString(client.getOverallExperience() % profileManager.getExpPerTile()));
     }
 
     int getTotalTiles() {
@@ -549,7 +546,7 @@ public class TilemanModePlugin extends Plugin {
 
         if (markedValue) {
             // Try add tile
-            if (!tilemanModeTiles.contains(tile) && (getGameRules().isAllowTileDeficit() || remainingTiles > 0)) {
+            if (!tilemanModeTiles.contains(tile) && (profileManager.isAllowTileDeficit() || remainingTiles > 0)) {
                 tilemanModeTiles.add(tile);
                 visiblePoints.add(worldPoint);
             }

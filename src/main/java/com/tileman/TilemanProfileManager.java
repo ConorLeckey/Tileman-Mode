@@ -51,7 +51,6 @@ public class TilemanProfileManager {
     private ConfigManager configManager;
     private Client client;
 
-    @Getter
     private TilemanGameRules gameRules = TilemanGameRules.GetDefaultRules();
     private TilemanProfile activeProfile = TilemanProfile.NONE;
 
@@ -75,52 +74,19 @@ public class TilemanProfileManager {
         }
     }
 
-    public void setGameMode(TilemanGameMode mode) {
-        gameRules.setGameMode(mode);
-        saveGameRules(activeProfile, gameRules);
+    private TilemanProfile getProfileForAccount(long accountHash) {
+        String key = TilemanProfile.getProfileKey(String.valueOf(accountHash));
+        return getJsonFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, key, TilemanProfile.class, TilemanProfile.NONE);
     }
 
-    public void setCustomGameMode(boolean state) {
-        gameRules.setEnableCustomGameMode(state);
-        saveGameRules(activeProfile, gameRules);
-    }
+    void setActiveProfile(TilemanProfile profile) {
+        this.activeProfile = profile;
+        this.gameRules = loadGameRules(profile);
 
-    public void setAllowTileDeficit(boolean state) {
-        gameRules.setAllowTileDeficit(state);
-        saveGameRules(activeProfile, gameRules);
-    }
+        tilesByRegion.clear();
+        tilesByRegion = loadAllTiles(profile, configManager);
 
-    public void setTilesFromTotalLevel(boolean state) {
-        gameRules.setTilesFromTotalLevel(state);
-        saveGameRules(activeProfile, gameRules);
-    }
-
-    public void setTilesFromExp(boolean state) {
-        gameRules.setTilesFromExp(state);
-        saveGameRules(activeProfile, gameRules);
-    }
-
-    public void setTileOffset(int offset) {
-        gameRules.setTilesOffset(offset);
-        saveGameRules(activeProfile, gameRules);
-    }
-
-    public void setExpPerTile(int exp) {
-        gameRules.setExpPerTile(exp);
-        saveGameRules(activeProfile, gameRules);
-    }
-
-    private TilemanGameRules loadGameRules(TilemanProfile profile) {
-        String rulesKey = profile.getGameRulesKey();
-        return getJsonFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, rulesKey, TilemanGameRules.class, TilemanGameRules.GetDefaultRules());
-    }
-
-    private void saveGameRules(TilemanProfile profile, TilemanGameRules rules) {
-        if (profile == TilemanProfile.NONE) {
-            return;
-        }
-        String rulesKey = profile.getGameRulesKey();
-        configManager.setConfiguration(TilemanModeConfig.CONFIG_GROUP, rulesKey, GSON.toJson(rules));
+        onProfileChangedEvent.forEach(l -> l.accept(profile));
     }
 
     private void saveProfile(TilemanProfile profile) {
@@ -128,11 +94,6 @@ public class TilemanProfileManager {
             return;
         }
         configManager.setConfiguration(TilemanModeConfig.CONFIG_GROUP, TilemanProfile.getProfileKey(profile.getAccountHash()), GSON.toJson(profile));
-    }
-
-    private TilemanProfile getProfileForAccount(long accountHash) {
-        String key = TilemanProfile.getProfileKey(String.valueOf(accountHash));
-        return getJsonFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, key, TilemanProfile.class, TilemanProfile.NONE);
     }
 
     TilemanProfile createProfile() {
@@ -165,16 +126,6 @@ public class TilemanProfileManager {
 
     public boolean hasActiveProfile() {
         return activeProfile != TilemanProfile.NONE;
-    }
-
-    void setActiveProfile(TilemanProfile profile) {
-        this.activeProfile = profile;
-        this.gameRules = loadGameRules(profile);
-
-        tilesByRegion.clear();
-        tilesByRegion = loadAllTiles(profile, configManager);
-
-        onProfileChangedEvent.forEach(l -> l.accept(profile));
     }
 
     String exportProfile() {
@@ -223,6 +174,62 @@ public class TilemanProfileManager {
 
         setActiveProfile(TilemanProfile.NONE);
     }
+
+    private TilemanGameRules loadGameRules(TilemanProfile profile) {
+        String rulesKey = profile.getGameRulesKey();
+        return getJsonFromConfigOrDefault(TilemanModeConfig.CONFIG_GROUP, rulesKey, TilemanGameRules.class, TilemanGameRules.GetDefaultRules());
+    }
+
+    private void saveGameRules(TilemanProfile profile, TilemanGameRules rules) {
+        if (profile == TilemanProfile.NONE) {
+            return;
+        }
+        String rulesKey = profile.getGameRulesKey();
+        configManager.setConfiguration(TilemanModeConfig.CONFIG_GROUP, rulesKey, GSON.toJson(rules));
+    }
+
+    public TilemanGameMode getGameMode() { return gameRules.getGameMode(); }
+    public void setGameMode(TilemanGameMode mode) {
+        gameRules.setGameMode(mode);
+        saveGameRules(activeProfile, gameRules);
+    }
+
+    public boolean isEnableCustomGameMode() { return gameRules.isEnableCustomGameMode(); }
+    public void setEnableCustomGameMode(boolean state) {
+        gameRules.setEnableCustomGameMode(state);
+        saveGameRules(activeProfile, gameRules);
+    }
+
+    public boolean isAllowTileDeficit() { return gameRules.isAllowTileDeficit(); }
+    public void setAllowTileDeficit(boolean state) {
+        gameRules.setAllowTileDeficit(state);
+        saveGameRules(activeProfile, gameRules);
+    }
+
+    public boolean isTilesFromTotalLevel() { return gameRules.isTilesFromTotalLevel(); }
+    public void setTilesFromTotalLevel(boolean state) {
+        gameRules.setTilesFromTotalLevel(state);
+        saveGameRules(activeProfile, gameRules);
+    }
+
+    public boolean isTilesFromExp() { return gameRules.isTilesFromExp(); }
+    public void setTilesFromExp(boolean state) {
+        gameRules.setTilesFromExp(state);
+        saveGameRules(activeProfile, gameRules);
+    }
+
+    public int getTilesOffset() { return gameRules.getTilesOffset(); }
+    public void setTilesOffset(int offset) {
+        gameRules.setTilesOffset(offset);
+        saveGameRules(activeProfile, gameRules);
+    }
+
+    public int getExpPerTile() { return gameRules.getExpPerTile(); }
+    public void setExpPerTile(int exp) {
+        gameRules.setExpPerTile(exp);
+        saveGameRules(activeProfile, gameRules);
+    }
+
 
     private void saveAllTiles(TilemanProfile profile, Map<Integer, List<TilemanModeTile>> tileData) {
         for (Integer region : tileData.keySet()) {
@@ -281,52 +288,8 @@ public class TilemanProfileManager {
         return trimmedRegions;
     }
 
-    // CONFIG STUFF
-
-    private static List<TilemanModeTile> loadTilesFromConfig(ConfigManager configManager, String configGroup, String key) {
-        String json = configManager.getConfiguration(configGroup, key);
-        if (Strings.isNullOrEmpty(json)) {
-            return Collections.emptyList();
-        }
-
-        return GSON.fromJson(json, new TypeToken<List<TilemanModeTile>>(){}.getType());
-    }
-
-    <T> T getJsonFromConfigOrDefault(String configGroup, String key, Class<T> clazz, T defaultVal) {
-        String json = getFromConfigOrDefault(configGroup, key, String.class, "");
-        if (Strings.isNullOrEmpty(json)) {
-            return defaultVal;
-        }
-
-        try {
-            return GSON.fromJson(json, clazz);
-        } catch (JsonSyntaxException e) {
-            return defaultVal;
-        }
-    }
-
-    <T> T getFromConfigOrDefault(String configGroup, String key, Class<T> clazz, T defaultVal) {
-        try {
-            Object val = configManager.getConfiguration(configGroup, key, clazz);
-            if (val != null && clazz.isAssignableFrom(val.getClass())) {
-                return (T)val;
-            }
-        } catch (ClassCastException e) {}
-        return defaultVal;
-    }
-
-
-
-
-
-
 
     // LEGACY STUFF
-
-    public boolean hasLegacySaveData() {
-        List<String> oldKeys = configManager.getConfigurationKeys(TilemanModeConfig.CONFIG_GROUP+".region");
-        return !oldKeys.isEmpty();
-    }
 
     private TilemanGameRules loadGameRulesFromLegacySaveDataOrUseDefaults() {
         TilemanGameRules defaults = TilemanGameRules.GetDefaultRules();
@@ -375,5 +338,39 @@ public class TilemanProfileManager {
 
             saveTiles(profile, regionId, groundMarkerTiles);
         }
+    }
+
+    // CONFIG STUFF
+
+    private static List<TilemanModeTile> loadTilesFromConfig(ConfigManager configManager, String configGroup, String key) {
+        String json = configManager.getConfiguration(configGroup, key);
+        if (Strings.isNullOrEmpty(json)) {
+            return Collections.emptyList();
+        }
+
+        return GSON.fromJson(json, new TypeToken<List<TilemanModeTile>>(){}.getType());
+    }
+
+    <T> T getJsonFromConfigOrDefault(String configGroup, String key, Class<T> clazz, T defaultVal) {
+        String json = getFromConfigOrDefault(configGroup, key, String.class, "");
+        if (Strings.isNullOrEmpty(json)) {
+            return defaultVal;
+        }
+
+        try {
+            return GSON.fromJson(json, clazz);
+        } catch (JsonSyntaxException e) {
+            return defaultVal;
+        }
+    }
+
+    <T> T getFromConfigOrDefault(String configGroup, String key, Class<T> clazz, T defaultVal) {
+        try {
+            Object val = configManager.getConfiguration(configGroup, key, clazz);
+            if (val != null && clazz.isAssignableFrom(val.getClass())) {
+                return (T)val;
+            }
+        } catch (ClassCastException e) {}
+        return defaultVal;
     }
 }
