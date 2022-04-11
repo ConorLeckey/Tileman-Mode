@@ -235,6 +235,7 @@ public class TilemanPluginPanel extends PluginPanel {
 
                         SpinnerNumberModel numberModel = new SpinnerNumberModel(gameRules.getTilesOffset(), MIN_TILE_OFFSET, MAX_TILE_OFFSET, 1);
                         JSpinner tilesOffsetSpinner = new JSpinner(numberModel);
+                        ((JSpinner.DefaultEditor)tilesOffsetSpinner.getEditor()).getTextField().setColumns(7); // Makes the width of the spinner reasonable
                         tilesOffsetSpinner.addChangeListener(l -> profileManager.setTileOffset(numberModel.getNumber().intValue()));
                         tileOffsetPanel.add(tilesOffsetSpinner);
                         rulesPanel.add(tileOffsetPanel);
