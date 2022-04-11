@@ -242,6 +242,7 @@ public class TilemanModePlugin extends Plugin {
         profileManager.onProfileChangedEvent.add(p -> {
             panel.rebuild();
             updateTileInfoDisplay();
+            updateVisiblePoints();
         });
         clientToolbar.addNavigation(navButton);
     }

@@ -339,7 +339,11 @@ public class TilemanPluginPanel extends PluginPanel {
             if (choice == 0) {
                 String maybeJson = importText.getText();
                 TilemanProfile profile = profileManager.importProfileAsNew(maybeJson, client.getAccountHash());
-                profileManager.setActiveProfile(profile);
+                if (profile == TilemanProfile.NONE) {
+                    JOptionPane.showMessageDialog(null, "An error occured while trying to import the profile data.", "Error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    profileManager.setActiveProfile(profile);
+                }
             }
         }
     }
