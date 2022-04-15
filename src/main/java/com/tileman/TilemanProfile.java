@@ -64,4 +64,13 @@ public class TilemanProfile implements Serializable {
     public String getRegionPrefix() {
         return accountHash + "_region_";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof TilemanProfile)) {
+            return false;
+        }
+        TilemanProfile other = (TilemanProfile)o;
+        return accountHash.equals(other.getAccountHash());
+    }
 }

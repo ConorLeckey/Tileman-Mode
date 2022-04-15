@@ -99,7 +99,7 @@ public class TilemanPluginPanel extends PluginPanel {
             if (!isLoggedIn) {
                 profileLabel.setText("Login to start");
             } else {
-                if (activeProfile != TilemanProfile.NONE) {
+                if (activeProfile.equals(TilemanProfile.NONE)) {
                     profileLabel.setText(activeProfile.getProfileName());
                 } else {
                     profileLabel.setText("Create a profile to start");
@@ -107,7 +107,7 @@ public class TilemanPluginPanel extends PluginPanel {
             }
             profilePanel.add(profileLabel);
 
-            if (activeProfile == TilemanProfile.NONE && isLoggedIn) {
+            if (activeProfile.equals(TilemanProfile.NONE) && isLoggedIn) {
                 JButton createProfileButton = new JButton("Create");
                 createProfileButton.setAlignmentX(CENTER_ALIGNMENT);
                 createProfileButton.addActionListener(l -> {
@@ -339,7 +339,7 @@ public class TilemanPluginPanel extends PluginPanel {
             if (choice == 0) {
                 String maybeJson = importText.getText();
                 TilemanProfile profile = profileManager.importProfileAsNew(maybeJson, client.getAccountHash());
-                if (profile == TilemanProfile.NONE) {
+                if (profile.equals(TilemanProfile.NONE)) {
                     JOptionPane.showMessageDialog(null, "An error occured while trying to import the profile data.", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
                     profileManager.setActiveProfile(profile);
