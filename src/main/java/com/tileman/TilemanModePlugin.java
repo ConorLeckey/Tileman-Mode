@@ -160,7 +160,9 @@ public class TilemanModePlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick tick) {
-        autoMark();
+        if (profileManager.hasActiveProfile()) {
+            autoMark();
+        }
     }
 
     @Subscribe

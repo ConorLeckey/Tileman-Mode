@@ -99,7 +99,7 @@ public class TilemanPluginPanel extends PluginPanel {
             if (!isLoggedIn) {
                 profileLabel.setText("Login to start");
             } else {
-                if (activeProfile.equals(TilemanProfile.NONE)) {
+                if (!activeProfile.equals(TilemanProfile.NONE)) {
                     profileLabel.setText(activeProfile.getProfileName());
                 } else {
                     profileLabel.setText("Create a profile to start");
