@@ -260,6 +260,9 @@ public class TilemanModePlugin extends Plugin {
 
     private void updateVisiblePoints() {
         visiblePoints.clear();
+        if (!profileManager.hasActiveProfile()) {
+            return;
+        }
 
         int[] regionIds = client.getMapRegions();
         for (int region : regionIds) {
