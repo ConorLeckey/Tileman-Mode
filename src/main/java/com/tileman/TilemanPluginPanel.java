@@ -1,4 +1,5 @@
 package com.tileman;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.client.ui.ColorScheme;
@@ -9,11 +10,15 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
+import java.awt.event.ActionListener;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import java.awt.datatransfer.StringSelection;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Slf4j
 @Singleton
@@ -182,15 +187,11 @@ public class TilemanPluginPanel extends PluginPanel {
                 gameRulesPanel.add(customGameModeCollapsable);
 
                 {
-                    JCheckBox customGameMode = new JCheckBox("Enable Custom Game Mode");
-                    customGameModeCollapsable.add(customGameMode, BorderLayout.NORTH);
-
-                    customGameMode.setAlignmentX(CENTER_ALIGNMENT);
-                    customGameMode.setSelected(profileManager.isEnableCustomGameMode());
-                    customGameMode.addActionListener(l ->  {
-                        profileManager.setEnableCustomGameMode(customGameMode.isSelected());
+                    JCheckBox customGameMode = createCheckbox("Enable Custom Game Mode", profileManager.isEnableCustomGameMode(), enabled -> {
+                        profileManager.setEnableCustomGameMode(enabled);
                         rebuild();
                     });
+                    customGameModeCollapsable.add(customGameMode, BorderLayout.NORTH);
                 }
 
                 {
@@ -200,29 +201,9 @@ public class TilemanPluginPanel extends PluginPanel {
 
                     customGameModeCollapsable.add(rulesPanel, BorderLayout.CENTER);
 
-                    {
-                        JCheckBox allowTileDeficit = new JCheckBox("Allow Tile Deficit");
-                        allowTileDeficit.setAlignmentX(CENTER_ALIGNMENT);
-                        allowTileDeficit.setSelected(profileManager.isAllowTileDeficit());
-                        allowTileDeficit.addActionListener(l -> profileManager.setAllowTileDeficit(allowTileDeficit.isSelected()));
-                        rulesPanel.add(allowTileDeficit);
-                    }
-
-                    {
-                        JCheckBox tilesFromLevels = new JCheckBox("Tiles From Levels");
-                        tilesFromLevels.setAlignmentX(CENTER_ALIGNMENT);
-                        tilesFromLevels.setSelected(profileManager.isTilesFromTotalLevel());
-                        tilesFromLevels.addActionListener(l -> profileManager.setTilesFromTotalLevel(tilesFromLevels.isSelected()));
-                        rulesPanel.add(tilesFromLevels);
-                    }
-
-                    {
-                        JCheckBox tilesFromExp = new JCheckBox("Tiles From Exp");
-                        tilesFromExp.setAlignmentX(CENTER_ALIGNMENT);
-                        tilesFromExp.setSelected(profileManager.isTilesFromExp());
-                        tilesFromExp.addActionListener(l -> profileManager.setTilesFromExp(tilesFromExp.isSelected()));
-                        rulesPanel.add(tilesFromExp);
-                    }
+                    rulesPanel.add(createCheckbox("Allow Tile Deficit", profileManager.isAllowTileDeficit(), b -> profileManager.setAllowTileDeficit(b)));
+                    rulesPanel.add(createCheckbox("Tiles From Levels", profileManager.isTilesFromTotalLevel(), b -> profileManager.setTilesFromTotalLevel(b)));
+                    rulesPanel.add(createCheckbox("Tiles From Exp", profileManager.isTilesFromExp(), b -> profileManager.setTilesFromExp(b)));
 
                     {
                         JPanel tileOffsetPanel = new JPanel();
@@ -362,6 +343,14 @@ public class TilemanPluginPanel extends PluginPanel {
 
     private static void addSpacer(JComponent element, int height) {
         element.add(Box.createVerticalStrut(height));
+    }
+
+    private static JCheckBox createCheckbox(String text, boolean defaultState, Consumer<Boolean> consumer) {
+        JCheckBox checkBox = new JCheckBox(text);
+        checkBox.setAlignmentX(CENTER_ALIGNMENT);
+        checkBox.setSelected(defaultState);
+        checkBox.addActionListener(l -> consumer.accept(checkBox.isSelected()));
+        return checkBox;
     }
 
     private void setJComponentEnabled(JComponent element, boolean state) {
