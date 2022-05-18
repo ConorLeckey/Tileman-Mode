@@ -1,5 +1,4 @@
 package com.tileman;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.client.ui.ColorScheme;
@@ -10,15 +9,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
-import java.awt.event.ActionListener;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import java.awt.datatransfer.StringSelection;
-import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 @Slf4j
 @Singleton
@@ -201,9 +196,9 @@ public class TilemanPluginPanel extends PluginPanel {
 
                     customGameModeCollapsable.add(rulesPanel, BorderLayout.CENTER);
 
-                    rulesPanel.add(createCheckbox("Allow Tile Deficit", profileManager.isAllowTileDeficit(), b -> profileManager.setAllowTileDeficit(b)));
-                    rulesPanel.add(createCheckbox("Tiles From Levels", profileManager.isTilesFromTotalLevel(), b -> profileManager.setTilesFromTotalLevel(b)));
-                    rulesPanel.add(createCheckbox("Tiles From Exp", profileManager.isTilesFromExp(), b -> profileManager.setTilesFromExp(b)));
+                    rulesPanel.add(createCheckbox("Allow Tile Deficit", profileManager.isAllowTileDeficit(), profileManager::setAllowTileDeficit));
+                    rulesPanel.add(createCheckbox("Tiles From Levels", profileManager.isTilesFromTotalLevel(), profileManager::setTilesFromTotalLevel));
+                    rulesPanel.add(createCheckbox("Tiles From Exp", profileManager.isTilesFromExp(), profileManager::setTilesFromExp));
 
                     {
                         JPanel tileOffsetPanel = new JPanel();
