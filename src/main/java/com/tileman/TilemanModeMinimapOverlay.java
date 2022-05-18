@@ -34,7 +34,7 @@ import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.util.Collection;
+import java.util.List;
 
 class TilemanModeMinimapOverlay extends Overlay
 {
@@ -65,22 +65,22 @@ class TilemanModeMinimapOverlay extends Overlay
 			return null;
 		}
 
-		final Collection<WorldPoint> points = plugin.getPoints();
-		for (final WorldPoint point : points)
+		Color color = getTileColor();
+		List<WorldPoint> visibleTilePoints = plugin.getVisiblePoints();
+
+		for (final WorldPoint point : visibleTilePoints)
 		{
-			WorldPoint worldPoint = point;
-			if (worldPoint.getPlane() != client.getPlane())
+			if (point.getPlane() != client.getPlane())
 			{
 				continue;
 			}
-
-			drawOnMinimap(graphics, worldPoint);
+			drawOnMinimap(graphics, point, color);
 		}
 
 		return null;
 	}
 
-	private void drawOnMinimap(Graphics2D graphics, WorldPoint point)
+	private void drawOnMinimap(Graphics2D graphics, WorldPoint point, Color color)
 	{
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
@@ -101,7 +101,7 @@ class TilemanModeMinimapOverlay extends Overlay
 			return;
 		}
 
-		OverlayUtil.renderMinimapRect(client, graphics, posOnMinimap, TILE_WIDTH, TILE_HEIGHT, getTileColor());
+		OverlayUtil.renderMinimapRect(client, graphics, posOnMinimap, TILE_WIDTH, TILE_HEIGHT, color);
 	}
 
 	private Color getTileColor() {

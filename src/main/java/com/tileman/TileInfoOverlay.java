@@ -55,8 +55,8 @@ class TileInfoOverlay extends OverlayPanel {
     @Inject
     private TileInfoOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
         super(plugin);
-        this.plugin = plugin;
         this.client = client;
+        this.plugin = plugin;
         this.config = config;
         setPosition(OverlayPosition.TOP_LEFT);
         setPriority(OverlayPriority.MED);
@@ -65,6 +65,10 @@ class TileInfoOverlay extends OverlayPanel {
 
     @Override
     public Dimension render(Graphics2D graphics) {
+        if (!plugin.getProfileManager().hasActiveProfile()) {
+            return super.render(graphics);
+        }
+
         String unspentTiles = addCommasToNumber(plugin.getRemainingTiles());
         String unlockedTiles = addCommasToNumber(plugin.getTotalTiles());
         String xpUntilNextTile = addCommasToNumber(plugin.getXpUntilNextTile());
@@ -76,7 +80,8 @@ class TileInfoOverlay extends OverlayPanel {
                 .rightColor(getTextColor())
                 .build());
 
-        if(!(config.enableCustomGameMode() && config.excludeExp())) {
+        TilemanProfileManager profileManager = plugin.getProfileManager();
+        if(!(profileManager.isEnableCustomGameMode() && !profileManager.isTilesFromExp())) {
             panelComponent.getChildren().add(LineComponent.builder()
                     .left(XP_UNTIL_NEXT_TILE)
                     .right(xpUntilNextTile)
