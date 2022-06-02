@@ -153,6 +153,29 @@ public interface TilemanModeConfig extends Config {
         return Color.YELLOW;
     }
 
+    @ConfigItem(
+            keyName = "drawOneClickTiles",
+            name = "Draw one-click tiles",
+            section = settingsSection,
+            description = "Configures whether to mark tiles that can be reached in one click without unlocking new tiles",
+            position = 7
+    )
+    default boolean drawOneClickTiles() {
+        return true;
+    }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "oneClickMarkerColor",
+            name = "One Click Tile Color",
+            section = settingsSection,
+            description = "Configures the color of tiles that can be reached in one click without unlocking new tiles",
+            position = 8
+    )
+    default Color oneClickMarkerColor() {
+        return Color.BLUE;
+    }
+
     /***   Custom Game Mode section   ***/
     @ConfigItem(
             keyName = "enableCustomGameMode",

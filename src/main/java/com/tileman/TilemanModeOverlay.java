@@ -38,8 +38,6 @@ import java.util.Collection;
 
 public class TilemanModeOverlay extends Overlay
 {
-	private static final int MAX_DRAW_DISTANCE = 32;
-
 	private final Client client;
 	private final TilemanModePlugin plugin;
 
@@ -78,7 +76,7 @@ public class TilemanModeOverlay extends Overlay
 	{
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
-		if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
+		if (point.distanceTo(playerLocation) >= TilemanModePlugin.MAX_DRAW_DISTANCE)
 		{
 			return;
 		}
@@ -95,10 +93,13 @@ public class TilemanModeOverlay extends Overlay
 			return;
 		}
 
-		OverlayUtil.renderPolygon(graphics, poly, getTileColor());
+		OverlayUtil.renderPolygon(graphics, poly, getTileColor(point));
 	}
 
-	private Color getTileColor() {
+	private Color getTileColor(WorldPoint point) {
+		if (config.drawOneClickTiles() && plugin.oneClickTiles.contains(point)) {
+			return config.oneClickMarkerColor();
+		}
 		if(config.enableTileWarnings()) {
 			if (plugin.getRemainingTiles() <= 0) {
 				return Color.RED;
