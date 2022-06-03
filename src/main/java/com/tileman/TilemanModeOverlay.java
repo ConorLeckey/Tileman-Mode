@@ -35,6 +35,7 @@ import net.runelite.client.ui.overlay.*;
 import javax.inject.Inject;
 import java.awt.*;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 public class TilemanModeOverlay extends Overlay
 {
@@ -58,17 +59,15 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		final Collection<WorldPoint> points = plugin.getPoints();
-		for (final WorldPoint point : points)
-		{
+		// Draw one-click tiles last to ensure they render on top
+		Stream.concat(plugin.getPoints().stream(), plugin.oneClickTiles.stream()).forEach(point -> {
 			if (point.getPlane() != client.getPlane())
 			{
-				continue;
+				return;
 			}
 
 			drawTile(graphics, point);
-		}
-
+		});
 		return null;
 	}
 
