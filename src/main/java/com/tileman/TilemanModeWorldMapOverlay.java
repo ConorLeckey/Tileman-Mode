@@ -43,7 +43,7 @@ import net.runelite.client.ui.overlay.OverlayPriority;
 class TilemanModeWorldMapOverlay extends Overlay {
     private static final int REGION_SIZE = 1 << 6;
     // Bitmask to return first coordinate in region
-    private static final int REGION_TRUNCATE = ~((1 << 6) - 1);
+    private static final int REGION_TRUNCATE = -(1 << 6);
 
     private final Client client;
     private final TilemanModeConfig config;
@@ -73,13 +73,12 @@ class TilemanModeWorldMapOverlay extends Overlay {
     private void drawOnWorldMap(Graphics2D graphics) {
         RenderOverview ro = client.getRenderOverview();
         Widget map = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
-        Float pixelsPerTile = ro.getWorldMapZoom();
+        float pixelsPerTile = ro.getWorldMapZoom();
         if (map == null) {
             return;
         }
         Rectangle worldMapRect = map.getBounds();
         graphics.setClip(worldMapRect);
-
 
         int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
         int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);

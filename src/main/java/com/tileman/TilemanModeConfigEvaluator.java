@@ -60,8 +60,8 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
     private static final int EXPEDITIOUS_TILEMAN_TILE_OFFSET = 0;
     private static final boolean EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL = true;
 
-    private static Map<TilemanGameMode, Integer> gameModeToTilesOffsetDefault;
-    private static Map<TilemanGameMode, Boolean> gameModeToIncludeTotalLevelDefault;
+    private static final Map<TilemanGameMode, Integer> gameModeToTilesOffsetDefault;
+    private static final Map<TilemanGameMode, Boolean> gameModeToIncludeTotalLevelDefault;
 
     static {
         // Load Game Mode defaults for Tiles Offset

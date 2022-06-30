@@ -33,8 +33,8 @@ import lombok.Value;
 @Value
 class TilemanModeTile
 {
-	private int regionId;
-	private int regionX;
-	private int regionY;
-	private int z;
+	int regionId;
+	int regionX;
+	int regionY;
+	int z;
 }
