@@ -29,7 +29,6 @@ package com.tileman;
 
 import java.awt.*;
 import javax.inject.Inject;
-
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.RenderOverview;
@@ -50,7 +49,8 @@ class TilemanModeWorldMapOverlay extends Overlay {
     private final TilemanModePlugin plugin;
 
     @Inject
-    private TilemanModeWorldMapOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
+    private TilemanModeWorldMapOverlay(
+            Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
         this.client = client;
         this.config = config;
         this.plugin = plugin;
@@ -88,28 +88,43 @@ class TilemanModeWorldMapOverlay extends Overlay {
         // Offset in tiles from anchor sides
         int yTileMin = worldMapPosition.getY() - heightInTiles / 2;
         int xRegionMin = (worldMapPosition.getX() - widthInTiles / 2) & REGION_TRUNCATE;
-        int xRegionMax = ((worldMapPosition.getX() + widthInTiles / 2) & REGION_TRUNCATE) + REGION_SIZE;
+        int xRegionMax =
+                ((worldMapPosition.getX() + widthInTiles / 2) & REGION_TRUNCATE) + REGION_SIZE;
         int yRegionMin = (yTileMin & REGION_TRUNCATE);
-        int yRegionMax = ((worldMapPosition.getY() + heightInTiles / 2) & REGION_TRUNCATE) + REGION_SIZE;
+        int yRegionMax =
+                ((worldMapPosition.getY() + heightInTiles / 2) & REGION_TRUNCATE) + REGION_SIZE;
         int regionPixelSize = (int) Math.ceil(REGION_SIZE * pixelsPerTile);
 
         for (int x = xRegionMin; x < xRegionMax; x += REGION_SIZE) {
             for (int y = yRegionMin; y < yRegionMax; y += REGION_SIZE) {
                 int regionId = ((x >> 6) << 8) | (y >> 6);
                 for (final TilemanModeTile tile : plugin.getTiles(regionId)) {
-                    if(tile.getZ() != client.getPlane()) {
+                    if (tile.getZ() != client.getPlane()) {
                         continue;
                     }
-                    int yTileOffset = -(yTileMin - y) + 2; // Added offset of 2 as tiles were misaligned
+                    int yTileOffset =
+                            -(yTileMin - y) + 2; // Added offset of 2 as tiles were misaligned
                     int xTileOffset = x + widthInTiles / 2 - worldMapPosition.getX();
                     int xPos = ((int) (xTileOffset * pixelsPerTile)) + (int) worldMapRect.getX();
-                    int yPos = (worldMapRect.height - (int) (yTileOffset * pixelsPerTile)) + (int) worldMapRect.getY();
-                    int size = (regionPixelSize / (64 - Math.round(48f * ((8f - pixelsPerTile) / 7f))));
+                    int yPos =
+                            (worldMapRect.height - (int) (yTileOffset * pixelsPerTile))
+                                    + (int) worldMapRect.getY();
+                    int size =
+                            (regionPixelSize
+                                    / (64 - Math.round(48f * ((8f - pixelsPerTile) / 7f))));
                     int tileSize = regionPixelSize / 64;
 
                     graphics.setColor(new Color(config.markerColor().getRGB()));
-                    graphics.fillRect(xPos + (tile.getRegionX() * tileSize), yPos - (tile.getRegionY() * tileSize) + tileSize, size - 1, size - 1);
-                    graphics.drawRect(xPos + (tile.getRegionX() * tileSize), yPos - (tile.getRegionY() * tileSize) + tileSize, size - 1, size - 1);
+                    graphics.fillRect(
+                            xPos + (tile.getRegionX() * tileSize),
+                            yPos - (tile.getRegionY() * tileSize) + tileSize,
+                            size - 1,
+                            size - 1);
+                    graphics.drawRect(
+                            xPos + (tile.getRegionX() * tileSize),
+                            yPos - (tile.getRegionY() * tileSize) + tileSize,
+                            size - 1,
+                            size - 1);
                 }
             }
         }

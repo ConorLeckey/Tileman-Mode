@@ -25,6 +25,9 @@
  */
 package com.tileman;
 
+import java.awt.*;
+import java.util.Collection;
+import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -32,86 +35,74 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.*;
 
-import javax.inject.Inject;
-import java.awt.*;
-import java.util.Collection;
+class TilemanModeMinimapOverlay extends Overlay {
+    private static final int MAX_DRAW_DISTANCE = 16;
+    private static final int TILE_WIDTH = 4;
+    private static final int TILE_HEIGHT = 4;
 
-class TilemanModeMinimapOverlay extends Overlay
-{
-	private static final int MAX_DRAW_DISTANCE = 16;
-	private static final int TILE_WIDTH = 4;
-	private static final int TILE_HEIGHT = 4;
+    private final Client client;
+    private final TilemanModeConfig config;
+    private final TilemanModePlugin plugin;
 
-	private final Client client;
-	private final TilemanModeConfig config;
-	private final TilemanModePlugin plugin;
+    @Inject
+    private TilemanModeMinimapOverlay(
+            Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
+        this.client = client;
+        this.config = config;
+        this.plugin = plugin;
+        setPosition(OverlayPosition.DYNAMIC);
+        setPriority(OverlayPriority.LOW);
+        setLayer(OverlayLayer.ABOVE_WIDGETS);
+    }
 
-	@Inject
-	private TilemanModeMinimapOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin)
-	{
-		this.client = client;
-		this.config = config;
-		this.plugin = plugin;
-		setPosition(OverlayPosition.DYNAMIC);
-		setPriority(OverlayPriority.LOW);
-		setLayer(OverlayLayer.ABOVE_WIDGETS);
-	}
+    @Override
+    public Dimension render(Graphics2D graphics) {
+        if (!config.drawTilesOnMinimap()) {
+            return null;
+        }
 
-	@Override
-	public Dimension render(Graphics2D graphics)
-	{
-		if (!config.drawTilesOnMinimap())
-		{
-			return null;
-		}
+        final Collection<WorldPoint> points = plugin.getPoints();
+        for (final WorldPoint point : points) {
+            WorldPoint worldPoint = point;
+            if (worldPoint.getPlane() != client.getPlane()) {
+                continue;
+            }
 
-		final Collection<WorldPoint> points = plugin.getPoints();
-		for (final WorldPoint point : points)
-		{
-			WorldPoint worldPoint = point;
-			if (worldPoint.getPlane() != client.getPlane())
-			{
-				continue;
-			}
+            drawOnMinimap(graphics, worldPoint);
+        }
 
-			drawOnMinimap(graphics, worldPoint);
-		}
+        return null;
+    }
 
-		return null;
-	}
+    private void drawOnMinimap(Graphics2D graphics, WorldPoint point) {
+        WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
-	private void drawOnMinimap(Graphics2D graphics, WorldPoint point)
-	{
-		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+        if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE) {
+            return;
+        }
 
-		if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
-		{
-			return;
-		}
+        LocalPoint lp = LocalPoint.fromWorld(client, point);
+        if (lp == null) {
+            return;
+        }
 
-		LocalPoint lp = LocalPoint.fromWorld(client, point);
-		if (lp == null)
-		{
-			return;
-		}
+        Point posOnMinimap = Perspective.localToMinimap(client, lp);
+        if (posOnMinimap == null) {
+            return;
+        }
 
-		Point posOnMinimap = Perspective.localToMinimap(client, lp);
-		if (posOnMinimap == null)
-		{
-			return;
-		}
+        OverlayUtil.renderMinimapRect(
+                client, graphics, posOnMinimap, TILE_WIDTH, TILE_HEIGHT, getTileColor());
+    }
 
-		OverlayUtil.renderMinimapRect(client, graphics, posOnMinimap, TILE_WIDTH, TILE_HEIGHT, getTileColor());
-	}
-
-	private Color getTileColor() {
-		if(config.enableTileWarnings()) {
-			if (plugin.getRemainingTiles() <= 0) {
-				return Color.RED;
-			} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
-				return new Color(255, 153, 0);
-			}
-		}
-		return config.markerColor();
-	}
+    private Color getTileColor() {
+        if (config.enableTileWarnings()) {
+            if (plugin.getRemainingTiles() <= 0) {
+                return Color.RED;
+            } else if (plugin.getRemainingTiles() <= config.warningLimit()) {
+                return new Color(255, 153, 0);
+            }
+        }
+        return config.markerColor();
+    }
 }

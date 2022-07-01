@@ -1,29 +1,30 @@
 plugins {
-	id 'java'
+    id 'java'
+    id "com.diffplug.spotless" version "6.8.0"
 }
 
 repositories {
-	mavenLocal()
-	maven {
-		url = 'https://repo.runelite.net'
-	}
-	mavenCentral()
+    mavenLocal()
+    maven {
+        url = 'https://repo.runelite.net'
+    }
+    mavenCentral()
 }
 
 def runeLiteVersion = '1.8.25'
 
 dependencies {
-	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
+    compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
 
-	compileOnly 'org.projectlombok:lombok:1.18.24'
-	annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
 
-	testImplementation 'junit:junit:4.13.2'
-	testImplementation 'org.slf4j:slf4j-simple:1.7.36'
-	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
-	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion, {
-		exclude group: 'ch.qos.logback', module: 'logback-classic'
-	}
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.slf4j:slf4j-simple:1.7.36'
+    testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
+    testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion, {
+        exclude group: 'ch.qos.logback', module: 'logback-classic'
+    }
 }
 
 group = 'com.tileman'
@@ -31,5 +32,23 @@ version = '1.0-SNAPSHOT'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
+    options.encoding = 'UTF-8'
 }
+
+spotless {
+    java {
+        importOrder()
+        removeUnusedImports()
+        googleJavaFormat().aosp()
+    }
+    format 'misc', {
+        // define the files to apply `misc` to
+        target '*.kt', '*.gradle', '*.md', '.gitignore'
+
+        // define the steps to apply to those files
+        trimTrailingWhitespace()
+        indentWithSpaces(4)
+        endWithNewline()
+    }
+}
+assemble.dependsOn(spotlessApply)

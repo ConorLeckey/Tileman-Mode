@@ -26,11 +26,10 @@
 
 package com.tileman;
 
-import lombok.extern.slf4j.Slf4j;
-
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
+import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 /***
  * This class handles evaluating the config basedon which game mode is selected, and whether or not the user
@@ -45,8 +44,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
      * Because this class also implements TilemanModeConfig, we only need to override the methods we care about ie.
      * the ones controlled by the Game Mode dropdown.
      */
-    @Inject
-    private TilemanModeConfig config;
+    @Inject private TilemanModeConfig config;
 
     // Tileman Game Mode
     private static final int TILEMAN_TILE_OFFSET = 9;
@@ -68,13 +66,17 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
         gameModeToTilesOffsetDefault = new HashMap<>();
         gameModeToTilesOffsetDefault.put(TilemanGameMode.COMMUNITY, TILEMAN_TILE_OFFSET);
         gameModeToTilesOffsetDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_TILE_OFFSET);
-        gameModeToTilesOffsetDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_TILE_OFFSET);
+        gameModeToTilesOffsetDefault.put(
+                TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_TILE_OFFSET);
 
         // Load Game Mode defaults for Include Total Levels
         gameModeToIncludeTotalLevelDefault = new HashMap<>();
-        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.COMMUNITY, TILEMAN_INCLUDE_TOTAL_LEVEL);
-        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.STRICT, STRICT_TILEMAN_INCLUDE_TOTAL_LEVEL);
-        gameModeToIncludeTotalLevelDefault.put(TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL);
+        gameModeToIncludeTotalLevelDefault.put(
+                TilemanGameMode.COMMUNITY, TILEMAN_INCLUDE_TOTAL_LEVEL);
+        gameModeToIncludeTotalLevelDefault.put(
+                TilemanGameMode.STRICT, STRICT_TILEMAN_INCLUDE_TOTAL_LEVEL);
+        gameModeToIncludeTotalLevelDefault.put(
+                TilemanGameMode.ACCELERATED, EXPEDITIOUS_TILEMAN_INCLUDE_TOTAL_LEVEL);
     }
 
     @Override
@@ -106,7 +108,7 @@ class TilemanModeConfigEvaluator implements TilemanModeConfig {
 
     @Override
     public boolean excludeExp() {
-        if(config.enableCustomGameMode()) {
+        if (config.enableCustomGameMode()) {
             return config.excludeExp();
         } else {
             return false;
