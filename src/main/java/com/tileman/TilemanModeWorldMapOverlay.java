@@ -46,14 +46,15 @@ class TilemanModeWorldMapOverlay extends Overlay {
 
     private final Client client;
     private final TilemanModeConfig config;
-    private final TilemanModePlugin plugin;
+    private final TileRepository tileRepository;
 
     @Inject
     private TilemanModeWorldMapOverlay(
-            Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
+            Client client, TilemanModeConfig config, TileRepository tileRepository) {
         this.client = client;
         this.config = config;
-        this.plugin = plugin;
+        this.tileRepository = tileRepository;
+
         setPosition(OverlayPosition.DYNAMIC);
         setPriority(OverlayPriority.HIGH);
         setLayer(OverlayLayer.ALWAYS_ON_TOP);
@@ -98,7 +99,7 @@ class TilemanModeWorldMapOverlay extends Overlay {
         for (int x = xRegionMin; x < xRegionMax; x += REGION_SIZE) {
             for (int y = yRegionMin; y < yRegionMax; y += REGION_SIZE) {
                 int regionId = ((x >> 6) << 8) | (y >> 6);
-                for (final TilemanModeTile tile : plugin.getTiles(regionId)) {
+                for (final TilemanModeTile tile : tileRepository.getTiles(regionId)) {
                     if (tile.getZ() != client.getPlane()) {
                         continue;
                     }

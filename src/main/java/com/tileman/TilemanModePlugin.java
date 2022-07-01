@@ -28,12 +28,10 @@ package com.tileman;
 
 import static com.tileman.MovementFlag.NO_MOVEMENT_FLAGS;
 import static com.tileman.MovementFlag.containsAnyOf;
+import static com.tileman.TileRepository.CONFIG_GROUP;
+import static com.tileman.TileRepository.REGION_PREFIX;
 
-import com.google.common.base.Strings;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.google.inject.Provides;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -60,14 +58,9 @@ import net.runelite.client.util.ImageUtil;
         description = "Automatically draws tiles where you walk",
         tags = {"overlay", "tiles"})
 public class TilemanModePlugin extends Plugin {
-    private static final String CONFIG_GROUP = "tilemanMode";
     private static final String MARK = "Unlock Tileman tile";
     private static final String UNMARK = "Clear Tileman tile";
     private static final String WALK_HERE = "Walk here";
-    private static final String REGION_PREFIX = "region_";
-    private static final Type TILE_SET_TYPE = new TypeToken<Set<TilemanModeTile>>() {}.getType();
-
-    private static final Gson GSON = new Gson();
 
     public static final int MOVE_NONE = 0;
 
@@ -89,8 +82,6 @@ public class TilemanModePlugin extends Plugin {
 
     @Inject private TilemanModeConfigEvaluator config;
 
-    @Inject private ConfigManager configManager;
-
     @Inject private OverlayManager overlayManager;
 
     @Inject private TilemanModeOverlay overlay;
@@ -102,6 +93,8 @@ public class TilemanModePlugin extends Plugin {
     @Inject private TileInfoOverlay infoOverlay;
 
     @Inject private ClientToolbar clientToolbar;
+
+    @Inject private TileRepository tileRepository;
 
     @Provides
     TilemanModeConfig provideConfig(ConfigManager configManager) {
@@ -132,7 +125,6 @@ public class TilemanModePlugin extends Plugin {
 
     private final HashSet<Integer> tutorialIslandRegionIds = new HashSet<Integer>();
 
-    private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
     private int lastPlane;
     private boolean lastAutoTilesConfig = false;
@@ -174,7 +166,7 @@ public class TilemanModePlugin extends Plugin {
                             client.getPlane());
 
             client.createMenuEntry(-1)
-                    .setOption(getTiles(regionId).contains(point) ? UNMARK : MARK)
+                    .setOption(tileRepository.getTiles(regionId).contains(point) ? UNMARK : MARK)
                     .setTarget(event.getTarget())
                     .setType(MenuAction.RUNELITE);
         }
@@ -192,7 +184,7 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
         loadPoints();
-        updateTileCounter();
+        tileRepository.updateTileCounter();
         inHouse = false;
     }
 
@@ -209,7 +201,7 @@ public class TilemanModePlugin extends Plugin {
             handleWalkedToTile(playerPosLocal);
         }
         lastAutoTilesConfig = config.automarkTiles();
-        updateTileCounter();
+        tileRepository.updateTileCounter();
     }
 
     @Subscribe
@@ -233,7 +225,7 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.add(worldMapOverlay);
         overlayManager.add(infoOverlay);
         loadPoints();
-        updateTileCounter();
+        tileRepository.updateTileCounter();
         log.debug("startup");
         TilemanImportPanel panel = new TilemanImportPanel(this);
         NavigationButton navButton =
@@ -282,7 +274,7 @@ public class TilemanModePlugin extends Plugin {
             handleWalkedToTile(playerPosLocal);
             lastTile = playerPosLocal;
             lastPlane = client.getPlane();
-            updateTileCounter();
+            tileRepository.updateTileCounter();
             log.debug("player moved");
             log.debug(
                     "last tile={}  distance={}",
@@ -290,7 +282,7 @@ public class TilemanModePlugin extends Plugin {
                     lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
 
         } else if (totalXp != currentTotalXp) {
-            updateTileCounter();
+            tileRepository.updateTileCounter();
             totalXp = currentTotalXp;
         }
 
@@ -300,23 +292,23 @@ public class TilemanModePlugin extends Plugin {
 
     public void importGroundMarkerTiles() {
         // Get and store all the Ground Markers Regions
-        List<String> groundMarkerRegions = getAllRegionIds("groundMarker");
+        List<String> groundMarkerRegions = tileRepository.getAllRegionIds("groundMarker");
         // If none, Exit function
 
         // Get and store array list of existing Tileman World Regions (like updateTileCounter does)
-        List<String> tilemanModeRegions = getAllRegionIds(CONFIG_GROUP);
+        List<String> tilemanModeRegions = tileRepository.getAllRegionIds(CONFIG_GROUP);
 
         // CONVERSION
         // Loop through Ground Marker Regions
         for (String region : groundMarkerRegions) {
             // Get Ground Markers Region's Tiles
             Set<TilemanModeTile> groundMarkerTiles =
-                    getConfiguration("groundMarker", REGION_PREFIX + region);
+                    tileRepository.getConfiguration("groundMarker", REGION_PREFIX + region);
             // If region already exists in Tileman World Regions Array:
             if (tilemanModeRegions.contains(region)) {
                 // Create Empty ArrayList for Region;
                 // Get Tileman Region's tiles and add them to the region array list
-                Set<TilemanModeTile> regionTiles = getTiles(region);
+                Set<TilemanModeTile> regionTiles = tileRepository.getTiles(region);
 
                 // Create int for regionOriginalSize;
                 // Set regionOriginalSize to arraylists length
@@ -335,96 +327,14 @@ public class TilemanModePlugin extends Plugin {
                 // If regionOriginalSize != current size
                 if (regionOriginalSize != regionTiles.size()) {
                     // Save points for arrayList
-                    savePoints(Integer.parseInt(region), regionTiles);
+                    tileRepository.savePoints(region, regionTiles);
                 }
             } else {
                 // Save points for that region
-                savePoints(Integer.parseInt(region), groundMarkerTiles);
+                tileRepository.savePoints(region, groundMarkerTiles);
             }
         }
         loadPoints();
-    }
-
-    List<String> getAllRegionIds(String configGroup) {
-        return removeRegionPrefixes(configManager.getConfigurationKeys(configGroup + ".region"));
-    }
-
-    private List<String> removeRegionPrefixes(List<String> regions) {
-        List<String> trimmedRegions = new ArrayList<>();
-        for (String region : regions) {
-            trimmedRegions.add(removeRegionPrefix(region));
-        }
-        return trimmedRegions;
-    }
-
-    private String removeRegionPrefix(String region) {
-        return region.substring(region.indexOf('_') + 1);
-    }
-
-    Set<TilemanModeTile> getTiles(int regionId) {
-        return getTiles(regionId + "");
-    }
-
-    private Set<TilemanModeTile> getTiles(String regionId) {
-        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
-    }
-
-    private void updateTileCounter() {
-        List<String> regions = configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
-        int totalTiles = 0;
-        for (String region : regions) {
-            Set<TilemanModeTile> regionTiles = getTiles(removeRegionPrefix(region));
-            totalTiles += regionTiles.size();
-        }
-
-        log.debug("Updating tile counter");
-
-        updateTotalTilesUsed(totalTiles);
-        updateRemainingTiles(totalTiles);
-        updateXpUntilNextTile();
-    }
-
-    private void updateTotalTilesUsed(int totalTilesCount) {
-        totalTilesUsed = totalTilesCount;
-    }
-
-    private void updateRemainingTiles(int placedTiles) {
-        // Start with tiles offset. We always get these
-        int earnedTiles = config.tilesOffset();
-
-        // If including xp, add those tiles in
-        if (!config.excludeExp()) {
-            earnedTiles += (int) client.getOverallExperience() / config.expPerTile();
-        }
-
-        // If including total level, add those tiles in
-        if (config.includeTotalLevel()) {
-            earnedTiles += client.getTotalLevel();
-        }
-
-        remainingTiles = earnedTiles - placedTiles;
-    }
-
-    private void updateXpUntilNextTile() {
-        xpUntilNextTile =
-                config.expPerTile()
-                        - Integer.parseInt(
-                                Long.toString(client.getOverallExperience() % config.expPerTile()));
-    }
-
-    private Set<TilemanModeTile> getConfiguration(String configGroup, String key) {
-
-        long start = System.currentTimeMillis();
-        String json = configManager.getConfiguration(configGroup, key);
-
-        if (Strings.isNullOrEmpty(json)) {
-            return new HashSet<>();
-        }
-
-        Set<TilemanModeTile> tilemanModeTiles = GSON.fromJson(json, TILE_SET_TYPE);
-        log.info("Took {}ms to get config", System.currentTimeMillis() - start);
-        assert tilemanModeTiles != null;
-        return tilemanModeTiles;
     }
 
     private void loadPoints() {
@@ -439,22 +349,11 @@ public class TilemanModePlugin extends Plugin {
         for (int regionId : regions) {
             // load points for region
             log.debug("Loading points for region {}", regionId);
-            Collection<WorldPoint> worldPoint = translateToWorldPoint(getTiles(regionId));
+            Collection<WorldPoint> worldPoint =
+                    translateToWorldPoint(tileRepository.getTiles(regionId));
             points.addAll(worldPoint);
         }
-        updateTileCounter();
-    }
-
-    private void savePoints(int regionId, Collection<TilemanModeTile> points) {
-        long start = System.currentTimeMillis();
-        if (points == null || points.isEmpty()) {
-            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
-            return;
-        }
-
-        String json = GSON.toJson(points);
-        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
-        log.info("Took {}ms to save config", System.currentTimeMillis() - start);
+        tileRepository.updateTileCounter();
     }
 
     private Set<WorldPoint> translateToWorldPoint(Set<TilemanModeTile> points) {
@@ -477,14 +376,6 @@ public class TilemanModePlugin extends Plugin {
                             return localWorldPoints.stream();
                         })
                 .collect(Collectors.toSet());
-    }
-
-    int getTotalTiles() {
-        return totalTilesUsed;
-    }
-
-    int getRemainingTiles() {
-        return remainingTiles;
     }
 
     private void handleMenuOption(LocalPoint selectedPoint, boolean markedValue) {
@@ -525,8 +416,16 @@ public class TilemanModePlugin extends Plugin {
                 case MOVE_DIAGONAL_ONE_TILE: // Moved 1 tile diagonally
                     handleCornerMovement(xDiff, yDiff);
                     break;
-                case MOVE_CARDINAL_TWO_TILES: // Moved 2 tiles straight
-                case MOVE_DIAGONAL_TWO_TILES: // Moved 2 tiles diagonally
+                case MOVE_CARDINAL_ONE_TILE * 2: // Moved 2 tiles straight
+                case MOVE_CARDINAL_ONE_TILE * 3:
+                case MOVE_CARDINAL_ONE_TILE * 4:
+                case MOVE_CARDINAL_ONE_TILE * 5:
+                case MOVE_CARDINAL_ONE_TILE * 7:
+                case MOVE_CARDINAL_ONE_TILE * 8:
+                case MOVE_CARDINAL_ONE_TILE * 9:
+                case MOVE_CARDINAL_ONE_TILE * 10:
+
+                case MOVE_DIAGONAL_ONE_TILE * 2: // Moved 2 tiles diagonally
                     fillTile(
                             new LocalPoint(
                                     lastTile.getX() + xModifier, lastTile.getY() + yModifier));
@@ -700,12 +599,12 @@ public class TilemanModePlugin extends Plugin {
                         client.getPlane());
         log.debug("Updating point: {} - {}", point, worldPoint);
 
-        Set<TilemanModeTile> tilemanModeTiles = getTiles(regionId);
+        Set<TilemanModeTile> tilemanModeTiles = tileRepository.getTiles(regionId);
 
         if (markedValue) {
             // Try add tile
             if (!tilemanModeTiles.contains(point)
-                    && (config.allowTileDeficit() || remainingTiles > 0)) {
+                    && (config.allowTileDeficit() || tileRepository.getRemainingTiles() > 0)) {
                 tilemanModeTiles.add(point);
             }
         } else {
@@ -713,11 +612,7 @@ public class TilemanModePlugin extends Plugin {
             tilemanModeTiles.remove(point);
         }
 
-        savePoints(regionId, tilemanModeTiles);
+        tileRepository.savePoints(regionId, tilemanModeTiles);
         loadPoints();
-    }
-
-    int getXpUntilNextTile() {
-        return xpUntilNextTile;
     }
 }

@@ -43,13 +43,18 @@ class TilemanModeMinimapOverlay extends Overlay {
     private final Client client;
     private final TilemanModeConfig config;
     private final TilemanModePlugin plugin;
+    private final TileRepository tileRepository;
 
     @Inject
     private TilemanModeMinimapOverlay(
-            Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
+            Client client,
+            TilemanModeConfig config,
+            TilemanModePlugin plugin,
+            TileRepository tileRepository) {
         this.client = client;
         this.config = config;
         this.plugin = plugin;
+        this.tileRepository = tileRepository;
         setPosition(OverlayPosition.DYNAMIC);
         setPriority(OverlayPriority.LOW);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
@@ -62,8 +67,7 @@ class TilemanModeMinimapOverlay extends Overlay {
         }
 
         final Collection<WorldPoint> points = plugin.getPoints();
-        for (final WorldPoint point : points) {
-            WorldPoint worldPoint = point;
+        for (final WorldPoint worldPoint : points) {
             if (worldPoint.getPlane() != client.getPlane()) {
                 continue;
             }
@@ -97,9 +101,10 @@ class TilemanModeMinimapOverlay extends Overlay {
 
     private Color getTileColor() {
         if (config.enableTileWarnings()) {
-            if (plugin.getRemainingTiles() <= 0) {
+            int remainingTiles = tileRepository.getRemainingTiles();
+            if (remainingTiles <= 0) {
                 return Color.RED;
-            } else if (plugin.getRemainingTiles() <= config.warningLimit()) {
+            } else if (remainingTiles <= config.warningLimit()) {
                 return new Color(255, 153, 0);
             }
         }

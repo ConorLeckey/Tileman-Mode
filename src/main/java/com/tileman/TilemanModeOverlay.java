@@ -42,6 +42,7 @@ public class TilemanModeOverlay extends Overlay {
     private final TilemanModePlugin plugin;
 
     @Inject private TilemanModeConfig config;
+    @Inject private TileRepository tileRepository;
 
     @Inject
     private TilemanModeOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
@@ -89,9 +90,10 @@ public class TilemanModeOverlay extends Overlay {
 
     private Color getTileColor() {
         if (config.enableTileWarnings()) {
-            if (plugin.getRemainingTiles() <= 0) {
+            int remainingTiles = tileRepository.getRemainingTiles();
+            if (remainingTiles <= 0) {
                 return Color.RED;
-            } else if (plugin.getRemainingTiles() <= config.warningLimit()) {
+            } else if (remainingTiles <= config.warningLimit()) {
                 return new Color(255, 153, 0);
             }
         }

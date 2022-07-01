@@ -30,7 +30,6 @@ import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 
 import java.awt.*;
 import javax.inject.Inject;
-import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -38,9 +37,8 @@ import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.LineComponent;
 
 class TileInfoOverlay extends OverlayPanel {
-    private final Client client;
     private final TilemanModeConfig config;
-    private final TilemanModePlugin plugin;
+    private final TileRepository tileRepository;
 
     private static final String UNSPENT_TILES_STRING = "Available Tiles:";
     private static final String XP_UNTIL_NEXT_TILE = "XP Until Next Tile:";
@@ -51,11 +49,11 @@ class TileInfoOverlay extends OverlayPanel {
             };
 
     @Inject
-    private TileInfoOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
+    private TileInfoOverlay(
+            TilemanModeConfig config, TilemanModePlugin plugin, TileRepository tileRepository) {
         super(plugin);
-        this.plugin = plugin;
-        this.client = client;
         this.config = config;
+        this.tileRepository = tileRepository;
         setPosition(OverlayPosition.TOP_LEFT);
         setPriority(OverlayPriority.MED);
         getMenuEntries()
@@ -66,9 +64,9 @@ class TileInfoOverlay extends OverlayPanel {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        String unspentTiles = addCommasToNumber(plugin.getRemainingTiles());
-        String unlockedTiles = addCommasToNumber(plugin.getTotalTiles());
-        String xpUntilNextTile = addCommasToNumber(plugin.getXpUntilNextTile());
+        String unspentTiles = addCommasToNumber(tileRepository.getRemainingTiles());
+        String unlockedTiles = addCommasToNumber(tileRepository.getTotalTilesUsed());
+        String xpUntilNextTile = addCommasToNumber(tileRepository.getXpUntilNextTile());
 
         panelComponent
                 .getChildren()
@@ -106,9 +104,10 @@ class TileInfoOverlay extends OverlayPanel {
 
     private Color getTextColor() {
         if (config.enableTileWarnings()) {
-            if (plugin.getRemainingTiles() <= 0) {
+            int remainingTiles = tileRepository.getRemainingTiles();
+            if (remainingTiles <= 0) {
                 return Color.RED;
-            } else if (plugin.getRemainingTiles() <= config.warningLimit()) {
+            } else if (remainingTiles <= config.warningLimit()) {
                 return Color.ORANGE;
             }
         }

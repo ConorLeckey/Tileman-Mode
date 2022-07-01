@@ -32,7 +32,7 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 /***
- * This class handles evaluating the config basedon which game mode is selected, and whether or not the user
+ * This class handles evaluating the config based on which game mode is selected, and whether the user
  * has selected to customize their game mode.
  */
 @Slf4j
