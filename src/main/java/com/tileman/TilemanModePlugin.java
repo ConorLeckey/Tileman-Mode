@@ -282,15 +282,18 @@ public class TilemanModePlugin extends Plugin {
             // Player moved
             handleWalkedToTile(playerPosLocal);
             long stopAutoMark = System.currentTimeMillis();
-            log.debug("handleWalkedToTile took {}ms", stopAutoMark - startAutoMark);
             lastTile = playerPosLocal;
             lastPlane = client.getPlane();
             tileRepository.updateTileCounter();
-            log.debug("player moved");
-            log.debug(
-                    "last tile={}  distance={}",
-                    lastTile,
-                    lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
+
+            if (log.isDebugEnabled()) {
+                log.debug("player moved");
+                log.debug("handleWalkedToTile took {}ms", stopAutoMark - startAutoMark);
+                log.debug(
+                        "last tile={}  distance={}",
+                        lastTile,
+                        lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
+            }
         } else if (totalXp != currentTotalXp) {
             tileRepository.updateTileCounter();
             totalXp = currentTotalXp;
