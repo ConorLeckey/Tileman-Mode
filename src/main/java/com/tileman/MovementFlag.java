@@ -51,9 +51,15 @@ public enum MovementFlag {
     public static final int NO_MOVEMENT_FLAGS = 0;
     @Getter private final int flag;
 
+    public static final MovementFlag[] VALUES = MovementFlag.values();
+
+    public static int compress(MovementFlag movementFlags) {
+        return movementFlags.flag;
     }
 
-    public static final MovementFlag[] VALUES = MovementFlag.values();
+    public static int compress(MovementFlag movementFlags1, MovementFlag movementFlags2) {
+        return movementFlags1.flag | movementFlags2.flag;
+    }
 
     public static int compress(MovementFlag... movementFlags) {
         int flag = 0;
