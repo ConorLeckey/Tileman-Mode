@@ -31,6 +31,9 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.Getter;
@@ -41,7 +44,6 @@ import net.runelite.client.config.ConfigManager;
 @Singleton
 @Slf4j
 class TileRepository {
-
     public static final String CONFIG_GROUP = "tilemanMode";
     public static final String REGION_PREFIX = "region_";
     private static final Type TILE_SET_TYPE = new TypeToken<Set<TilemanModeTile>>() {}.getType();
@@ -53,6 +55,10 @@ class TileRepository {
     @Inject private TilemanModeConfigEvaluator config;
 
     @Getter private int totalTilesUsed, remainingTiles, xpUntilNextTile;
+
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+
+    private final Map<String, Set<TilemanModeTile>> tiles = new ConcurrentHashMap<>();
 
     private static List<String> removeRegionPrefixes(List<String> regions) {
         List<String> trimmedRegions = new ArrayList<>();
@@ -66,24 +72,50 @@ class TileRepository {
         return region.substring(region.indexOf('_') + 1);
     }
 
-    List<String> getAllRegionIds(String configGroup) {
+    public void reloadAllTiles() {
+        tiles.clear();
+        updateTileCounter();
+    }
+
+    public List<String> getAllRegionIds(String configGroup) {
         return removeRegionPrefixes(configManager.getConfigurationKeys(configGroup + ".region"));
     }
 
-    public void savePoints(int regionId, Collection<TilemanModeTile> points) {
-        savePoints(regionId + "", points);
+    /** Save the given tiles as the unlocked tiles of the region asynchronously. */
+    public void saveTiles(int regionId, Collection<TilemanModeTile> points) {
+        saveTiles(regionId + "", points);
     }
 
-    public void savePoints(String regionId, Collection<TilemanModeTile> points) {
+    /** Save the given tiles as the unlocked tiles of the region asynchronously. */
+    public void saveTiles(String regionId, Collection<TilemanModeTile> points) {
+        executor.execute(() -> syncSaveTiles(regionId, points));
+    }
+
+    /** Save the given tiles as the unlocked tiles of the region on the current thread. */
+    private void syncSaveTiles(String regionId, Collection<TilemanModeTile> points) {
         long start = System.currentTimeMillis();
         if (points == null || points.isEmpty()) {
             configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+            tiles.remove(regionId);
             return;
         }
 
         String json = GSON.toJson(points);
         configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
-        log.info("Took {}ms to save config", System.currentTimeMillis() - start);
+        log.debug("Took {}ms to save config", System.currentTimeMillis() - start);
+    }
+
+    /** Save the all loaded tiles synchronously. */
+    public void syncSaveAllNow() {
+        for (Map.Entry<String, Set<TilemanModeTile>> entry : tiles.entrySet()) {
+            syncSaveTiles(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public void shutDown() {
+        executor.shutdownNow();
+        syncSaveAllNow();
+        tiles.clear();
     }
 
     public Set<TilemanModeTile> getConfiguration(String configGroup, String key) {
@@ -96,32 +128,44 @@ class TileRepository {
         }
 
         Set<TilemanModeTile> tilemanModeTiles = GSON.fromJson(json, TILE_SET_TYPE);
-        log.info("Took {}ms to get config", System.currentTimeMillis() - start);
+        log.debug("Took {}ms to get config", System.currentTimeMillis() - start);
         assert tilemanModeTiles != null;
         return tilemanModeTiles;
     }
 
-    Set<TilemanModeTile> getTiles(int regionId) {
+    public Set<TilemanModeTile> getTiles(int regionId) {
         return getTiles(regionId + "");
     }
 
     public Set<TilemanModeTile> getTiles(String regionId) {
-        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+        return tiles.computeIfAbsent(
+                regionId,
+                id -> {
+                    Set<TilemanModeTile> loadedSet =
+                            getConfiguration(CONFIG_GROUP, REGION_PREFIX + id);
+                    Set<TilemanModeTile> set = ConcurrentHashMap.newKeySet(loadedSet.size());
+                    set.addAll(loadedSet);
+                    return set;
+                });
     }
 
     void updateTileCounter() {
-        List<String> regions = configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
-        int totalTiles = 0;
-        for (String region : regions) {
-            Set<TilemanModeTile> regionTiles = getTiles(removeRegionPrefix(region));
-            totalTiles += regionTiles.size();
-        }
+        executor.execute(
+                () -> {
+                    List<String> regions =
+                            configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
+                    int totalTiles = 0;
+                    for (String region : regions) {
+                        Set<TilemanModeTile> regionTiles = getTiles(removeRegionPrefix(region));
+                        totalTiles += regionTiles.size();
+                    }
 
-        log.debug("Updating tile counter");
+                    log.debug("Updating tile counter");
 
-        updateTotalTilesUsed(totalTiles);
-        updateRemainingTiles(totalTiles);
-        updateXpUntilNextTile();
+                    updateTotalTilesUsed(totalTiles);
+                    updateRemainingTiles(totalTiles);
+                    updateXpUntilNextTile();
+                });
     }
 
     private void updateTotalTilesUsed(int totalTilesCount) {
