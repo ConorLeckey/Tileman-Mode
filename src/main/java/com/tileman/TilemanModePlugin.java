@@ -541,11 +541,7 @@ public class TilemanModePlugin extends Plugin {
         CollisionData[] collisionData = client.getCollisionMaps();
         assert collisionData != null;
         int[][] collisionDataFlags = collisionData[client.getPlane()].getFlags();
-
-        Set<MovementFlag> tilesBesideFlagsSet =
-                MovementFlag.getSetFlags(
-                        collisionDataFlags[pointBeside.getSceneX()][pointBeside.getSceneY()]);
-        return MovementFlag.compress(tilesBesideFlagsSet.toArray(new MovementFlag[0]));
+        return collisionDataFlags[pointBeside.getSceneX()][pointBeside.getSceneY()];
     }
 
     private int getTileMovementFlags(LocalPoint localPoint) {
