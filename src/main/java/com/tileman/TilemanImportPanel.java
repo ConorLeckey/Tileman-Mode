@@ -1,12 +1,12 @@
 package com.tileman;
-import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.PluginPanel;
 
+import java.awt.*;
 import javax.inject.Singleton;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.PluginPanel;
 
 @Slf4j
 @Singleton
@@ -33,9 +33,17 @@ public class TilemanImportPanel extends PluginPanel {
         infoPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         infoPanel.setLayout(new GridLayout(0, 1));
 
-        JLabel info = new JLabel(htmlLabel("Clicking the Import button below will migrate all tiles marked with the Ground Marker plugin into the Tileman Mode plugin. They will NOT be removed from the Ground Marker Plugin.", "#FFFFFF"));
+        JLabel info =
+                new JLabel(
+                        htmlLabel(
+                                "Clicking the Import button below will migrate all tiles marked with the Ground Marker plugin into the Tileman Mode plugin. They will NOT be removed from the Ground Marker Plugin.",
+                                "#FFFFFF"));
 
-        JLabel warning = new JLabel(htmlLabel("WARNING: This directly modifies RuneLite's settings.properties file. You should make a back up before importing.", "#FFFF00"));
+        JLabel warning =
+                new JLabel(
+                        htmlLabel(
+                                "WARNING: This directly modifies RuneLite's settings.properties file. You should make a back up before importing.",
+                                "#FFFF00"));
 
         infoPanel.add(info);
         infoPanel.add(warning);
@@ -59,9 +67,7 @@ public class TilemanImportPanel extends PluginPanel {
         add(centerPanel, BorderLayout.SOUTH);
     }
 
-
-    private static String htmlLabel(String key, String color)
-    {
+    private static String htmlLabel(String key, String color) {
         return "<html><body style = 'color:" + color + "'>" + key + "</body></html>";
     }
 }

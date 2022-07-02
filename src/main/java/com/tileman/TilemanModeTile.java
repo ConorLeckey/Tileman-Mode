@@ -27,14 +27,11 @@ package com.tileman;
 
 import lombok.Value;
 
-/**
- * Used for serialization of ground marker points.
- */
+/** Used for serialization of ground marker points. */
 @Value
-class TilemanModeTile
-{
-	private int regionId;
-	private int regionX;
-	private int regionY;
-	private int z;
+class TilemanModeTile {
+    int regionId;
+    int regionX;
+    int regionY;
+    int z;
 }

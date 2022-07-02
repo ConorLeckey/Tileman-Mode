@@ -26,32 +26,22 @@
  */
 package com.tileman;
 
-import net.runelite.client.config.*;
-
 import java.awt.*;
+import net.runelite.client.config.*;
 
 @ConfigGroup("tilemanMode")
 public interface TilemanModeConfig extends Config {
-    @ConfigSection(
-            name = "Game Mode",
-            description = "Select your Tileman game mode'",
-            position = 1
-    )
+    @ConfigSection(name = "Game Mode", description = "Select your Tileman game mode'", position = 1)
     String gameModeSection = "gameMode";
 
-    @ConfigSection(
-            name = "Settings",
-            description = "Settings'",
-            position = 2
-    )
+    @ConfigSection(name = "Settings", description = "Settings'", position = 2)
     String settingsSection = "settings";
 
     @ConfigSection(
             name = "Custom Game Mode",
             description = "Create a custom Tileman game mode. Be sure to 'Enable Custom Game Mode'",
             position = 99,
-            closedByDefault = true
-    )
+            closedByDefault = true)
     String customGameModeSection = "customGameMode";
 
     public enum TilemanGameMode {
@@ -66,8 +56,7 @@ public interface TilemanModeConfig extends Config {
             name = "Game Mode",
             section = gameModeSection,
             description = "Select your Tileman game mode",
-            position = 1
-    )
+            position = 1)
     default TilemanGameMode gameMode() {
         return TilemanGameMode.COMMUNITY;
     }
@@ -77,22 +66,18 @@ public interface TilemanModeConfig extends Config {
             name = "Auto-mark tiles",
             section = settingsSection,
             description = "Automatically mark tiles as you walk.",
-            position = 2
-    )
+            position = 2)
     default boolean automarkTiles() {
         return false;
     }
 
-    @Range(
-            min = Integer.MIN_VALUE
-    )
+    @Range(min = Integer.MIN_VALUE)
     @ConfigItem(
             keyName = "warningLimit",
             name = "Unspent tiles warning",
             section = settingsSection,
             description = "Highlights overlay when limit reached",
-            position = 3
-    )
+            position = 3)
     default int warningLimit() {
         return 20;
     }
@@ -102,8 +87,7 @@ public interface TilemanModeConfig extends Config {
             name = "Enable Tiles Warning",
             section = settingsSection,
             description = "Turns on tile warnings when you reach your set limit or 0.",
-            position = 4
-    )
+            position = 4)
     default boolean enableTileWarnings() {
         return false;
     }
@@ -113,8 +97,7 @@ public interface TilemanModeConfig extends Config {
             name = "Allow Tile Deficit",
             section = settingsSection,
             description = "Allows you to place tiles after you have none left.",
-            position = 5
-    )
+            position = 5)
     default boolean allowTileDeficit() {
         return false;
     }
@@ -124,8 +107,7 @@ public interface TilemanModeConfig extends Config {
             name = "Draw tiles on minimap",
             section = settingsSection,
             description = "Configures whether marked tiles should be drawn on minimap",
-            position = 6
-    )
+            position = 6)
     default boolean drawTilesOnMinimap() {
         return false;
     }
@@ -135,8 +117,7 @@ public interface TilemanModeConfig extends Config {
             name = "Draw tiles on world map",
             section = settingsSection,
             description = "Configures whether marked tiles should be drawn on world map",
-            position = 5
-    )
+            position = 5)
     default boolean drawTilesOnWorldMap() {
         return false;
     }
@@ -147,8 +128,7 @@ public interface TilemanModeConfig extends Config {
             name = "Tile Color",
             section = settingsSection,
             description = "Configures the color of the tiles",
-            position = 6
-    )
+            position = 6)
     default Color markerColor() {
         return Color.YELLOW;
     }
@@ -159,22 +139,18 @@ public interface TilemanModeConfig extends Config {
             name = "Enable Custom Game Mode",
             description = "Settings below will override Game Mode defaults",
             section = customGameModeSection,
-            position = 1
-    )
+            position = 1)
     default boolean enableCustomGameMode() {
         return false;
     }
 
-    @Range(
-            min = Integer.MIN_VALUE
-    )
+    @Range(min = Integer.MIN_VALUE)
     @ConfigItem(
             keyName = "tilesOffset",
             name = "Bonus tiles",
             description = "Add more tiles to your limit, set to 0 for off",
             section = customGameModeSection,
-            position = 2
-    )
+            position = 2)
     default int tilesOffset() {
         return 9;
     }
@@ -184,8 +160,7 @@ public interface TilemanModeConfig extends Config {
             name = "Include total level",
             description = "Includes total level in usable tiles",
             section = customGameModeSection,
-            position = 3
-    )
+            position = 3)
     default boolean includeTotalLevel() {
         return false;
     }
@@ -195,22 +170,18 @@ public interface TilemanModeConfig extends Config {
             name = "Exclude Experience",
             description = "Includes experience / 1000 in usable tiles",
             section = customGameModeSection,
-            position = 4
-    )
+            position = 4)
     default boolean excludeExp() {
         return false;
     }
 
-    @Range(
-            min = 500
-    )
+    @Range(min = 500)
     @ConfigItem(
             keyName = "expPerTile",
             name = "Exp per Tile",
             description = "Determines how much exp you require per tile",
             section = customGameModeSection,
-            position = 5
-    )
+            position = 5)
     default int expPerTile() {
         return 1000;
     }
