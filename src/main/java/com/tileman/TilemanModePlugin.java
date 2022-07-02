@@ -282,7 +282,7 @@ public class TilemanModePlugin extends Plugin {
             // Player moved
             handleWalkedToTile(playerPosLocal);
             long stopAutoMark = System.currentTimeMillis();
-            log.info("handleWalkedToTile took {}ms", stopAutoMark - startAutoMark);
+            log.debug("handleWalkedToTile took {}ms", stopAutoMark - startAutoMark);
             lastTile = playerPosLocal;
             lastPlane = client.getPlane();
             tileRepository.updateTileCounter();
