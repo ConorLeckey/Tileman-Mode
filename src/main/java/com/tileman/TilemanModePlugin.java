@@ -65,13 +65,14 @@ public class TilemanModePlugin extends Plugin {
     private static final String WALK_HERE = "Walk here";
     private static final String REGION_PREFIX = "region_";
 
-    private static final Gson GSON = new Gson();
-
     @Getter(AccessLevel.PACKAGE)
     private final List<WorldPoint> points = new ArrayList<>();
 
     @Inject
     private Client client;
+
+    @Inject
+    private Gson gson;
 
     @Inject
     private TilemanModeConfigEvaluator config;
@@ -387,7 +388,7 @@ public class TilemanModePlugin extends Plugin {
             return Collections.emptyList();
         }
 
-        return GSON.fromJson(json, new TypeToken<List<TilemanModeTile>>() {
+        return gson.fromJson(json, new TypeToken<List<TilemanModeTile>>() {
         }.getType());
     }
 
@@ -415,7 +416,7 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
-        String json = GSON.toJson(points);
+        String json = gson.toJson(points);
         configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
     }
 

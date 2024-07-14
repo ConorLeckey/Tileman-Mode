@@ -25,11 +25,10 @@
  */
 package com.tileman;
 
-import net.runelite.api.Client;
+import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.LineComponent;
 
 import javax.inject.Inject;
@@ -39,7 +38,6 @@ import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 
 class TileInfoOverlay extends OverlayPanel {
-    private final Client client;
     private final TilemanModeConfig config;
     private final TilemanModePlugin plugin;
 
@@ -53,13 +51,12 @@ class TileInfoOverlay extends OverlayPanel {
     };
 
     @Inject
-    private TileInfoOverlay(Client client, TilemanModeConfig config, TilemanModePlugin plugin) {
+    private TileInfoOverlay(TilemanModeConfig config, TilemanModePlugin plugin) {
         super(plugin);
         this.plugin = plugin;
-        this.client = client;
         this.config = config;
         setPosition(OverlayPosition.TOP_LEFT);
-        setPriority(OverlayPriority.MED);
+        setPriority(Overlay.PRIORITY_MED);
         getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, "Tileman Mode overlay"));
     }
 

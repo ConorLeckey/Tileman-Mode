@@ -53,7 +53,7 @@ class TilemanModeMinimapOverlay extends Overlay
 		this.config = config;
 		this.plugin = plugin;
 		setPosition(OverlayPosition.DYNAMIC);
-		setPriority(OverlayPriority.LOW);
+		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
 
