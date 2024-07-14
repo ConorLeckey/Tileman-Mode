@@ -506,10 +506,10 @@ public class TilemanModePlugin extends Plugin {
         if (tileBesideFlagsArray.length == 0) {
             fillTile(new LocalPoint(lastTile.getX() + tileBesideXDiff / 2, lastTile.getY() + tileBesideYDiff / 2));
         } else if (containsAnyOf(fullBlock, tileBesideFlagsArray)) {
-            if (yModifier == 64) {
-                yModifier = 128;
-            } else if (xModifier == 64) {
-                xModifier = 128;
+            if (Math.abs(yModifier) == 64) {
+                yModifier *= 2;
+            } else if (Math.abs(xModifier) == 64) {
+                xModifier *= 2;
             }
             fillTile(new LocalPoint(lastTile.getX() + xModifier, lastTile.getY() + yModifier));
         } else if (containsAnyOf(allDirections, tileBesideFlagsArray)){
