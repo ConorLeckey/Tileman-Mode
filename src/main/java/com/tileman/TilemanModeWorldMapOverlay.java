@@ -32,13 +32,11 @@ import javax.inject.Inject;
 
 import net.runelite.api.Client;
 import net.runelite.api.Point;
-import net.runelite.api.RenderOverview;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.OverlayPriority;
 
 class TilemanModeWorldMapOverlay extends Overlay {
     private static final int REGION_SIZE = 1 << 6;
@@ -55,7 +53,7 @@ class TilemanModeWorldMapOverlay extends Overlay {
         this.config = config;
         this.plugin = plugin;
         setPosition(OverlayPosition.DYNAMIC);
-        setPriority(OverlayPriority.HIGH);
+        setPriority(Overlay.PRIORITY_HIGH);
         setLayer(OverlayLayer.ALWAYS_ON_TOP);
     }
 
@@ -71,9 +69,8 @@ class TilemanModeWorldMapOverlay extends Overlay {
     }
 
     private void drawOnWorldMap(Graphics2D graphics) {
-        RenderOverview ro = client.getRenderOverview();
-        Widget map = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
-        Float pixelsPerTile = ro.getWorldMapZoom();
+        Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+        Float pixelsPerTile = client.getWorldMap().getWorldMapZoom();
         if (map == null) {
             return;
         }
@@ -84,7 +81,7 @@ class TilemanModeWorldMapOverlay extends Overlay {
         int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
         int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);
 
-        Point worldMapPosition = ro.getWorldMapPosition();
+        Point worldMapPosition = client.getWorldMap().getWorldMapPosition();
 
         // Offset in tiles from anchor sides
         int yTileMin = worldMapPosition.getY() - heightInTiles / 2;

@@ -11,11 +11,7 @@ import java.awt.*;
 @Slf4j
 @Singleton
 public class TilemanImportPanel extends PluginPanel {
-    private final TilemanModePlugin plugin;
-
     public TilemanImportPanel(TilemanModePlugin plugin) {
-        this.plugin = plugin;
-
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(10, 10, 10, 10));
 
