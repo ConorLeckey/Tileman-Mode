@@ -65,7 +65,7 @@ class TilemanModeMinimapOverlay extends Overlay
 			return null;
 		}
 
-		final Collection<WorldPoint> points = plugin.getPoints();
+		final Collection<WorldPoint> points = plugin.getTilesToRender();
 		for (final WorldPoint point : points)
 		{
 			WorldPoint worldPoint = point;
