@@ -219,8 +219,11 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.add(minimapOverlay);
         overlayManager.add(worldMapOverlay);
         overlayManager.add(infoOverlay);
-        //updateTilesToRender();
-        //updateTileCountFromConfigs();
+
+        // update so we render if the plugin has just been freshly enabled.
+        updateTileCountFromConfigs();
+        updateTilesToRender();
+
         log.debug("startup");
         TilemanImportPanel panel = new TilemanImportPanel(this);
         NavigationButton navButton = NavigationButton.builder()
