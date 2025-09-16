@@ -64,6 +64,7 @@ public class TilemanModePlugin extends Plugin {
     private static final String UNMARK = "Clear Tileman tile";
     private static final String WALK_HERE = "Walk here";
     private static final String REGION_PREFIX = "region_";
+    private static final String REGION_PREFIX_V2 = "v2_region_";
 
     @Getter(AccessLevel.PACKAGE)
     private final List<WorldPoint> points = new ArrayList<>();
@@ -129,6 +130,8 @@ public class TilemanModePlugin extends Plugin {
     private boolean lastAutoTilesConfig = false;
     private boolean inHouse = false;
     private long totalXp;
+
+    public String diagPrint = "";
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -283,7 +286,7 @@ public class TilemanModePlugin extends Plugin {
         for (String region : groundMarkerRegions) {
             // Get Ground Markers Region's Tiles
             ArrayList<TilemanModeTile> groundMarkerTiles =
-                    new ArrayList<>(getConfiguration("groundMarker", REGION_PREFIX + region));
+                    new ArrayList<>(getConfigurationV1("groundMarker", REGION_PREFIX + region));
             // If region already exists in Tileman World Regions Array:
             if (tilemanModeRegions.contains(region)) {
                 // Create Empty ArrayList for Region;
@@ -333,11 +336,24 @@ public class TilemanModePlugin extends Plugin {
     }
 
     Collection<TilemanModeTile> getTiles(int regionId) {
-        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+
+        List<TilemanModeTile> tiles = new ArrayList<>();
+
+        // load any declarations in the old v1 format
+        Collection<TilemanModeTile> v1data = getConfigurationV1(CONFIG_GROUP, REGION_PREFIX + regionId);
+        tiles.addAll(v1data);
+
+        // load declarations in the more efficient v2 format and append them
+        for (int plane = 0; plane < 4; plane++) {
+            Collection<TilemanModeTile> v2data = getConfigurationV2(regionId, plane);
+            tiles.addAll(v2data);
+        }
+
+        return tiles;
     }
 
     private Collection<TilemanModeTile> getTiles(String regionId) {
-        return getConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+        return getTiles(Integer.parseInt(regionId));
     }
 
     private void updateTileCounter() {
@@ -381,7 +397,8 @@ public class TilemanModePlugin extends Plugin {
         xpUntilNextTile = config.expPerTile() - Integer.parseInt(Long.toString(client.getOverallExperience() % config.expPerTile()));
     }
 
-    private Collection<TilemanModeTile> getConfiguration(String configGroup, String key) {
+    private Collection<TilemanModeTile> getConfigurationV1(String configGroup, String key) {
+
         String json = configManager.getConfiguration(configGroup, key);
 
         if (Strings.isNullOrEmpty(json)) {
@@ -390,6 +407,49 @@ public class TilemanModePlugin extends Plugin {
 
         return gson.fromJson(json, new TypeToken<List<TilemanModeTile>>() {
         }.getType());
+    }
+
+    private Collection<TilemanModeTile> getConfigurationV2(int regionID, int plane) {
+
+        // grab the raw encoded string in Base64 from the config file
+        diagPrint = Integer.toString(regionID);
+
+        String encoded = configManager.getConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionID + "_" + plane);
+        if (encoded == null){
+            return Collections.emptyList();
+        }
+
+        // decode it back to a byte array
+        byte[] bytes = Base64.getUrlDecoder().decode(encoded);
+
+        // return if there's no data under that key
+        if (bytes == null || bytes.length == 0){
+            return Collections.emptyList();
+        }
+
+        List<TilemanModeTile> tilesStoredInV2Format = new ArrayList<>();
+
+        int tileIndex = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            byte currentByte = bytes[i];
+            for (int bitIndex = 7; bitIndex >= 0; bitIndex--) { // Iterate from most significant bit (7) to least significant bit (0)
+                boolean isBitSet = ((currentByte >> bitIndex) & 1) == 1;
+
+                // move to next bit if the current bit isn't flagging a tile as unlocked
+                if (!isBitSet){
+                    tileIndex += 1;
+                    continue;
+                }
+
+                int tileRegionY = tileIndex / 64;
+                int tileRegionX = tileIndex - (64 * tileRegionY);
+                tilesStoredInV2Format.add(new TilemanModeTile(regionID, tileRegionX, tileRegionY, plane));
+
+                tileIndex += 1;
+            }
+        }
+
+        return tilesStoredInV2Format;
     }
 
     private void loadPoints() {
@@ -411,9 +471,6 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void savePoints(int regionId, Collection<TilemanModeTile> tiles) {
-
-        // String json = gson.toJson(tiles);
-        // configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
 
         int numBytes = 512; // (64x * 64y)bits / 8 bits to the byte. 64x64 because that's Runelite's region size
         byte[][] bytes = new byte[4][numBytes]; // 4 because that's the number of planes Runelite uses for maps
@@ -444,10 +501,9 @@ public class TilemanModePlugin extends Plugin {
 
             // write the bytes directly to base64 encoded string.
             configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + i, bytes[i]);
-
         }
 
-        // scrub all v1 data - we do this last so any allocated tiles are saved if the plugin crashes above
+        // scrub empty regions - we do this last so any allocated tiles are saved if the plugin crashes above
         if (tiles == null || tiles.isEmpty()) {
             configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
             return;
