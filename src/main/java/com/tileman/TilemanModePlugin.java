@@ -410,14 +410,49 @@ public class TilemanModePlugin extends Plugin {
         updateTileCounter();
     }
 
-    private void savePoints(int regionId, Collection<TilemanModeTile> points) {
-        if (points == null || points.isEmpty()) {
+    private void savePoints(int regionId, Collection<TilemanModeTile> tiles) {
+
+        // String json = gson.toJson(tiles);
+        // configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
+
+        int numBytes = 512; // (64x * 64y)bits / 8 bits to the byte. 64x64 because that's Runelite's region size
+        byte[][] bytes = new byte[4][numBytes]; // 4 because that's the number of planes Runelite uses for maps
+        Boolean[] containsData = new Boolean[4];
+
+        // write the data as v2 tile data
+        for (TilemanModeTile tile : tiles) {
+
+            int i = tile.getRegionY() * 64 + tile.getRegionX();
+            int plane = tile.getZ();
+            containsData[plane] = true;
+
+            // Determine which byte to modify
+            int byteIndex = i / 8;
+            // Determine which bit within the byte to set
+            int bitPosition = i % 8;
+            // Set the bit using a bitwise OR operation
+            bytes[plane][byteIndex] |= (1 << bitPosition);
+        }
+
+        // write out the populated planes for the region
+        for (int i = 0; i <= 4; i++){
+
+            // exit early if the plane is empty, we don't want to write it
+            if (!containsData[i]) {
+                continue;
+            }
+
+            // write the bytes directly to base64 encoded string.
+            configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + i, bytes[i]);
+
+        }
+
+        // scrub all v1 data - we do this last so any allocated tiles are saved if the plugin crashes above
+        if (tiles == null || tiles.isEmpty()) {
             configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
             return;
         }
 
-        String json = gson.toJson(points);
-        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId, json);
     }
 
     private Collection<WorldPoint> translateToWorldPoint(Collection<TilemanModeTile> points) {
