@@ -285,8 +285,8 @@ public class TilemanModePlugin extends Plugin {
     public void importGroundMarkerTiles() {
         // Get and store all the Ground Markers Regions
         // ground markers have not been migrated to v2 data stores as most people have far fewer markers
-        List<Integer> groundMarkerRegions = getAllRegionIds("groundMarker", REGION_PREFIX);
-        List<Integer> tilemanModeRegions = getAllRegionIds(CONFIG_GROUP, REGION_PREFIX_V2);
+        Set<Integer> groundMarkerRegions = getAllRegionIds("groundMarker", REGION_PREFIX);
+        Set<Integer> tilemanModeRegions = getAllRegionIds(CONFIG_GROUP, REGION_PREFIX_V2);
 
         // CONVERSION
         // Loop through Ground Marker Regions
@@ -326,10 +326,10 @@ public class TilemanModePlugin extends Plugin {
         updateTilesToRender();
     }
 
-    List<Integer> getAllRegionIds(String configGroup, String regionPrefix) {
+    Set<Integer> getAllRegionIds(String configGroup, String regionPrefix) {
 
         List<String> allKeys = configManager.getConfigurationKeys(configGroup + "." + regionPrefix);
-        List<Integer> regionIds = new ArrayList<>();
+        Set<Integer> regionIds = new HashSet<>();
 
         for (String key : allKeys) {
             key = key.replace(configGroup + "." + regionPrefix, "");
@@ -356,7 +356,7 @@ public class TilemanModePlugin extends Plugin {
 
     private void updateTileCountFromConfigs() {
         log.debug("Updating tile counter");
-        List<Integer> regions = getAllRegionIds(CONFIG_GROUP, REGION_PREFIX_V2);
+        Set<Integer> regions = getAllRegionIds(CONFIG_GROUP, REGION_PREFIX_V2);
         int totalTiles = 0;
         for (int region : regions) {
             Collection<TilemanModeTile> regionTiles = getTiles(region);
