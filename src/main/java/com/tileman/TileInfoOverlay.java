@@ -85,11 +85,6 @@ class TileInfoOverlay extends OverlayPanel {
                 .right(unlockedTiles)
                 .build());
 
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("DIAG")
-                .right(plugin.diagPrint)
-                .build());
-
         panelComponent.setPreferredSize(new Dimension(
                 getLongestStringWidth(STRINGS, graphics)
                         + getLongestStringWidth(new String[] {unlockedTiles, unspentTiles}, graphics),

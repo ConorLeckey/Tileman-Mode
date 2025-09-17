@@ -131,8 +131,6 @@ public class TilemanModePlugin extends Plugin {
     private boolean inHouse = false;
     private long totalXp;
 
-    public String diagPrint = "";
-
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
@@ -348,12 +346,6 @@ public class TilemanModePlugin extends Plugin {
     Collection<TilemanModeTile> getTiles(int regionId) {
 
         List<TilemanModeTile> tiles = new ArrayList<>();
-
-        // load any declarations in the old v1 format
-        // Collection<TilemanModeTile> v1data = getConfigurationV1(CONFIG_GROUP, REGION_PREFIX + regionId);
-        // tiles.addAll(v1data);
-
-        // load declarations in the more efficient v2 format and append them
         for (int plane = 0; plane < 4; plane++) {
             Collection<TilemanModeTile> v2data = getConfigurationV2(regionId, plane);
             tiles.addAll(v2data);
@@ -372,10 +364,6 @@ public class TilemanModePlugin extends Plugin {
         }
         totalTilesUsed = totalTiles;
         updateRemainingTiles();
-    }
-
-    private void updateTotalTilesUsed(int totalTilesCount) {
-
     }
 
     private void updateRemainingTiles() {
@@ -406,7 +394,6 @@ public class TilemanModePlugin extends Plugin {
         String prefix = "tilemanMode.region_";
         List<String> v1keys = configManager.getConfigurationKeys(prefix);
         for (String key : v1keys){
-            diagPrint = key; // tilemanMode.region_57777
             Integer regionId = Integer.parseInt(key.replace(prefix, ""));
             String json = configManager.getConfiguration("tilemanMode", "region_" + regionId);
             List<TilemanModeTile> tiles = gson.fromJson(json, new TypeToken<List<TilemanModeTile>>(){}.getType());
