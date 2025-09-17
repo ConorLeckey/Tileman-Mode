@@ -64,7 +64,7 @@ public class TilemanModePlugin extends Plugin {
     private static final String UNMARK = "Clear Tileman tile";
     private static final String WALK_HERE = "Walk here";
     private static final String REGION_PREFIX = "region_";
-    private static final String REGION_PREFIX_V2 = "v2_region_";
+    private static final String REGION_PREFIX_V2 = "regionv2_";
 
     @Getter(AccessLevel.PACKAGE)
     private final List<WorldPoint> points = new ArrayList<>();
@@ -275,15 +275,15 @@ public class TilemanModePlugin extends Plugin {
 
     public void importGroundMarkerTiles() {
         // Get and store all the Ground Markers Regions
-        List<String> groundMarkerRegions = getAllRegionIds("groundMarker");
+        List<Integer> groundMarkerRegions = getAllRegionIds("groundMarker");
         // If none, Exit function
 
         // Get and store array list of existing Tileman World Regions (like updateTileCounter does)
-        List<String> tilemanModeRegions = getAllRegionIds(CONFIG_GROUP);
+        List<Integer> tilemanModeRegions = getAllRegionIds(CONFIG_GROUP);
 
         // CONVERSION
         // Loop through Ground Marker Regions
-        for (String region : groundMarkerRegions) {
+        for (int region : groundMarkerRegions) {
             // Get Ground Markers Region's Tiles
             ArrayList<TilemanModeTile> groundMarkerTiles =
                     new ArrayList<>(getConfigurationV1("groundMarker", REGION_PREFIX + region));
@@ -309,30 +309,32 @@ public class TilemanModePlugin extends Plugin {
                 // If regionOriginalSize != current size
                 if (regionOriginalSize != regionTiles.size()) {
                     // Save points for arrayList
-                    savePoints(Integer.parseInt(region), regionTiles);
+                    savePoints(region, regionTiles);
                 }
             } else {
                 // Save points for that region
-                savePoints(Integer.parseInt(region), groundMarkerTiles);
+                savePoints(region, groundMarkerTiles);
             }
         }
         loadPoints();
     }
 
-    List<String> getAllRegionIds(String configGroup) {
-        return removeRegionPrefixes(configManager.getConfigurationKeys(configGroup + ".region"));
-    }
+    List<Integer> getAllRegionIds(String configGroup) {
 
-    private List<String> removeRegionPrefixes(List<String> regions) {
-        List<String> trimmedRegions = new ArrayList<String>();
-        for (String region : regions) {
-            trimmedRegions.add(removeRegionPrefix(region));
+        List<String> allKeys = configManager.getConfigurationKeys(configGroup + ".region");
+        List<Integer> regionIds = new ArrayList<>();
+
+        for (String key : allKeys) {
+            key = key.replace(configGroup + "." + REGION_PREFIX_V2, "");
+            key = key.replace(configGroup + "." + REGION_PREFIX, "");
+            key = key.replace("_0", "");
+            key = key.replace("_1", "");
+            key = key.replace("_2", "");
+            key = key.replace("_3", "");
+            regionIds.add(Integer.parseInt(key));
         }
-        return trimmedRegions;
-    }
 
-    private String removeRegionPrefix(String region) {
-        return region.substring(region.indexOf('_') + 1);
+        return regionIds;
     }
 
     Collection<TilemanModeTile> getTiles(int regionId) {
@@ -340,8 +342,8 @@ public class TilemanModePlugin extends Plugin {
         List<TilemanModeTile> tiles = new ArrayList<>();
 
         // load any declarations in the old v1 format
-        Collection<TilemanModeTile> v1data = getConfigurationV1(CONFIG_GROUP, REGION_PREFIX + regionId);
-        tiles.addAll(v1data);
+        // Collection<TilemanModeTile> v1data = getConfigurationV1(CONFIG_GROUP, REGION_PREFIX + regionId);
+        // tiles.addAll(v1data);
 
         // load declarations in the more efficient v2 format and append them
         for (int plane = 0; plane < 4; plane++) {
@@ -352,16 +354,11 @@ public class TilemanModePlugin extends Plugin {
         return tiles;
     }
 
-    private Collection<TilemanModeTile> getTiles(String regionId) {
-        return getTiles(Integer.parseInt(regionId));
-    }
-
     private void updateTileCounter() {
-        List<String> regions = configManager.getConfigurationKeys(CONFIG_GROUP + ".region");
+        List<Integer> regions = getAllRegionIds(CONFIG_GROUP);
         int totalTiles = 0;
-        for (String region : regions) {
-            Collection<TilemanModeTile> regionTiles = getTiles(removeRegionPrefix(region));
-
+        for (int region : regions) {
+            Collection<TilemanModeTile> regionTiles = getTiles(region);
             totalTiles += regionTiles.size();
         }
 
