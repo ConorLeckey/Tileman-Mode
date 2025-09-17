@@ -361,10 +361,6 @@ public class TilemanModePlugin extends Plugin {
         updateRemainingTiles();
     }
 
-    private void updateTotalTilesUsed(int totalTilesCount) {
-
-    }
-
     private void updateRemainingTiles() {
         // Start with tiles offset. We always get these
         int earnedTiles = config.tilesOffset();
