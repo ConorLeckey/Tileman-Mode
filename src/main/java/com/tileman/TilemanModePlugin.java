@@ -469,6 +469,12 @@ public class TilemanModePlugin extends Plugin {
 
     private void savePoints(int regionId, Collection<TilemanModeTile> tiles) {
 
+        // don't write empty regions. remove them instead.
+        if (tiles == null || tiles.isEmpty()) {
+            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+            return;
+        }
+
         int numBytes = 512; // (64x * 64y)bits / 8 bits to the byte. 64x64 because that's Runelite's region size
         byte[][] bytes = new byte[4][numBytes]; // 4 because that's the number of planes Runelite uses for maps
         Boolean[] containsData = new Boolean[4];
@@ -498,12 +504,6 @@ public class TilemanModePlugin extends Plugin {
 
             // write the bytes directly to base64 encoded string.
             configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + i, bytes[i]);
-        }
-
-        // scrub empty regions - we do this last so any allocated tiles are saved if the plugin crashes above
-        if (tiles == null || tiles.isEmpty()) {
-            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
-            return;
         }
 
     }
