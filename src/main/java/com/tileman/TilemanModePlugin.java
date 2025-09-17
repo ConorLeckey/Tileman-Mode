@@ -130,6 +130,7 @@ public class TilemanModePlugin extends Plugin {
     private boolean lastAutoTilesConfig = false;
     private boolean inHouse = false;
     private long totalXp;
+    private boolean dataMigrationInProgress = false;
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -189,6 +190,10 @@ public class TilemanModePlugin extends Plugin {
 
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
+        // exit early if change made is during an automatic data migration
+        if (dataMigrationInProgress){
+            return;
+        }
 
         // Check if automark tiles is on, and if so attempt to step on current tile
         final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
@@ -389,6 +394,7 @@ public class TilemanModePlugin extends Plugin {
 
     private void performConfigVersionMigrations() {
         // we use string literals here rather than constants in case somebody removes or changes the constants in future
+        dataMigrationInProgress = true;
 
         // v1 to v2 data
         String prefix = "tilemanMode.region_";
@@ -402,6 +408,7 @@ public class TilemanModePlugin extends Plugin {
         }
 
         // additional migrations should be added below here migrating from v2 data to v3 and so on.
+        dataMigrationInProgress = false;
     }
 
     private Collection<TilemanModeTile> getConfigurationV1(String configGroup, String key) {
