@@ -474,7 +474,9 @@ public class TilemanModePlugin extends Plugin {
 
         // don't write empty regions. remove them instead.
         if (tiles == null || tiles.isEmpty()) {
-            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX + regionId);
+            for (int i = 0; i < 4; i++) {
+                configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + i);
+            }
             return;
         }
 
@@ -498,7 +500,7 @@ public class TilemanModePlugin extends Plugin {
         }
 
         // write out the populated planes for the region
-        for (int i = 0; i < 4; i++){
+        for (int i = 0; i < 4; i++) {
             // exit early if the plane is empty, we don't want to write it
             if (!containsData[i]) {
                 continue;
