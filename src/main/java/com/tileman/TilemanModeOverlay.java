@@ -60,7 +60,7 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		final Collection<WorldPoint> points = plugin.getPoints();
+		final Collection<WorldPoint> points = plugin.getTilesToRender();
 		for (final WorldPoint point : points)
 		{
 			if (point.getPlane() != client.getPlane())
