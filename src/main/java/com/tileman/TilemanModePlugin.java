@@ -298,7 +298,7 @@ public class TilemanModePlugin extends Plugin {
         for (int region : groundMarkerRegions) {
             // Get Ground Markers Region's Tiles
             ArrayList<TilemanModeTile> groundMarkerTiles =
-                    new ArrayList<>(getConfigurationV1("groundMarker", REGION_PREFIX + region));
+                    new ArrayList<>(readV1FormatData("groundMarker", REGION_PREFIX + region));
             // If region already exists in Tileman World Regions Array:
             if (tilemanModeRegions.contains(region)) {
                 // Create Empty ArrayList for Region;
@@ -352,7 +352,7 @@ public class TilemanModePlugin extends Plugin {
 
         List<TilemanModeTile> tiles = new ArrayList<>();
         for (int plane = 0; plane < 4; plane++) {
-            Collection<TilemanModeTile> v2data = getConfigurationV2(regionId, plane);
+            Collection<TilemanModeTile> v2data = readV2FormatData(regionId, plane);
             tiles.addAll(v2data);
         }
 
@@ -411,7 +411,7 @@ public class TilemanModePlugin extends Plugin {
         dataMigrationInProgress = false;
     }
 
-    private Collection<TilemanModeTile> getConfigurationV1(String configGroup, String key) {
+    private Collection<TilemanModeTile> readV1FormatData(String configGroup, String key) {
 
         String json = configManager.getConfiguration(configGroup, key);
 
@@ -423,7 +423,7 @@ public class TilemanModePlugin extends Plugin {
         }.getType());
     }
 
-    private Collection<TilemanModeTile> getConfigurationV2(int regionID, int plane) {
+    private Collection<TilemanModeTile> readV2FormatData(int regionID, int plane) {
 
         // grab the raw encoded string in Base64 from the config file
         String encoded = configManager.getConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionID + "_" + plane);
