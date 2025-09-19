@@ -156,16 +156,16 @@ public class TilemanModePlugin extends Plugin {
                 return;
             }
 
-
             final WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, selectedSceneTile.getLocalLocation());
-            final int regionId = worldPoint.getRegionID();
-            final TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
+
+            if (worldPoint.getPlane() != client.getPlane()) {
+                return;
+            }
 
             client.createMenuEntry(-1)
-                    .setOption(getTiles(regionId).contains(point) ? UNMARK : MARK)
-                    .setTarget(event.getTarget())
-                    .setType(MenuAction.RUNELITE);
-
+                .setOption(tilesToRender.contains(worldPoint) ? UNMARK : MARK)
+                .setTarget(event.getTarget())
+                .setType(MenuAction.RUNELITE);
         }
     }
 
@@ -295,37 +295,42 @@ public class TilemanModePlugin extends Plugin {
 
         // CONVERSION
         // Loop through Ground Marker Regions
-        for (int region : groundMarkerRegions) {
+        for (int regionId : groundMarkerRegions) {
+
             // Get Ground Markers Region's Tiles
-            ArrayList<TilemanModeTile> groundMarkerTiles =
-                    new ArrayList<>(readV1FormatData("groundMarker", REGION_PREFIX + region));
-            // If region already exists in Tileman World Regions Array:
-            if (tilemanModeRegions.contains(region)) {
-                // Create Empty ArrayList for Region;
-                // Get Tileman Region's tiles and add them to the region array list
-                ArrayList<TilemanModeTile> regionTiles = new ArrayList<>(getTiles(region));
+            Collection<TilemanModeTile> groundMarkerTiles = readV1FormatData("groundMarker", REGION_PREFIX + regionId);
 
-                // Create int for regionOriginalSize;
-                // Set regionOriginalSize to arraylists length
-                int regionOriginalSize = regionTiles.size();
+            for (int plane = 0; plane < 4; plane++) {
 
-                // Loop through Ground Markers Points
-                for (TilemanModeTile groundMarkerTile : groundMarkerTiles) {
-                    // If Ground Marker point already exists in Tileman World Region: Break loop iteration
-                    if (regionTiles.contains(groundMarkerTile)) {
-                        continue;
+                // If region already exists in Tileman World Regions Array:
+                if (tilemanModeRegions.contains(regionId)) {
+
+                    // Create Empty ArrayList for Region;
+                    // Get Tileman Region's tiles and add them to the region array list
+                    Collection<TilemanModeTile> regionTiles = readTiles(regionId, plane);
+
+                    // Create int for regionOriginalSize;
+                    // Set regionOriginalSize to arraylists length
+                    int regionOriginalSize = regionTiles.size();
+
+                    // Loop through Ground Markers Points
+                    for (TilemanModeTile groundMarkerTile : groundMarkerTiles) {
+                        // If Ground Marker point already exists in Tileman World Region: Break loop iteration
+                        if (regionTiles.contains(groundMarkerTile)) {
+                            continue;
+                        }
+                        // Add point to array list
+                        regionTiles.add(groundMarkerTile);
                     }
-                    // Add point to array list
-                    regionTiles.add(groundMarkerTile);
+                    // If regionOriginalSize != current size
+                    if (regionOriginalSize != regionTiles.size()) {
+                        // Save points for arrayList
+                        writeTiles(regionId, regionTiles, plane);
+                    }
+                } else {
+                    // Save points for that region
+                    writeTiles(regionId, groundMarkerTiles, plane);
                 }
-                // If regionOriginalSize != current size
-                if (regionOriginalSize != regionTiles.size()) {
-                    // Save points for arrayList
-                    savePoints(region, regionTiles);
-                }
-            } else {
-                // Save points for that region
-                savePoints(region, groundMarkerTiles);
             }
         }
         updateTilesToRender();
@@ -348,25 +353,18 @@ public class TilemanModePlugin extends Plugin {
         return regionIds;
     }
 
-    Collection<TilemanModeTile> getTiles(int regionId) {
-
-        List<TilemanModeTile> tiles = new ArrayList<>();
-        for (int plane = 0; plane < 4; plane++) {
-            Collection<TilemanModeTile> v2data = readV2FormatData(regionId, plane);
-            tiles.addAll(v2data);
-        }
-
-        return tiles;
-    }
-
     private void updateTileCountFromConfigs() {
         log.debug("Updating tile counter");
-        Set<Integer> regions = getAllRegionIds(CONFIG_GROUP, REGION_PREFIX_V2);
+
         int totalTiles = 0;
-        for (int region : regions) {
-            Collection<TilemanModeTile> regionTiles = getTiles(region);
-            totalTiles += regionTiles.size();
+        Set<Integer> regions = getAllRegionIds(CONFIG_GROUP, REGION_PREFIX_V2);
+        for (int regionId : regions) {
+            for (int plane = 0; plane < 4; plane++) {
+                Collection<TilemanModeTile> regionTiles = readTiles(regionId, plane);
+                totalTiles += regionTiles.size();
+            }
         }
+
         totalTilesUsed = totalTiles;
         updateRemainingTiles();
     }
@@ -393,7 +391,10 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void performConfigVersionMigrations() {
-        // we use string literals here rather than constants in case somebody removes or changes the constants in future
+        // Progressively move v1 -> v2, then v2 -> v3 etc so users configs are always on the latest version.
+        // This ensures runtime code is always using the most efficient / current implementation.
+        // Use string literals here rather than constants in case somebody removes or changes the constants in future
+
         dataMigrationInProgress = true;
 
         // v1 to v2 data
@@ -403,15 +404,42 @@ public class TilemanModePlugin extends Plugin {
             Integer regionId = Integer.parseInt(key.replace(prefix, ""));
             String json = configManager.getConfiguration("tilemanMode", "region_" + regionId);
             List<TilemanModeTile> tiles = gson.fromJson(json, new TypeToken<List<TilemanModeTile>>(){}.getType());
-            savePoints(regionId, tiles); // save as v2 format
+            for (int plane = 0; plane < 4; plane++) {
+                List<TilemanModeTile> filteredTiles = new ArrayList<TilemanModeTile>();
+                for (TilemanModeTile tile : tiles) {
+                    if (tile.getZ() == plane){
+                        filteredTiles.add(tile);
+                    }
+                }
+                writeV2FormatData(regionId, filteredTiles, plane);
+            }
+        }
+        configManager.sendConfig(); // v1 -> v2 saved to disk
+
+        // cleanup v1 keys now the v2 keys have been safely saved to disk
+        for (String key : v1keys) {
+            Integer regionId = Integer.parseInt(key.replace(prefix, ""));
             configManager.unsetConfiguration("tilemanMode", "region_" + regionId); // remove old v1 format
         }
+        configManager.sendConfig(); // v1 removed from configs and saved to disk
 
-        // additional migrations should be added below here migrating from v2 data to v3 and so on.
+        // any future migrations should be added here migrating from v2 data to v3 and so on.
+
         dataMigrationInProgress = false;
     }
 
+    private void writeTiles(int regionId, Collection<TilemanModeTile> tiles, int plane) {
+        // we wrap data writes using this handler so if the format changes in future only one location needs updating
+        writeV2FormatData(regionId, tiles, plane);
+    }
+
+    public Collection<TilemanModeTile> readTiles(int regionID, int plane) {
+        // we wrap most data reads using this handler so if the format changes in future only one location needs updating
+        return readV2FormatData(regionID, plane);
+    }
+
     private Collection<TilemanModeTile> readV1FormatData(String configGroup, String key) {
+        // retained to allow reading of legacy V1 format data
 
         String json = configManager.getConfiguration(configGroup, key);
 
@@ -465,49 +493,37 @@ public class TilemanModePlugin extends Plugin {
         for (int regionId : regions) {
             // load points for region
             log.debug("Loading tiles to render for region {}", regionId);
-            Collection<WorldPoint> worldPoint = translateToWorldPoint(getTiles(regionId));
+            int plane = client.getPlane();
+            Collection<WorldPoint> worldPoint = translateToWorldPoint(readTiles(regionId, plane));
             tilesToRender.addAll(worldPoint);
         }
     }
 
-    private void savePoints(int regionId, Collection<TilemanModeTile> tiles) {
+    private void writeV2FormatData(int regionId, Collection<TilemanModeTile> tiles, int plane) {
 
         // don't write empty regions. remove them instead.
         if (tiles == null || tiles.isEmpty()) {
-            for (int i = 0; i < 4; i++) {
-                configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + i);
-            }
+            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + plane);
             return;
         }
 
         int numBytes = 512; // (64x * 64y)bits / 8 bits to the byte. 64x64 because that's Runelite's region size
-        byte[][] bytes = new byte[4][numBytes]; // 4 because that's the number of planes Runelite uses for maps
-        Boolean[] containsData = {false, false, false, false};
+        byte[] bytes = new byte[numBytes];
 
-        // write the data as v2 tile data
+        // write as v2 data
         for (TilemanModeTile tile : tiles) {
-
-            int i = tile.getRegionY() * 64 + tile.getRegionX();
-            int plane = tile.getZ();
-            containsData[plane] = true;
-
+            // convert tile location inside the region back to bit index when written
+            int tileIndex = tile.getRegionY() * 64 + tile.getRegionX();
             // Determine which byte to modify
-            int byteIndex = i / 8;
+            int byteIndex = tileIndex / 8;
             // Determine which bit within the byte to set
-            int bitPosition = i % 8;
+            int bitPosition = tileIndex % 8;
             // Set the bit using a bitwise OR operation
-            bytes[plane][byteIndex] |= (1 << bitPosition);
+            bytes[byteIndex] |= (1 << bitPosition);
         }
 
-        // write out the populated planes for the region
-        for (int i = 0; i < 4; i++) {
-            // exit early if the plane is empty, we don't want to write it
-            if (!containsData[i]) {
-                continue;
-            }
-            // write the bytes directly to base64 encoded string.
-            configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + i, bytes[i]);
-        }
+        // write out the plane data directly to base64 encoded string.
+        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + plane, bytes);
     }
 
     private Collection<WorldPoint> translateToWorldPoint(Collection<TilemanModeTile> points) {
@@ -718,19 +734,22 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
+        int plane = client.getPlane();
         WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
         int regionId = worldPoint.getRegionID();
-        TilemanModeTile point = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), client.getPlane());
-        log.debug("Updating point: {} - {}", point, worldPoint);
+        TilemanModeTile tile = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), plane);
+        log.debug("Updating point: {} - {}", tile, worldPoint);
 
-        List<TilemanModeTile> tilemanModeTiles = new ArrayList<>(getTiles(regionId));
-        Boolean tileIsUnlocked = tilemanModeTiles.contains(point);
+        Collection<TilemanModeTile> tiles = readTiles(regionId, plane);
+        Boolean tileIsUnlocked = tiles.contains(tile);
+        WorldPoint point = WorldPoint.fromRegion(tile.getRegionId(), tile.getRegionX(), tile.getRegionY(), tile.getZ());
         Boolean stateChanged = false;
 
         // attempt to unlock
         if (claimTile && !tileIsUnlocked) {
             if ((config.allowTileDeficit() || remainingTiles > 0)) {
-                tilemanModeTiles.add(point);
+                tiles.add(tile);
+                tilesToRender.add(worldPoint);
                 totalTilesUsed += 1;
                 stateChanged = true;
             }
@@ -739,7 +758,8 @@ public class TilemanModePlugin extends Plugin {
         // release lock
         if (!claimTile && tileIsUnlocked)
         {
-            tilemanModeTiles.remove(point);
+            tiles.remove(tile);
+            tilesToRender.remove(worldPoint);
             totalTilesUsed -= 1;
             stateChanged = true;
         }
@@ -747,7 +767,12 @@ public class TilemanModePlugin extends Plugin {
         // do updates only if state changes to prevent updates when unchanged
         if (stateChanged)
         {
-            savePoints(regionId, tilemanModeTiles);
+            writeTiles(regionId, tiles, plane);
+        }
+
+        if (lastPlane != plane){
+            // Otherwise moving to a claimed tile between planes doesn't render
+            lastPlane = plane;
             updateTilesToRender();
         }
     }
