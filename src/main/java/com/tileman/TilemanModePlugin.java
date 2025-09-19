@@ -49,6 +49,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -217,6 +219,8 @@ public class TilemanModePlugin extends Plugin {
     @Override
     protected void startUp() {
 
+        log.debug("TileManMode Startup - Start");
+
         performConfigVersionMigrations();
 
         tutorialIslandRegionIds.add(12079);
@@ -233,7 +237,7 @@ public class TilemanModePlugin extends Plugin {
         updateTileCountFromConfigs();
         updateTilesToRender();
 
-        log.debug("startup");
+
         TilemanImportPanel panel = new TilemanImportPanel(this);
         NavigationButton navButton = NavigationButton.builder()
                 .tooltip("Tileman Import")
@@ -391,6 +395,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void performConfigVersionMigrations() {
+        Instant startTime = Instant.now();
         // Progressively move v1 -> v2, then v2 -> v3 etc so users configs are always on the latest version.
         // This ensures runtime code is always using the most efficient / current implementation.
         // Use string literals here rather than constants in case somebody removes or changes the constants in future
@@ -404,6 +409,7 @@ public class TilemanModePlugin extends Plugin {
             Integer regionId = Integer.parseInt(key.replace(prefix, ""));
             String json = configManager.getConfiguration("tilemanMode", "region_" + regionId);
             List<TilemanModeTile> tiles = gson.fromJson(json, new TypeToken<List<TilemanModeTile>>(){}.getType());
+            log.debug("TileManMode performConfigVersionMigrations - " + tiles.size() + " tiles to migrate");
             for (int plane = 0; plane < 4; plane++) {
                 List<TilemanModeTile> filteredTiles = new ArrayList<TilemanModeTile>();
                 for (TilemanModeTile tile : tiles) {
@@ -426,16 +432,26 @@ public class TilemanModePlugin extends Plugin {
         // any future migrations should be added here migrating from v2 data to v3 and so on.
 
         dataMigrationInProgress = false;
+        Duration d = Duration.between(startTime, Instant.now());
+        log.debug("TileManMode performConfigVersionMigrations - Finish (" + d.toMillis() + "ms)");
     }
 
     private void writeTiles(int regionId, Collection<TilemanModeTile> tiles, int plane) {
-        // we wrap data writes using this handler so if the format changes in future only one location needs updating
+        // Wrap data writes using this handler so if the format changes in future only one location needs updating
+        Instant startTime = Instant.now();
         writeV2FormatData(regionId, tiles, plane);
+        Duration d = Duration.between(startTime, Instant.now());
+        log.debug("TileManMode writeTiles (memory) - Finish (" + d.toMillis() + "ms)");
     }
 
-    public Collection<TilemanModeTile> readTiles(int regionID, int plane) {
-        // we wrap most data reads using this handler so if the format changes in future only one location needs updating
-        return readV2FormatData(regionID, plane);
+    public Collection<TilemanModeTile> readTiles(int regionId, int plane) {
+        // Wrap most data reads using this handler so if the format changes in future only one location needs updating
+        // The logging here is spammy for general development but useful for on demand profiling, so we comment gate it.
+        //Instant startTime = Instant.now();
+        Collection<TilemanModeTile> tiles = readV2FormatData(regionId, plane);
+        //Duration d = Duration.between(startTime, Instant.now());
+        //log.debug("TileManMode readTiles (memory) " + regionId + ":" + plane + " - Finish (" + d.toNanos()+ " nanoseconds)");
+        return tiles;
     }
 
     private Collection<TilemanModeTile> readV1FormatData(String configGroup, String key) {
@@ -482,6 +498,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateTilesToRender() {
+        Instant startTime = Instant.now();
         tilesToRender.clear();
 
         int[] regions = client.getMapRegions();
@@ -491,12 +508,12 @@ public class TilemanModePlugin extends Plugin {
         }
 
         for (int regionId : regions) {
-            // load points for region
-            log.debug("Loading tiles to render for region {}", regionId);
-            int plane = client.getPlane();
-            Collection<WorldPoint> worldPoint = translateToWorldPoint(readTiles(regionId, plane));
+            Collection<WorldPoint> worldPoint = translateToWorldPoint(readTiles(regionId, client.getPlane()));
             tilesToRender.addAll(worldPoint);
         }
+
+        Duration d = Duration.between(startTime, Instant.now());
+        log.debug("TileManMode updateTilesToRender - Finish (" + d.toNanos()+ " nanoseconds)");
     }
 
     private void writeV2FormatData(int regionId, Collection<TilemanModeTile> tiles, int plane) {
@@ -507,23 +524,14 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
-        int numBytes = 512; // (64x * 64y)bits / 8 bits to the byte. 64x64 because that's Runelite's region size
-        byte[] bytes = new byte[numBytes];
-
-        // write as v2 data
+        // 4096 = 64x64 because that's Runelite's region dimensions
+        BitSet out = new BitSet(4096);
         for (TilemanModeTile tile : tiles) {
-            // convert tile location inside the region back to bit index when written
-            int tileIndex = tile.getRegionY() * 64 + tile.getRegionX();
-            // Determine which byte to modify
-            int byteIndex = tileIndex / 8;
-            // Determine which bit within the byte to set
-            int bitPosition = tileIndex % 8;
-            // Set the bit using a bitwise OR operation
-            bytes[byteIndex] |= (1 << bitPosition);
+            out.set(tile.getRegionY() * 64 + tile.getRegionX());
         }
 
         // write out the plane data directly to base64 encoded string.
-        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + plane, bytes);
+        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + plane, out.toByteArray());
     }
 
     private Collection<WorldPoint> translateToWorldPoint(Collection<TilemanModeTile> points) {
@@ -728,6 +736,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void updateTileMark(LocalPoint localPoint, boolean claimTile) {
+        Instant startTime = Instant.now();
 
         // never modify a blocked tile
         if(containsAnyOf(getTileMovementFlags(localPoint), fullBlock)) {
@@ -748,6 +757,10 @@ public class TilemanModePlugin extends Plugin {
         // attempt to unlock
         if (claimTile && !tileIsUnlocked) {
             if ((config.allowTileDeficit() || remainingTiles > 0)) {
+                log.debug("TileManMode updateTileMark - claimed tile");
+                if (tiles.isEmpty()){
+                    tiles = new ArrayList<TilemanModeTile>();
+                }
                 tiles.add(tile);
                 tilesToRender.add(worldPoint);
                 totalTilesUsed += 1;
@@ -758,6 +771,7 @@ public class TilemanModePlugin extends Plugin {
         // release lock
         if (!claimTile && tileIsUnlocked)
         {
+            log.debug("TileManMode updateTileMark - released tile");
             tiles.remove(tile);
             tilesToRender.remove(worldPoint);
             totalTilesUsed -= 1;
@@ -771,10 +785,14 @@ public class TilemanModePlugin extends Plugin {
         }
 
         if (lastPlane != plane){
+            log.debug("TileManMode updateTileMark - changed plane");
             // Otherwise moving to a claimed tile between planes doesn't render
             lastPlane = plane;
             updateTilesToRender();
         }
+
+        Duration d = Duration.between(startTime, Instant.now());
+        log.debug("TileManMode updateTileMark - Finish (" + d.toNanos()+ " nanoseconds)");
     }
 
     int getXpUntilNextTile() {
