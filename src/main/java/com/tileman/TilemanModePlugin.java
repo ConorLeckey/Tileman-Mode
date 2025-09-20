@@ -43,15 +43,18 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.puzzlesolver.solver.pathfinding.Pathfinder;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
+import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -134,6 +137,10 @@ public class TilemanModePlugin extends Plugin {
     private long totalXp;
     private boolean dataMigrationInProgress = false;
 
+    public WorldPoint hoverTile;
+    public WorldPoint hoverTileLastTick;
+    public WorldPoint[] hoverTilePath;
+
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
@@ -174,6 +181,11 @@ public class TilemanModePlugin extends Plugin {
     @Subscribe
     public void onGameTick(GameTick tick) {
         autoMark();
+
+        hoverTile = client.getSelectedSceneTile().getWorldLocation();
+        if (hoverTileLastTick == null || hoverTileLastTick != hoverTile){
+            hoverTileLastTick = hoverTile;
+        }
     }
 
     @Subscribe
@@ -797,6 +809,10 @@ public class TilemanModePlugin extends Plugin {
 
     int getXpUntilNextTile() {
         return xpUntilNextTile;
+    }
+
+    public Client getClient(){
+        return client;
     }
 
     @AllArgsConstructor

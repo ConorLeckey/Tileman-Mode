@@ -25,6 +25,7 @@
  */
 package com.tileman;
 
+import net.runelite.api.CollisionData;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
@@ -84,6 +85,53 @@ class TileInfoOverlay extends OverlayPanel {
                 .left(UNLOCKED_TILES)
                 .right(unlockedTiles)
                 .build());
+
+        if (plugin.hoverTile != null) {
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("RegionID")
+                    .right(String.valueOf(plugin.hoverTile.getRegionID()))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("RegionX")
+                    .right(String.valueOf(plugin.hoverTile.getRegionX()))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("RegionY")
+                    .right(String.valueOf(plugin.hoverTile.getRegionY()))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("RegionPlane")
+                    .right(String.valueOf(plugin.hoverTile.getPlane()))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Tile")
+                    .right(plugin.getTilesToRender().contains(plugin.hoverTile) ? "Unlocked" : "Locked")
+                    .build());
+
+            int regionId = plugin.hoverTile.getRegionID();
+            int plane = plugin.hoverTile.getPlane();
+            CollisionData[] cd = plugin.getClient().getWorldView(regionId).getCollisionMaps();
+
+            if (cd != null) {
+
+                int[][] collisionDataFlags = cd[plane].getFlags();
+
+            }
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Claimable")
+                    .right(cd.)
+                    .build());
+
+
+
+
+        }
 
         panelComponent.setPreferredSize(new Dimension(
                 getLongestStringWidth(STRINGS, graphics)
