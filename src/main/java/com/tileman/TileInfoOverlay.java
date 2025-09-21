@@ -26,6 +26,9 @@
 package com.tileman;
 
 import net.runelite.api.CollisionData;
+import net.runelite.api.WorldView;
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldArea;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
@@ -86,21 +89,24 @@ class TileInfoOverlay extends OverlayPanel {
                 .right(unlockedTiles)
                 .build());
 
-        if (plugin.hoverTile != null) {
+        LocalPoint target = plugin.getClient().getSelectedSceneTile().getLocalLocation();
+        if (target != null) {
 
             panelComponent.getChildren().add(LineComponent.builder()
                     .left("RegionID")
                     .right(String.valueOf(plugin.hoverTile.getRegionID()))
                     .build());
 
+            int regionX = plugin.hoverTile.getRegionX();
             panelComponent.getChildren().add(LineComponent.builder()
                     .left("RegionX")
-                    .right(String.valueOf(plugin.hoverTile.getRegionX()))
+                    .right(String.valueOf(regionX))
                     .build());
 
+            int regionY = plugin.hoverTile.getRegionY();
             panelComponent.getChildren().add(LineComponent.builder()
                     .left("RegionY")
-                    .right(String.valueOf(plugin.hoverTile.getRegionY()))
+                    .right(String.valueOf(regionY))
                     .build());
 
             panelComponent.getChildren().add(LineComponent.builder()
@@ -113,23 +119,72 @@ class TileInfoOverlay extends OverlayPanel {
                     .right(plugin.getTilesToRender().contains(plugin.hoverTile) ? "Unlocked" : "Locked")
                     .build());
 
-            int regionId = plugin.hoverTile.getRegionID();
-            int plane = plugin.hoverTile.getPlane();
-            CollisionData[] cd = plugin.getClient().getWorldView(regionId).getCollisionMaps();
+            /*
+
+            int wvID = plugin.getClient().getTopLevelWorldView().getId();
+            CollisionData[] cd = plugin.getClient().getWorldView(wvID).getCollisionMaps();
+            int plane = plugin.getClient().getTopLevelWorldView().getPlane();
 
             if (cd != null) {
 
                 int[][] collisionDataFlags = cd[plane].getFlags();
+                int targetFlags = collisionDataFlags[target.getSceneX()][target.getSceneY()];
+
+                WorldArea travelCheck = plugin.hoverTile.toWorldArea();
+                WorldView wv = plugin.getClient().getWorldView(wvID);
+                int southOnYAxis = -1;
+                int northOnYAxis = 1;
+                int eastOnXAxis = 1;
+                int westOnXAxis = -1;
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("Tile Collision Data:")
+                        .right("")
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("North")
+                        .right(String.valueOf(travelCheck.canTravelInDirection(wv, 0, northOnYAxis)))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("South")
+                        .right(String.valueOf(travelCheck.canTravelInDirection(wv, 0, southOnYAxis)))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("East")
+                        .right(String.valueOf(travelCheck.canTravelInDirection(wv, eastOnXAxis, 0)))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("West")
+                        .right(String.valueOf(travelCheck.canTravelInDirection(wv, westOnXAxis, 0)))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("NorthEast")
+                        .right(String.valueOf(travelCheck.canTravelInDirection(wv, eastOnXAxis, northOnYAxis)))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("NorthWest")
+                        .right(String.valueOf(travelCheck.canTravelInDirection(wv, westOnXAxis, northOnYAxis)))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("SouthEast")
+                        .right(String.valueOf(travelCheck.canTravelInDirection(wv, eastOnXAxis, southOnYAxis)))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("SouthWest")
+                        .right(String.valueOf(travelCheck.canTravelInDirection(wv, westOnXAxis, southOnYAxis)))
+                        .build());
 
             }
 
-            panelComponent.getChildren().add(LineComponent.builder()
-                    .left("Claimable")
-                    .right(cd.)
-                    .build());
-
-
-
+            */
 
         }
 

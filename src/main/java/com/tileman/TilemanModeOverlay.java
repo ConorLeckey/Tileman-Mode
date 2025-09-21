@@ -30,6 +30,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
@@ -95,7 +96,24 @@ public class TilemanModeOverlay extends Overlay
 			return;
 		}
 
-		OverlayUtil.renderPolygon(graphics, poly, getTileColor());
+		Color highlightColor = new Color(0, 255, 0, 255);
+		Color highlightFillColor = new Color(0, 255, 0, 64);
+		WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
+		Boolean isHoverTile =
+				hoverTile.getRegionX() == point.getRegionX() &&
+				hoverTile.getRegionY() == point.getRegionY() &&
+				hoverTile.getRegionID() == point.getRegionID() &&
+				hoverTile.getPlane() == point.getPlane();
+
+		plugin.updateWayfinder();
+		Boolean renderPath = (plugin.pathToHoverTile != null && plugin.pathToHoverTile.contains(point));
+
+		if (isHoverTile || renderPath){
+			OverlayUtil.renderPolygon(graphics, poly, highlightColor, highlightFillColor, graphics.getStroke());
+		}
+		else {
+			OverlayUtil.renderPolygon(graphics, poly, getTileColor());
+		}
 	}
 
 	private Color getTileColor() {

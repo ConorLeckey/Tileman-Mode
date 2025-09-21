@@ -43,7 +43,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.puzzlesolver.solver.pathfinding.Pathfinder;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -139,7 +138,10 @@ public class TilemanModePlugin extends Plugin {
 
     public WorldPoint hoverTile;
     public WorldPoint hoverTileLastTick;
-    public WorldPoint[] hoverTilePath;
+    public TilemanPath wayfinder = new TilemanPath(this);
+    public WorldPoint lastPathStart;
+    public WorldPoint lastPathEnd;
+    public List<WorldPoint> pathToHoverTile;
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -200,6 +202,8 @@ public class TilemanModePlugin extends Plugin {
         updateTileCountFromConfigs();
         updateTilesToRender();
         inHouse = false;
+        lastPathStart = client.getLocalPlayer().getWorldLocation();
+        lastPathEnd = client.getLocalPlayer().getWorldLocation();
     }
 
     @Subscribe
@@ -813,6 +817,26 @@ public class TilemanModePlugin extends Plugin {
 
     public Client getClient(){
         return client;
+    }
+
+    public TilemanPath getWayfinder(){
+        return wayfinder;
+    }
+
+    public Boolean updateWayfinder(){
+        WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+        WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
+        Boolean playerMoved = !lastPathStart.equals(playerLocation);
+        Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
+        Boolean recalculate = playerMoved || hoverTileChanged;
+
+        if (recalculate){
+            log.debug("TileManMode Pathfinder - Recalculating");
+            lastPathStart = playerLocation;
+            lastPathEnd = hoverTile;
+            pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
+        }
+        return recalculate;
     }
 
     @AllArgsConstructor
