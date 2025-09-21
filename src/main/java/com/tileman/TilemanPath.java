@@ -31,7 +31,7 @@ public class TilemanPath {
         unevaluatedNodes.add(new Node(start, null));
 
         int bestDistance = Integer.MAX_VALUE;
-        int searchLimiter = 100; // one full tile region
+        int searchLimiter = 4096; // one full tile region
 
         while (!unevaluatedNodes.isEmpty() && searchLimiter > 0) {
             searchLimiter -= 1; // used to exit the loop if search gets too large

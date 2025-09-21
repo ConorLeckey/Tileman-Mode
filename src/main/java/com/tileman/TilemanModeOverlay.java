@@ -27,6 +27,7 @@
 package com.tileman;
 
 import net.runelite.api.Client;
+import net.runelite.api.KeyCode;
 import net.runelite.api.Perspective;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
@@ -61,21 +62,56 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+
+		WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
+
+		plugin.updateWayfinder();
+
+		// draw unlocked tiles not on path or being hovered
 		final Collection<WorldPoint> points = plugin.getTilesToRender();
 		for (final WorldPoint point : points)
 		{
-			if (point.getPlane() != client.getPlane())
-			{
-				continue;
-			}
+			Color border = getTileColor();
+			Color fill = new Color(0, 0, 0, 32); // TODO - from config
+			drawTile(graphics, point, border, fill);
+		}
 
-			drawTile(graphics, point);
+		// draw predictive path if shift isn't held
+		final Collection<WorldPoint> path = plugin.pathToHoverTile;
+		Boolean allUnlocked = points.containsAll(path);
+		if (!client.isKeyPressed(KeyCode.KC_SHIFT)) {
+			int tilesRequired = 0;
+			for (final WorldPoint point : path) {
+
+				// if whole path is unlocked we're always green
+				if (allUnlocked) {
+					Color border = new Color(0, 255, 0, 128); // TODO - from config
+					Color fill = new Color(0, 255, 0, 32); // TODO - from config
+					drawTile(graphics, point, border, fill);
+					continue;
+				}
+
+				// draw tiles unlocked but on a path that contains locked tiles
+				Boolean unlockedTile = points.contains(point);
+				if (unlockedTile) {
+					Color border = new Color(255, 185, 0, 64); // TODO - from config
+					Color fill = new Color(255, 185, 0, 32); // TODO - from config
+					drawTile(graphics, point, border, fill);
+					continue;
+				}
+
+				// draw tiles requiring fresh unlock
+				tilesRequired += 1;
+				Color border = new Color(255, 0, 0, 64); // TODO - from config
+				Color fill = new Color(255, 0, 0, 32); // TODO - from config
+				drawTile(graphics, point, border, fill);
+			}
 		}
 
 		return null;
 	}
 
-	private void drawTile(Graphics2D graphics, WorldPoint point)
+	private void drawTile(Graphics2D graphics, WorldPoint point, Color border, Color fill)
 	{
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
@@ -96,24 +132,7 @@ public class TilemanModeOverlay extends Overlay
 			return;
 		}
 
-		Color highlightColor = new Color(0, 255, 0, 255);
-		Color highlightFillColor = new Color(0, 255, 0, 64);
-		WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
-		Boolean isHoverTile =
-				hoverTile.getRegionX() == point.getRegionX() &&
-				hoverTile.getRegionY() == point.getRegionY() &&
-				hoverTile.getRegionID() == point.getRegionID() &&
-				hoverTile.getPlane() == point.getPlane();
-
-		plugin.updateWayfinder();
-		Boolean renderPath = (plugin.pathToHoverTile != null && plugin.pathToHoverTile.contains(point));
-
-		if (isHoverTile || renderPath){
-			OverlayUtil.renderPolygon(graphics, poly, highlightColor, highlightFillColor, graphics.getStroke());
-		}
-		else {
-			OverlayUtil.renderPolygon(graphics, poly, getTileColor());
-		}
+		OverlayUtil.renderPolygon(graphics, poly, border, fill, graphics.getStroke());
 	}
 
 	private Color getTileColor() {
