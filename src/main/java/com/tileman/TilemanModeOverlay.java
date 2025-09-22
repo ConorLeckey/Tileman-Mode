@@ -26,18 +26,15 @@
  */
 package com.tileman;
 
-import net.runelite.api.Client;
-import net.runelite.api.KeyCode;
-import net.runelite.api.Perspective;
+import net.runelite.api.*;
 import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.util.Collection;
+import java.util.*;
 
 public class TilemanModeOverlay extends Overlay
 {
@@ -63,60 +60,85 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-
-		WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
-
+		// refresh the path if player or target has changed location
 		plugin.updateWayfinder();
 
-		// draw unlocked tiles not on path or being hovered
-		final Collection<WorldPoint> points = plugin.getTilesToRender();
-		for (final WorldPoint point : points)
-		{
+		// fetch the last navigation path generated, remain empty when shift is held
+		Boolean shiftIsHeld = client.isKeyPressed(KeyCode.KC_SHIFT);
+		final Collection<WorldPoint> pathTiles = shiftIsHeld ? Collections.emptyList() : plugin.pathToHoverTile;
+
+		// build subset of tiles outside the path to render
+		Set<WorldPoint> simpleTiles = new HashSet<>(plugin.getTilesToRender());
+		simpleTiles.removeAll(pathTiles);
+
+		// render non path tile squares
+		for (WorldPoint tile : simpleTiles) {
 			Color border = getTileColor();
 			Color fill = new Color(0, 0, 0, 32); // TODO - from config
-			drawTile(graphics, point, border, fill);
+			drawTile(graphics, tile, border, fill);
 		}
 
-		// draw predictive path if shift isn't held
-		final Collection<WorldPoint> path = plugin.pathToHoverTile;
+		// render path tiles
+		int tilesRequired = 0;
+		Boolean allUnlocked = plugin.getTilesToRender().containsAll(pathTiles);
+		for (WorldPoint tile : pathTiles) {
 
-		Boolean shortPath = path.size() <= 1;
-		if (!client.isKeyPressed(KeyCode.KC_SHIFT) && !shortPath) {
-			Boolean allUnlocked = points.containsAll(path);
-			int tilesRequired = 0;
-			for (final WorldPoint point : path) {
+			// render claimed path tiles as ordinary path tile squares if shift is held
+			Boolean tileIsClaimed = plugin.getTilesToRender().contains(tile);
 
-				// if whole path is unlocked we're always green
-				if (allUnlocked) {
-					Color border = new Color(0, 255, 0, 128); // TODO - from config
-					Color fill = new Color(0, 255, 0, 32); // TODO - from config
-					drawTile(graphics, point, border, fill);
-					continue;
-				}
-
-				// draw tiles unlocked but on a path that contains locked tiles
-				Boolean unlockedTile = points.contains(point);
-				if (unlockedTile) {
-					Color border = new Color(255, 185, 0, 64); // TODO - from config
-					Color fill = new Color(255, 185, 0, 32); // TODO - from config
-					drawTile(graphics, point, border, fill);
-					continue;
-				}
-
-				// draw tiles requiring fresh unlock
-				tilesRequired += 1;
-				Color border = new Color(255, 0, 0, 64); // TODO - from config
-				Color fill = new Color(255, 0, 0, 32); // TODO - from config
-				drawTile(graphics, point, border, fill);
-				LocalPoint lp = LocalPoint.fromWorld(client, point);
-				Point canvasTextLocation = Perspective.getCanvasTextLocation(client, graphics, lp, String.valueOf(tilesRequired), 0);
-				if (canvasTextLocation != null)
-				{
-					Color textColor = new Color(255, 255, 255, 255); // TODO - from config
-					OverlayUtil.renderTextLocation(graphics, canvasTextLocation, String.valueOf(tilesRequired), textColor);
-				}
+			if (shiftIsHeld && tileIsClaimed) {
+				Color border = getTileColor();
+				Color fill = new Color(0, 0, 0, 32); // TODO - from config
+				drawTile(graphics, tile, border, fill);
+				continue;
 			}
+
+			// if whole path is unlocked highlight the path to hover tile
+			if (allUnlocked) {
+				Color border = new Color(0, 255, 0, 64); // TODO - from config
+				Color fill = new Color(0, 255, 0, 16); // TODO - from config
+				drawTile(graphics, tile, border, fill);
+				continue;
+			}
+
+			// render partially claimed paths
+			if (tileIsClaimed) {
+				Color border = new Color(255, 185, 0, 64); // TODO - from config
+				Color fill = new Color(255, 185, 0, 32); // TODO - from config
+				drawTile(graphics, tile, border, fill);
+				continue;
+			}
+
+			// dont render unclaimed tiles while shift is held
+			if (shiftIsHeld){
+				continue;
+			}
+
+			// draw tiles requiring fresh unlock
+			tilesRequired += 1;
+			Color border = new Color(255, 0, 0, 64); // TODO - from config
+			Color fill = new Color(255, 0, 0, 32); // TODO - from config
+			drawTile(graphics, tile, border, fill);
+
+			// draw tile cost to unlock
+			LocalPoint lp = LocalPoint.fromWorld(client, tile);
+			Point canvasCountLocation = Perspective.getCanvasTextLocation(client, graphics, lp, String.valueOf(tilesRequired), 0);
+			if (canvasCountLocation != null)
+			{
+				Color textColor = new Color(180, 180, 180); // TODO - from config
+				OverlayUtil.renderTextLocation(graphics, canvasCountLocation, String.valueOf(tilesRequired), textColor);
+			}
+
 		}
+
+		// TODO - only render path if walk here is first option?
+		// dont draw paths if menu options active
+		//MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
+		//for (MenuEntry m : menuEntries){
+		//	if (m.isItemOp()) {
+		//		renderPath = false;
+		//	}
+		//}
 
 		return null;
 	}

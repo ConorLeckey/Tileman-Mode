@@ -51,13 +51,18 @@ public class TilemanPath {
             addTraversableNeighbors(node);
         }
 
-        // return the shortest path found
-        if (shortestPathTail != null) {
-            return shortestPathTail.getPathToRootHead();
+        // dont return a near path, only an actual path
+        if (!shortestPathTail.point.equals(end)){
+            return Collections.emptyList();
         }
 
-        // fallback in case no path is found
-        return Collections.emptyList();
+        // don't return single tile paths
+        List<WorldPoint> returnPath = shortestPathTail.getPathToRootHead();
+        if (returnPath.size() <= 1){
+            return Collections.emptyList();
+        }
+
+        return returnPath;
     }
 
     private void addTraversableNeighbors(Node head) {

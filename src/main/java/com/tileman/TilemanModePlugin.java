@@ -831,7 +831,6 @@ public class TilemanModePlugin extends Plugin {
         Boolean recalculate = playerMoved || hoverTileChanged;
 
         if (recalculate){
-            log.debug("TileManMode Pathfinder - Recalculating");
             lastPathStart = playerLocation;
             lastPathEnd = hoverTile;
             pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
