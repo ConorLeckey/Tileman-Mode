@@ -34,6 +34,7 @@ import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.awt.Menu;
 import java.util.*;
 
 public class TilemanModeOverlay extends Overlay
@@ -63,9 +64,15 @@ public class TilemanModeOverlay extends Overlay
 		// refresh the path if player or target has changed location
 		plugin.updateWayfinder();
 
+		// Don't draw paths if menu option isn't walk here
+		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
+		// last element is the default left click option
+		String option = menuEntries[menuEntries.length-1].getOption();
+		Boolean shortCircuit = !option.startsWith("Walk here");
+
 		// fetch the last navigation path generated, remain empty when shift is held
 		Boolean shiftIsHeld = client.isKeyPressed(KeyCode.KC_SHIFT);
-		final Collection<WorldPoint> pathTiles = shiftIsHeld ? Collections.emptyList() : plugin.pathToHoverTile;
+		final Collection<WorldPoint> pathTiles = (shiftIsHeld || shortCircuit) ? Collections.emptyList() : plugin.pathToHoverTile;
 
 		// build subset of tiles outside the path to render
 		Set<WorldPoint> simpleTiles = new HashSet<>(plugin.getTilesToRender());
@@ -130,15 +137,6 @@ public class TilemanModeOverlay extends Overlay
 			}
 
 		}
-
-		// TODO - only render path if walk here is first option?
-		// dont draw paths if menu options active
-		//MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
-		//for (MenuEntry m : menuEntries){
-		//	if (m.isItemOp()) {
-		//		renderPath = false;
-		//	}
-		//}
 
 		return null;
 	}
