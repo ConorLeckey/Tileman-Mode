@@ -29,6 +29,7 @@ package com.tileman;
 import net.runelite.api.Client;
 import net.runelite.api.KeyCode;
 import net.runelite.api.Perspective;
+import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InterfaceID;
@@ -78,8 +79,10 @@ public class TilemanModeOverlay extends Overlay
 
 		// draw predictive path if shift isn't held
 		final Collection<WorldPoint> path = plugin.pathToHoverTile;
-		Boolean allUnlocked = points.containsAll(path);
-		if (!client.isKeyPressed(KeyCode.KC_SHIFT)) {
+
+		Boolean shortPath = path.size() <= 1;
+		if (!client.isKeyPressed(KeyCode.KC_SHIFT) && !shortPath) {
+			Boolean allUnlocked = points.containsAll(path);
 			int tilesRequired = 0;
 			for (final WorldPoint point : path) {
 
@@ -105,6 +108,13 @@ public class TilemanModeOverlay extends Overlay
 				Color border = new Color(255, 0, 0, 64); // TODO - from config
 				Color fill = new Color(255, 0, 0, 32); // TODO - from config
 				drawTile(graphics, point, border, fill);
+				LocalPoint lp = LocalPoint.fromWorld(client, point);
+				Point canvasTextLocation = Perspective.getCanvasTextLocation(client, graphics, lp, String.valueOf(tilesRequired), 0);
+				if (canvasTextLocation != null)
+				{
+					Color textColor = new Color(255, 255, 255, 255); // TODO - from config
+					OverlayUtil.renderTextLocation(graphics, canvasTextLocation, String.valueOf(tilesRequired), textColor);
+				}
 			}
 		}
 
