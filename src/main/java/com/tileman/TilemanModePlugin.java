@@ -469,11 +469,14 @@ public class TilemanModePlugin extends Plugin {
 
     private Collection<TilemanModeTile> readV2FormatData(int regionID, int plane) {
 
+        // generate the list to build or return empty.
+        List<TilemanModeTile> tilesStoredInV2Format = new ArrayList<>();
+
         // grab the raw encoded string in Base64 from the config file
         String encoded = configManager.getConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionID + "_" + plane);
 
         if (encoded == null){
-            return Collections.emptyList();
+            return tilesStoredInV2Format;
         }
 
         // decode to a byte array, then interpret it as a Bitset
@@ -481,11 +484,10 @@ public class TilemanModePlugin extends Plugin {
 
         // return if there's no data under that key
         if (bytes == null || bytes.length == 0){
-            return Collections.emptyList();
+            return tilesStoredInV2Format;
         }
 
         BitSet bitSet = BitSet.valueOf(bytes);
-        List<TilemanModeTile> tilesStoredInV2Format = new ArrayList<>();
 
         // find bits set to 1, and create a tile when they're found
         for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
