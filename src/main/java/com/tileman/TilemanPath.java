@@ -19,7 +19,7 @@ public class TilemanPath {
 
         // check for silly requests
         Node shortestPathTail = null;
-        if (start == null || end == null) {
+        if (start == null || end == null || start.equals(end)) {
             return Collections.emptyList(); // no path available
         }
 
