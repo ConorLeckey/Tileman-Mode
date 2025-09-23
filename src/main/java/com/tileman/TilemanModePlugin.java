@@ -760,9 +760,6 @@ public class TilemanModePlugin extends Plugin {
         if (claimTile && !tileIsUnlocked) {
             if ((config.allowTileDeficit() || remainingTiles > 0)) {
                 log.debug("TileManMode updateTileMark - claimed tile");
-                if (tiles.isEmpty()){
-                    tiles = new ArrayList<TilemanModeTile>();
-                }
                 tiles.add(tile);
                 tilesToRender.add(worldPoint);
                 totalTilesUsed += 1;
