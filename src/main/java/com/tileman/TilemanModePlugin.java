@@ -49,7 +49,6 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
-import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -138,10 +137,6 @@ public class TilemanModePlugin extends Plugin {
 
     public WorldPoint hoverTile;
     public WorldPoint hoverTileLastTick;
-    public TilemanPath wayfinder = new TilemanPath(this);
-    public WorldPoint lastPathStart;
-    public WorldPoint lastPathEnd;
-    public List<WorldPoint> pathToHoverTile;
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
@@ -206,8 +201,6 @@ public class TilemanModePlugin extends Plugin {
         updateTileCountFromConfigs();
         updateTilesToRender();
         inHouse = false;
-        lastPathStart = client.getLocalPlayer().getWorldLocation();
-        lastPathEnd = client.getLocalPlayer().getWorldLocation();
     }
 
     @Subscribe
@@ -821,25 +814,6 @@ public class TilemanModePlugin extends Plugin {
 
     public Client getClient(){
         return client;
-    }
-
-    public TilemanPath getWayfinder(){
-        return wayfinder;
-    }
-
-    public Boolean updateWayfinder(){
-        WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-        WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
-        Boolean playerMoved = !lastPathStart.equals(playerLocation);
-        Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
-        Boolean recalculate = playerMoved || hoverTileChanged;
-
-        if (recalculate){
-            lastPathStart = playerLocation;
-            lastPathEnd = hoverTile;
-            pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
-        }
-        return recalculate;
     }
 
     @AllArgsConstructor

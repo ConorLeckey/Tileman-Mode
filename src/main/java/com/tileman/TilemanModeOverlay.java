@@ -35,16 +35,20 @@ import net.runelite.client.ui.overlay.*;
 import javax.inject.Inject;
 import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class TilemanModeOverlay extends Overlay
 {
 	private static final int MAX_DRAW_DISTANCE = 32;
-
 	private final Client client;
 	private final TilemanModePlugin plugin;
 	private final Timer timer = new Timer();
 	private float dashPhase = 0f;
 
+	private final TilemanPath wayfinder;
+	private WorldPoint lastPathStart = new WorldPoint(0,0,0);
+	private WorldPoint lastPathEnd = new WorldPoint(0,0,0);
+	private List<WorldPoint> pathToHoverTile;
 	@Inject
 	private TilemanModeConfig config;
 
@@ -54,11 +58,14 @@ public class TilemanModeOverlay extends Overlay
 		this.client = client;
 		this.plugin = plugin;
 		this.config = config;
+		this.wayfinder = new TilemanPath(plugin);
+
+		// define RuneLite rendering params
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 
-		// Update the animation timer at a regular interval
+		// Update the animation timer at a regular interval to make paths animate
 		timer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
@@ -71,7 +78,7 @@ public class TilemanModeOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		// refresh the path if player or target has changed location
-		plugin.updateWayfinder();
+		updatePathIfOutdated();
 
 		// Don't draw paths if menu option isn't walk here
 		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
@@ -81,7 +88,7 @@ public class TilemanModeOverlay extends Overlay
 
 		// fetch the last navigation path generated, remain empty when shift is held
 		Boolean shiftIsHeld = client.isKeyPressed(KeyCode.KC_SHIFT);
-		final Collection<WorldPoint> pathTiles = (shiftIsHeld || shortCircuit) ? Collections.emptyList() : plugin.pathToHoverTile;
+		final Collection<WorldPoint> pathTiles = (shiftIsHeld || shortCircuit) ? Collections.emptyList() : pathToHoverTile;
 
 		// build subset of tiles outside the path to render
 		Set<WorldPoint> simpleTiles = new HashSet<>(plugin.getTilesToRender());
@@ -208,6 +215,20 @@ public class TilemanModeOverlay extends Overlay
 		dashPhase += 1.0f;
 		if (dashPhase > 15.0f) { // must be total length of dashPattern to loop smoothly
 			dashPhase = 0;
+		}
+	}
+
+	private void updatePathIfOutdated(){
+		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+		WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
+		Boolean playerMoved = !lastPathStart.equals(playerLocation);
+		Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
+		Boolean recalculate = playerMoved || hoverTileChanged;
+
+		if (recalculate){
+			lastPathStart = playerLocation;
+			lastPathEnd = hoverTile;
+			pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
 		}
 	}
 }
