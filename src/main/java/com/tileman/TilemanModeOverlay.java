@@ -34,7 +34,6 @@ import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.awt.Menu;
 import java.util.*;
 
 public class TilemanModeOverlay extends Overlay
@@ -43,6 +42,8 @@ public class TilemanModeOverlay extends Overlay
 
 	private final Client client;
 	private final TilemanModePlugin plugin;
+	private final Timer timer = new Timer();
+	private float dashPhase = 0f;
 
 	@Inject
 	private TilemanModeConfig config;
@@ -56,6 +57,14 @@ public class TilemanModeOverlay extends Overlay
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
+
+		// Update the animation timer at a regular interval
+		timer.scheduleAtFixedRate(new TimerTask() {
+			@Override
+			public void run() {
+				updateDashPhase();
+			}
+		}, 75, 75);
 	}
 
 	@Override
@@ -82,7 +91,7 @@ public class TilemanModeOverlay extends Overlay
 		for (WorldPoint tile : simpleTiles) {
 			Color border = getTileColor();
 			Color fill = new Color(0, 0, 0, 32); // TODO - from config
-			drawTile(graphics, tile, border, fill);
+			drawTile(graphics, tile, border, fill, getSolidLine());
 		}
 
 		// render path tiles
@@ -92,11 +101,10 @@ public class TilemanModeOverlay extends Overlay
 
 			// render claimed path tiles as ordinary path tile squares if shift is held
 			Boolean tileIsClaimed = plugin.getTilesToRender().contains(tile);
-
 			if (shiftIsHeld && tileIsClaimed) {
 				Color border = getTileColor();
 				Color fill = new Color(0, 0, 0, 32); // TODO - from config
-				drawTile(graphics, tile, border, fill);
+				drawTile(graphics, tile, border, fill, getSolidLine());
 				continue;
 			}
 
@@ -104,7 +112,8 @@ public class TilemanModeOverlay extends Overlay
 			if (allUnlocked) {
 				Color border = new Color(0, 255, 0, 64); // TODO - from config
 				Color fill = new Color(0, 255, 0, 16); // TODO - from config
-				drawTile(graphics, tile, border, fill);
+				drawTile(graphics, tile, border, fill, getDashedLine());
+				Color textColor = new Color(180, 180, 180); // TODO - from config
 				continue;
 			}
 
@@ -112,7 +121,8 @@ public class TilemanModeOverlay extends Overlay
 			if (tileIsClaimed) {
 				Color border = new Color(255, 185, 0, 64); // TODO - from config
 				Color fill = new Color(255, 185, 0, 32); // TODO - from config
-				drawTile(graphics, tile, border, fill);
+				drawTile(graphics, tile, border, fill, getDashedLine());
+				Color textColor = new Color(180, 180, 180); // TODO - from config
 				continue;
 			}
 
@@ -123,25 +133,34 @@ public class TilemanModeOverlay extends Overlay
 
 			// draw tiles requiring fresh unlock
 			tilesRequired += 1;
-			Color border = new Color(255, 0, 0, 64); // TODO - from config
+			Color border = new Color(255, 0, 0, 96); // TODO - from config
 			Color fill = new Color(255, 0, 0, 32); // TODO - from config
-			drawTile(graphics, tile, border, fill);
+			drawTile(graphics, tile, border, fill, getDashedLine());
 
 			// draw tile cost to unlock
-			LocalPoint lp = LocalPoint.fromWorld(client, tile);
-			Point canvasCountLocation = Perspective.getCanvasTextLocation(client, graphics, lp, String.valueOf(tilesRequired), 0);
-			if (canvasCountLocation != null)
-			{
-				Color textColor = new Color(180, 180, 180); // TODO - from config
-				OverlayUtil.renderTextLocation(graphics, canvasCountLocation, String.valueOf(tilesRequired), textColor);
-			}
+			Color textColor = new Color(200, 200, 200); // TODO - from config
+			drawTileText(graphics, tile, textColor, String.valueOf(tilesRequired));
 
 		}
 
 		return null;
 	}
 
-	private void drawTile(Graphics2D graphics, WorldPoint point, Color border, Color fill)
+	private void drawTileText(Graphics2D graphics, WorldPoint tile, Color color, String label)
+	{
+		if (label == ""){
+			return;
+		}
+
+		LocalPoint lp = LocalPoint.fromWorld(client, tile);
+		Point canvasCountLocation = Perspective.getCanvasTextLocation(client, graphics, lp, label, 0);
+		if (canvasCountLocation != null)
+		{
+			OverlayUtil.renderTextLocation(graphics, canvasCountLocation, label, color);
+		}
+	}
+
+	private void drawTile(Graphics2D graphics, WorldPoint point, Color border, Color fill, BasicStroke stroke)
 	{
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
@@ -162,7 +181,7 @@ public class TilemanModeOverlay extends Overlay
 			return;
 		}
 
-		OverlayUtil.renderPolygon(graphics, poly, border, fill, graphics.getStroke());
+		OverlayUtil.renderPolygon(graphics, poly, border, fill, stroke);
 	}
 
 	private Color getTileColor() {
@@ -174,5 +193,21 @@ public class TilemanModeOverlay extends Overlay
 			}
 		}
 		return config.markerColor();
+	}
+
+	private BasicStroke getSolidLine() {
+		return new BasicStroke();
+	}
+
+	private BasicStroke getDashedLine() {
+		float[] dashPattern = {10.0f, 5.0f}; // 10 units on, 5 units off
+		return new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, dashPattern, dashPhase);
+	}
+
+	private void updateDashPhase(){
+		dashPhase += 1.0f;
+		if (dashPhase > 15.0f) { // must be total length of dashPattern to loop smoothly
+			dashPhase = 0;
+		}
 	}
 }

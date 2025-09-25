@@ -182,12 +182,16 @@ public class TilemanModePlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick tick) {
+
+        // update tile claims based on movement
         autoMark();
 
+        // update diagnostic info
         hoverTile = client.getSelectedSceneTile().getWorldLocation();
         if (hoverTileLastTick == null || hoverTileLastTick != hoverTile){
             hoverTileLastTick = hoverTile;
         }
+
     }
 
     @Subscribe
