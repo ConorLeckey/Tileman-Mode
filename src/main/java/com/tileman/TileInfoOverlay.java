@@ -25,11 +25,6 @@
  */
 package com.tileman;
 
-import net.runelite.api.CollisionData;
-import net.runelite.api.Tile;
-import net.runelite.api.WorldView;
-import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
@@ -41,6 +36,7 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.time.Duration;
 
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
@@ -139,7 +135,7 @@ class TileInfoOverlay extends OverlayPanel {
 
                 panelComponent.getChildren().add(LineComponent.builder()
                         .left("State:")
-                        .right(plugin.getTilesToRender().contains(plugin.hoverTile) ? "Unlocked" : "Locked")
+                        .right(plugin.getTilesToRender().contains(target) ? "Unlocked" : "Locked")
                         .build());
             }
         }
@@ -154,37 +150,45 @@ class TileInfoOverlay extends OverlayPanel {
             TitleComponent title = TitleComponent.builder().text("Performance").color(Color.ORANGE).build();
             panelComponent.getChildren().add(title);
 
-
             panelComponent.getChildren().add(LineComponent.builder()
                     .left("Region Read:")
-                    .right("TODO")
+                    .right(prettyDuration(plugin.durationLastRegionRead))
                     .build());
 
             panelComponent.getChildren().add(LineComponent.builder()
                     .left("Region Write:")
-                    .right("TODO")
+                    .right(prettyDuration(plugin.durationLastRegionWrite))
                     .build());
 
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("Last Wayfind:")
-                    .right("TODO")
+                    .left("Wayfind:")
+                    .right(prettyDuration(plugin.durationLastWayfind))
                     .build());
 
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("Last Claim:")
-                    .right("TODO")
+                    .left("Startup:")
+                    .right(prettyDuration(plugin.durationLastStart))
                     .build());
 
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("Last Startup:")
-                    .right("TODO")
+                    .left("Move:")
+                    .right(prettyDuration(plugin.durationLastMove))
                     .build());
 
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("Last Tile Change:")
-                    .right("TODO")
+                    .left("Tiles Update:")
+                    .right(prettyDuration(plugin.durationLastTilesUpdate))
                     .build());
         }
+    }
+
+    private String prettyDuration(Duration d)
+    {
+        if (d == null) {
+            return "-";
+        }
+        long millis = d.toMillis();
+        return millis >= 1 ? String.valueOf(millis) + "ms" : "<1ms";
     }
 
     private Color getTextColor() {

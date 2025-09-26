@@ -34,6 +34,8 @@ import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.List;
 
@@ -221,6 +223,7 @@ public class TilemanModeOverlay extends Overlay
 	}
 
 	private void updatePathIfOutdated(){
+		Instant startTime = Instant.now();
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 		WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
 		Boolean playerMoved = !lastPathStart.equals(playerLocation);
@@ -231,6 +234,7 @@ public class TilemanModeOverlay extends Overlay
 			lastPathStart = playerLocation;
 			lastPathEnd = hoverTile;
 			pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
+			plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
 		}
 	}
 
