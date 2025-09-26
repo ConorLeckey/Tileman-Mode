@@ -40,19 +40,19 @@ public interface TilemanModeConfig extends Config {
     String gameModeSection = "gameMode";
 
     @ConfigSection(
-            name = "Settings",
-            description = "Settings'",
-            position = 2
-    )
-    String settingsSection = "settings";
-
-    @ConfigSection(
             name = "Custom Game Mode",
             description = "Create a custom Tileman game mode. Be sure to 'Enable Custom Game Mode'",
-            position = 3,
+            position = 2,
             closedByDefault = true
     )
     String customGameModeSection = "customGameMode";
+
+    @ConfigSection(
+            name = "Settings",
+            description = "Settings'",
+            position = 3
+    )
+    String settingsSection = "settings";
 
     @ConfigSection(
             name = "Claimed Tiles",
@@ -84,6 +84,14 @@ public interface TilemanModeConfig extends Config {
             closedByDefault = true
     )
     String claimedPathSection = "claimedPath";
+
+    @ConfigSection(
+            name = "Metrics",
+            description = "Additional overlay information",
+            position = 8,
+            closedByDefault = true
+    )
+    String metricsSection = "metrics";
 
     ///////////////////////////////////////////////////////////////////////////
     // gameMode section
@@ -266,6 +274,31 @@ public interface TilemanModeConfig extends Config {
     )
     default Color markerColor() {
         return Color.YELLOW;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // metrics section
+
+    @ConfigItem(
+            keyName = "showTileInfo",
+            name = "Show Tile Info",
+            description = "Shows additional information about the tile under the players cursor.",
+            section = metricsSection,
+            position = 1
+    )
+    default boolean showTileInfo() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "showPerformanceInfo",
+            name = "Show Performance Info",
+            description = "Shows additional information about plugin performance",
+            section = metricsSection,
+            position = 2
+    )
+    default boolean showPerformanceInfo() {
+        return false;
     }
 
 }

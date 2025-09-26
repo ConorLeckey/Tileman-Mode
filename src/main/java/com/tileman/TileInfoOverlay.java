@@ -26,14 +26,18 @@
 package com.tileman;
 
 import net.runelite.api.CollisionData;
+import net.runelite.api.Tile;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
+import net.runelite.client.ui.overlay.components.PanelComponent;
+import net.runelite.client.ui.overlay.components.TitleComponent;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -89,37 +93,9 @@ class TileInfoOverlay extends OverlayPanel {
                 .right(unlockedTiles)
                 .build());
 
-        LocalPoint target = plugin.getClient().getSelectedSceneTile().getLocalLocation();
-        if (target != null) {
 
-            panelComponent.getChildren().add(LineComponent.builder()
-                    .left("RegionID")
-                    .right(String.valueOf(plugin.hoverTile.getRegionID()))
-                    .build());
-
-            int regionX = plugin.hoverTile.getRegionX();
-            panelComponent.getChildren().add(LineComponent.builder()
-                    .left("RegionX")
-                    .right(String.valueOf(regionX))
-                    .build());
-
-            int regionY = plugin.hoverTile.getRegionY();
-            panelComponent.getChildren().add(LineComponent.builder()
-                    .left("RegionY")
-                    .right(String.valueOf(regionY))
-                    .build());
-
-            panelComponent.getChildren().add(LineComponent.builder()
-                    .left("RegionPlane")
-                    .right(String.valueOf(plugin.hoverTile.getPlane()))
-                    .build());
-
-            panelComponent.getChildren().add(LineComponent.builder()
-                    .left("Tile")
-                    .right(plugin.getTilesToRender().contains(plugin.hoverTile) ? "Unlocked" : "Locked")
-                    .build());
-
-        }
+        renderTileInfoPanel(panelComponent);
+        renderPerformancePanel(panelComponent);
 
         panelComponent.setPreferredSize(new Dimension(
                 getLongestStringWidth(STRINGS, graphics)
@@ -127,6 +103,88 @@ class TileInfoOverlay extends OverlayPanel {
                 0));
 
         return super.render(graphics);
+    }
+
+    private void renderTileInfoPanel(PanelComponent panelComponent) {
+        if (config.showTileInfo()) {
+
+            WorldPoint target = plugin.getClient().getTopLevelWorldView().getSelectedSceneTile().getWorldLocation();
+            if (target != null) {
+
+                TitleComponent spacer = TitleComponent.builder().text("").build();
+                panelComponent.getChildren().add(spacer);
+
+                TitleComponent title = TitleComponent.builder().text("Tile Info").color(Color.ORANGE).build();
+                panelComponent.getChildren().add(title);
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("RegionID:")
+                        .right(String.valueOf(target.getRegionID()))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("RegionX:")
+                        .right(String.valueOf(target.getRegionX()))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("RegionY:")
+                        .right(String.valueOf(target.getRegionY()))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("RegionPlane:")
+                        .right(String.valueOf(target.getPlane()))
+                        .build());
+
+                panelComponent.getChildren().add(LineComponent.builder()
+                        .left("State:")
+                        .right(plugin.getTilesToRender().contains(plugin.hoverTile) ? "Unlocked" : "Locked")
+                        .build());
+            }
+        }
+    }
+
+    private void renderPerformancePanel(PanelComponent panelComponent) {
+        if (config.showPerformanceInfo()) {
+
+            TitleComponent spacer = TitleComponent.builder().text("").build();
+            panelComponent.getChildren().add(spacer);
+
+            TitleComponent title = TitleComponent.builder().text("Performance").color(Color.ORANGE).build();
+            panelComponent.getChildren().add(title);
+
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Region Read:")
+                    .right("TODO")
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Region Write:")
+                    .right("TODO")
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Last Wayfind:")
+                    .right("TODO")
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Last Claim:")
+                    .right("TODO")
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Last Startup:")
+                    .right("TODO")
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Last Tile Change:")
+                    .right("TODO")
+                    .build());
+        }
     }
 
     private Color getTextColor() {
