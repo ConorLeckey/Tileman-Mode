@@ -49,10 +49,44 @@ public interface TilemanModeConfig extends Config {
     @ConfigSection(
             name = "Custom Game Mode",
             description = "Create a custom Tileman game mode. Be sure to 'Enable Custom Game Mode'",
-            position = 99,
+            position = 3,
             closedByDefault = true
     )
     String customGameModeSection = "customGameMode";
+
+    @ConfigSection(
+            name = "Claimed Tiles",
+            description = "Tile rendering options for claimed tiles'",
+            position = 4
+    )
+    String claimedTilesSection = "claimedTiles";
+
+    @ConfigSection(
+            name = "Complete Path",
+            description = "Wayfinder tile rendering options for tiles on a complete path requiring no unlocks",
+            position = 5,
+            closedByDefault = true
+    )
+    String completePathSection = "completePath";
+
+    @ConfigSection(
+            name = "Incomplete Path - Unclaimed",
+            description = "Wayfinder tile rendering options for unclaimed tiles on a path that requires unlocks",
+            position = 6,
+            closedByDefault = true
+    )
+    String unclaimedPathSection = "unclaimedPath";
+
+    @ConfigSection(
+            name = "Incomplete Path - Claimed",
+            description = "Wayfinder tile rendering options for claimed tiles on a path that requires unlocks",
+            position = 7,
+            closedByDefault = true
+    )
+    String claimedPathSection = "claimedPath";
+
+    ///////////////////////////////////////////////////////////////////////////
+    // gameMode section
 
     public enum TilemanGameMode {
         COMMUNITY,
@@ -72,88 +106,9 @@ public interface TilemanModeConfig extends Config {
         return TilemanGameMode.COMMUNITY;
     }
 
-    @ConfigItem(
-            keyName = "automarkTiles",
-            name = "Auto-mark tiles",
-            section = settingsSection,
-            description = "Automatically mark tiles as you walk.",
-            position = 2
-    )
-    default boolean automarkTiles() {
-        return false;
-    }
+    ///////////////////////////////////////////////////////////////////////////
+    // customGameMode section
 
-    @Range(
-            min = Integer.MIN_VALUE
-    )
-    @ConfigItem(
-            keyName = "warningLimit",
-            name = "Unspent tiles warning",
-            section = settingsSection,
-            description = "Highlights overlay when limit reached",
-            position = 3
-    )
-    default int warningLimit() {
-        return 20;
-    }
-
-    @ConfigItem(
-            keyName = "enableTilesWarning",
-            name = "Enable Tiles Warning",
-            section = settingsSection,
-            description = "Turns on tile warnings when you reach your set limit or 0.",
-            position = 4
-    )
-    default boolean enableTileWarnings() {
-        return false;
-    }
-
-    @ConfigItem(
-            keyName = "allowTileDeficit",
-            name = "Allow Tile Deficit",
-            section = settingsSection,
-            description = "Allows you to place tiles after you have none left.",
-            position = 5
-    )
-    default boolean allowTileDeficit() {
-        return false;
-    }
-
-    @ConfigItem(
-            keyName = "drawOnMinimap",
-            name = "Draw tiles on minimap",
-            section = settingsSection,
-            description = "Configures whether marked tiles should be drawn on minimap",
-            position = 6
-    )
-    default boolean drawTilesOnMinimap() {
-        return false;
-    }
-
-    @ConfigItem(
-            keyName = "drawTilesOnWorldMap",
-            name = "Draw tiles on world map",
-            section = settingsSection,
-            description = "Configures whether marked tiles should be drawn on world map",
-            position = 5
-    )
-    default boolean drawTilesOnWorldMap() {
-        return false;
-    }
-
-    @Alpha
-    @ConfigItem(
-            keyName = "markerColor",
-            name = "Tile Color",
-            section = settingsSection,
-            description = "Configures the color of the tiles",
-            position = 6
-    )
-    default Color markerColor() {
-        return Color.YELLOW;
-    }
-
-    /***   Custom Game Mode section   ***/
     @ConfigItem(
             keyName = "enableCustomGameMode",
             name = "Enable Custom Game Mode",
@@ -214,4 +169,103 @@ public interface TilemanModeConfig extends Config {
     default int expPerTile() {
         return 1000;
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // settings section
+
+    @ConfigItem(
+            keyName = "automarkTiles",
+            name = "Auto-mark tiles",
+            section = settingsSection,
+            description = "Automatically mark tiles as you walk.",
+            position = 2
+    )
+    default boolean automarkTiles() {
+        return false;
+    }
+
+    @Range(
+            min = Integer.MIN_VALUE
+    )
+    @ConfigItem(
+            keyName = "warningLimit",
+            name = "Unspent tiles warning",
+            section = settingsSection,
+            description = "Highlights overlay when limit reached",
+            position = 3
+    )
+    default int warningLimit() {
+        return 20;
+    }
+
+    @ConfigItem(
+            keyName = "enableTilesWarning",
+            name = "Enable Tiles Warning",
+            section = settingsSection,
+            description = "Turns on tile warnings when you reach your set limit or 0.",
+            position = 4
+    )
+    default boolean enableTileWarnings() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "allowTileDeficit",
+            name = "Allow Tile Deficit",
+            section = settingsSection,
+            description = "Allows you to place tiles after you have none left.",
+            position = 5
+    )
+    default boolean allowTileDeficit() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "enableWayfinderSystem",
+            name = "Enable Wayfinder",
+            section = settingsSection,
+            description = "Draws the path to the tile underneath the cursor",
+            position = 6
+    )
+    default boolean enableWayfinder() {
+        return true;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // claimedTiles section
+
+    @ConfigItem(
+            keyName = "drawOnMinimap",
+            name = "Draw tiles on minimap",
+            section = claimedTilesSection,
+            description = "Configures whether marked tiles should be drawn on minimap",
+            position = 1
+    )
+    default boolean drawTilesOnMinimap() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "drawTilesOnWorldMap",
+            name = "Draw tiles on world map",
+            section = claimedTilesSection,
+            description = "Configures whether marked tiles should be drawn on world map",
+            position = 2
+    )
+    default boolean drawTilesOnWorldMap() {
+        return false;
+    }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "markerColor",
+            name = "Tile Border Color",
+            section = claimedTilesSection,
+            description = "Configures the border color of the tiles",
+            position = 3
+    )
+    default Color markerColor() {
+        return Color.YELLOW;
+    }
+
 }

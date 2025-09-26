@@ -126,9 +126,9 @@ public class TilemanModeOverlay extends Overlay
 
 			// render partially claimed paths
 			if (tileIsClaimed) {
-				Color border = new Color(255, 185, 0, 64); // TODO - from config
-				Color fill = new Color(255, 185, 0, 32); // TODO - from config
-				drawTile(graphics, tile, border, fill, getDashedLine());
+				Color border = new Color(180, 180, 180, 96); // TODO - from config
+				Color fill = new Color(180, 180, 180, 16); // TODO - from config
+				drawTile(graphics, tile, border, fill, getSolidLine());
 				Color textColor = new Color(180, 180, 180); // TODO - from config
 				continue;
 			}
@@ -140,8 +140,8 @@ public class TilemanModeOverlay extends Overlay
 
 			// draw tiles requiring fresh unlock
 			tilesRequired += 1;
-			Color border = new Color(255, 0, 0, 96); // TODO - from config
-			Color fill = new Color(255, 0, 0, 32); // TODO - from config
+			Color border = new Color(180, 180, 180, 96); // TODO - from config
+			Color fill = new Color(180, 180, 180, 16); // TODO - from config
 			drawTile(graphics, tile, border, fill, getDashedLine());
 
 			// draw tile cost to unlock
@@ -188,6 +188,8 @@ public class TilemanModeOverlay extends Overlay
 			return;
 		}
 
+		insetTilePoly(poly);
+
 		OverlayUtil.renderPolygon(graphics, poly, border, fill, stroke);
 	}
 
@@ -230,5 +232,28 @@ public class TilemanModeOverlay extends Overlay
 			lastPathEnd = hoverTile;
 			pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
 		}
+	}
+
+	private void insetTilePoly(Polygon source)
+	{
+		int centreX = (source.xpoints[0] + source.xpoints[1] + source.xpoints[2] + source.xpoints[3]) / 4;
+		int centreY = (source.ypoints[0] + source.ypoints[1] + source.ypoints[2] + source.ypoints[3]) / 4;
+
+		// 20% inset
+		source.xpoints[0] = (source.xpoints[0] * 4 + centreX) / 5;
+		source.xpoints[1] = (source.xpoints[1] * 4 + centreX) / 5;
+		source.xpoints[2] = (source.xpoints[2] * 4 + centreX) / 5;
+		source.xpoints[3] = (source.xpoints[3] * 4 + centreX) / 5;
+
+		source.ypoints[0] = (source.ypoints[0] * 4 + centreY) / 5;
+		source.ypoints[1] = (source.ypoints[1] * 4 + centreY) / 5;
+		source.ypoints[2] = (source.ypoints[2] * 4 + centreY) / 5;
+		source.ypoints[3] = (source.ypoints[3] * 4 + centreY) / 5;
+
+	}
+
+	public void updateRenderConfigCache() {
+		// because render is invoked extremely frequently, we don't want to config read often
+		// instead we cache the values read into variables and update when changed
 	}
 }

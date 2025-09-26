@@ -218,6 +218,8 @@ public class TilemanModePlugin extends Plugin {
         }
         lastAutoTilesConfig = config.automarkTiles();
         updateTileCountFromConfigs();
+
+        overlay.updateRenderConfigCache();
     }
 
     @Subscribe
@@ -247,9 +249,9 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.add(infoOverlay);
 
         // update so we render if the plugin has just been freshly enabled.
+        overlay.updateRenderConfigCache();
         updateTileCountFromConfigs();
         updateTilesToRender();
-
 
         TilemanImportPanel panel = new TilemanImportPanel(this);
         NavigationButton navButton = NavigationButton.builder()
