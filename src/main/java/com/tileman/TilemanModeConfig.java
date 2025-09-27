@@ -62,7 +62,7 @@ public interface TilemanModeConfig extends Config {
     String claimedTilesSection = "claimedTiles";
 
     @ConfigSection(
-            name = "Complete Path",
+            name = "Claimed on Complete Path",
             description = "Wayfinder tile rendering options for tiles on a complete path requiring no unlocks",
             position = 5,
             closedByDefault = true
@@ -70,20 +70,20 @@ public interface TilemanModeConfig extends Config {
     String completePathSection = "completePath";
 
     @ConfigSection(
-            name = "Incomplete Path - Unclaimed",
-            description = "Wayfinder tile rendering options for unclaimed tiles on a path that requires unlocks",
+            name = "Claimed on Incomplete Path",
+            description = "Wayfinder tile rendering options for claimed tiles on a path that requires unlocks",
             position = 6,
             closedByDefault = true
     )
-    String unclaimedPathSection = "unclaimedPath";
+    String claimedPathSection = "claimedPath";
 
     @ConfigSection(
-            name = "Incomplete Path - Claimed",
-            description = "Wayfinder tile rendering options for claimed tiles on a path that requires unlocks",
+            name = "Unclaimed on Incomplete Path",
+            description = "Wayfinder tile rendering options for unclaimed tiles on a path that requires unlocks",
             position = 7,
             closedByDefault = true
     )
-    String claimedPathSection = "claimedPath";
+    String unclaimedPathSection = "unclaimedPath";
 
     @ConfigSection(
             name = "Metrics",
@@ -250,7 +250,7 @@ public interface TilemanModeConfig extends Config {
             position = 1
     )
     default boolean drawTilesOnMinimap() {
-        return false;
+        return true;
     }
 
     @ConfigItem(
@@ -261,20 +261,222 @@ public interface TilemanModeConfig extends Config {
             position = 2
     )
     default boolean drawTilesOnWorldMap() {
-        return false;
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "drawTilesUnderPaths",
+            name = "Draw on wayfinder path",
+            section = claimedTilesSection,
+            description = "Enable to draw claimed tiles under the predictive wayfinder paths",
+            position = 3
+    )
+    default boolean drawTilesUnderPaths() {
+        return true;
     }
 
     @Alpha
     @ConfigItem(
+            // keyName here should not be made consistent as this is a legacy schema field
+            // we don't want upgrading version to stop respecting old settings
             keyName = "markerColor",
             name = "Tile Border Color",
             section = claimedTilesSection,
-            description = "Configures the border color of the tiles",
+            description = "Border color of unlocked tiles",
+            position = 4
+    )
+    default Color claimedTileBorderColor() { return new Color(123,232,0,79); }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "claimedTileFillColor",
+            name = "Tile Fill Color",
+            section = claimedTilesSection,
+            description = "Fill color of unlocked tiles",
+            position = 5
+    )
+    default Color claimedTileFillColor() { return new Color(0, 0, 0, 32); }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "claimedTileWarningColor",
+            name = "Tile Warning Color",
+            section = claimedTilesSection,
+            description = "Color claimed tile borders change to at the warning threshold",
+            position = 6
+    )
+    default Color claimedTileWarningColor() { return new Color(255, 153, 0, 90); }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "claimedTileDeficitColor",
+            name = "Tile Deficit Color",
+            section = claimedTilesSection,
+            description = "Color claimed tile borders change to when no tile unlocks remain.",
+            position = 7
+    )
+    default Color claimedTileDeficitColor() { return new Color(255, 0, 0, 128); }
+
+    @ConfigItem(
+            keyName = "insetClaimedTiles",
+            name = "Inset",
+            section = claimedTilesSection,
+            description = "Reduces the rendered tile size by 20%",
+            position = 8
+    )
+    default boolean insetClaimedTiles() {
+        return false;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // completePath section
+
+    @Alpha
+    @ConfigItem(
+            keyName = "completePathBorderColor",
+            name = "Border Color",
+            section = completePathSection,
+            description = "Border color of path tiles on paths with all tiles claimed",
+            position = 1
+    )
+    default Color completePathBorderColor() { return new Color(0, 255, 0, 64); }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "completePathFillColor",
+            name = "Fill Color",
+            section = completePathSection,
+            description = "Fill color of path tiles on paths with all tiles claimed",
+            position = 2
+    )
+    default Color completePathFillColor() { return new Color(0, 255, 0, 16); }
+
+    @ConfigItem(
+            keyName = "insetCompletePathTiles",
+            name = "Inset",
+            section = completePathSection,
+            description = "Reduces the rendered tile size by 20%",
             position = 3
     )
-    default Color markerColor() {
-        return Color.YELLOW;
-    }
+    default boolean insetCompletePathTiles() { return true; }
+
+    @ConfigItem(
+            keyName = "animateCompletePathTiles",
+            name = "Animate",
+            section = completePathSection,
+            description = "Makes the border of the tile smoothly pulse.",
+            position = 4
+    )
+    default boolean animateCompletePathTiles() { return true; }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // claimedPath section
+
+    @Alpha
+    @ConfigItem(
+            keyName = "claimedPathBorderColor",
+            name = "Border Color",
+            section = claimedPathSection,
+            description = "Border color of claimed path tiles on paths that are partially claimed",
+            position = 1
+    )
+    default Color claimedPathBorderColor() { return new Color(0, 255, 0, 64); }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "claimedPathFillColor",
+            name = "Fill Color",
+            section = claimedPathSection,
+            description = "Fill color of claimed path tiles on paths that are partially claimed",
+            position = 2
+    )
+    default Color claimedPathFillColor() { return new Color(0, 255, 0, 16); }
+
+    @ConfigItem(
+            keyName = "insetClaimedPathTiles",
+            name = "Inset",
+            section = claimedPathSection,
+            description = "Reduces the rendered tile size by 20%",
+            position = 3
+    )
+    default boolean insetClaimedPathTiles() { return true; }
+
+    @ConfigItem(
+            keyName = "animateClaimedPathTiles",
+            name = "Animate",
+            section = claimedPathSection,
+            description = "Makes the border of the tile smoothly pulse.",
+            position = 4
+    )
+    default boolean animateClaimedPathTiles() { return true; }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // unclaimedPath section
+
+    @Alpha
+    @ConfigItem(
+            keyName = "unclaimedPathBorderColor",
+            name = "Border Color",
+            section = unclaimedPathSection,
+            description = "Border color of unclaimed path tiles on paths that are partially claimed",
+            position = 1
+    )
+    default Color unclaimedPathBorderColor() { return new Color(180, 180, 180, 96); }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "unclaimedPathFillColor",
+            name = "Fill Color",
+            section = unclaimedPathSection,
+            description = "Fill color of unclaimed path tiles on paths that are partially claimed",
+            position = 2
+    )
+    default Color unclaimedPathFillColor() { return new Color(180, 180, 180, 16); }
+
+    @ConfigItem(
+            keyName = "insetUnclaimedPathTiles",
+            name = "Inset",
+            section = unclaimedPathSection,
+            description = "Reduces the rendered tile size by 20%",
+            position = 3
+    )
+    default boolean insetUnclaimedPathTiles() { return true; }
+
+    @ConfigItem(
+            keyName = "animateUnclaimedPathTiles",
+            name = "Animate",
+            section = unclaimedPathSection,
+            description = "Makes the border of the tile smoothly pulse.",
+            position = 4
+    )
+    default boolean animateUnclaimedPathTiles() { return true; }
+
+    @ConfigItem(
+            keyName = "showWayfinderClaimCosts",
+            name = "Show claim cost",
+            section = unclaimedPathSection,
+            description = "Shows the cost to unlock tiles on the wayfinder path.",
+            position = 5
+    )
+    default boolean showClaimCosts() { return true; }
+
+    @ConfigItem(
+            keyName = "showWayfinderClaimCostsAsRemaining",
+            name = "Show costs as remaining",
+            section = unclaimedPathSection,
+            description = "Shows the cost to unlock tiles as the balance remaining after claiming.",
+            position = 6
+    )
+    default boolean showClaimCostsAsRemaining() { return false; }
+
+    @ConfigItem(
+            keyName = "wayfinderCostsTextColor",
+            name = "Tile Costs Color",
+            section = unclaimedPathSection,
+            description = "Text color of claim costs",
+            position = 7
+    )
+    default Color claimCostsColor() { return new Color(200, 200, 200); }
 
     ///////////////////////////////////////////////////////////////////////////
     // metrics section

@@ -216,8 +216,6 @@ public class TilemanModePlugin extends Plugin {
         }
         lastAutoTilesConfig = config.automarkTiles();
         updateTileCountFromConfigs();
-
-        overlay.updateRenderConfigCache();
     }
 
     @Subscribe
@@ -247,7 +245,6 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.add(infoOverlay);
 
         // update so we render if the plugin has just been freshly enabled.
-        overlay.updateRenderConfigCache();
         updateTileCountFromConfigs();
         updateTilesToRender();
 
@@ -291,8 +288,7 @@ public class TilemanModePlugin extends Plugin {
             handleWalkedToTile(playerPosLocal);
             lastTile = playerPosLocal;
             lastPlane = client.getPlane();
-            log.debug("player moved");
-            log.debug("last tile={}  distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
+            log.debug("moved to tile={} distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
         }
 
         // Refresh metrics

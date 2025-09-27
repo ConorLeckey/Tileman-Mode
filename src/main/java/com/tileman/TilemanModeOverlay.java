@@ -77,7 +77,7 @@ public class TilemanModeOverlay extends Overlay
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
+	public Dimension render(Graphics2D g)
 	{
 		// refresh the path if player or target has changed location
 		updatePathIfOutdated();
@@ -92,15 +92,25 @@ public class TilemanModeOverlay extends Overlay
 		Boolean shiftIsHeld = client.isKeyPressed(KeyCode.KC_SHIFT);
 		final Collection<WorldPoint> pathTiles = (shiftIsHeld || shortCircuit) ? Collections.emptyList() : pathToHoverTile;
 
+		// TODO - Should this be done continually or when a path is recalculated?
+		// TODO - I think this should probably only be done when recalcing to make render more optimised
 		// build subset of tiles outside the path to render
 		Set<WorldPoint> simpleTiles = new HashSet<>(plugin.getTilesToRender());
-		simpleTiles.removeAll(pathTiles);
+		if (!config.drawTilesUnderPaths()){
+			simpleTiles.removeAll(pathTiles);
+		}
 
 		// render non path tile squares
 		for (WorldPoint tile : simpleTiles) {
-			Color border = getTileColor();
-			Color fill = new Color(0, 0, 0, 32); // TODO - from config
-			drawTile(graphics, tile, border, fill, getSolidLine());
+			Color border = getClaimedTileBorderColor();
+			Color fill = config.claimedTileFillColor();
+			drawTile(g, tile, border, fill, getSolidLine(), config.insetClaimedTiles());
+		}
+
+		// Exit early to avoid rendering path tiles while shift is held
+		// Interacting with right click menu can be annoying otherwise
+		if (shiftIsHeld || !config.enableWayfinder()){
+			return null;
 		}
 
 		// render path tiles
@@ -111,45 +121,47 @@ public class TilemanModeOverlay extends Overlay
 			// render claimed path tiles as ordinary path tile squares if shift is held
 			Boolean tileIsClaimed = plugin.getTilesToRender().contains(tile);
 			if (shiftIsHeld && tileIsClaimed) {
-				Color border = getTileColor();
-				Color fill = new Color(0, 0, 0, 32); // TODO - from config
-				drawTile(graphics, tile, border, fill, getSolidLine());
+				Color border = getClaimedTileBorderColor();
+				Color fill = config.claimedTileFillColor();
+				boolean inset = config.insetClaimedTiles();
+				drawTile(g, tile, border, fill, getSolidLine(), inset);
 				continue;
 			}
 
 			// if whole path is unlocked highlight the path to hover tile
 			if (allUnlocked) {
-				Color border = new Color(0, 255, 0, 64); // TODO - from config
-				Color fill = new Color(0, 255, 0, 16); // TODO - from config
-				drawTile(graphics, tile, border, fill, getDashedLine());
-				Color textColor = new Color(180, 180, 180); // TODO - from config
+				Color border = config.completePathBorderColor();
+				Color fill = config.completePathFillColor();
+				BasicStroke stroke = config.animateCompletePathTiles() ? getDashedLine() : getSolidLine();
+				boolean inset = config.insetCompletePathTiles();
+				drawTile(g, tile, border, fill, stroke, inset);
 				continue;
 			}
 
 			// render partially claimed paths
 			if (tileIsClaimed) {
-				Color border = new Color(180, 180, 180, 96); // TODO - from config
-				Color fill = new Color(180, 180, 180, 16); // TODO - from config
-				drawTile(graphics, tile, border, fill, getSolidLine());
-				Color textColor = new Color(180, 180, 180); // TODO - from config
-				continue;
-			}
-
-			// dont render unclaimed tiles while shift is held
-			if (shiftIsHeld){
+				Color border = config.claimedPathBorderColor();
+				Color fill = config.claimedPathFillColor();
+				BasicStroke stroke = config.animateClaimedPathTiles() ? getDashedLine() : getSolidLine();
+				boolean inset = config.insetClaimedPathTiles();
+				drawTile(g, tile, border, fill, stroke, inset);
 				continue;
 			}
 
 			// draw tiles requiring fresh unlock
 			tilesRequired += 1;
-			Color border = new Color(180, 180, 180, 96); // TODO - from config
-			Color fill = new Color(180, 180, 180, 16); // TODO - from config
-			drawTile(graphics, tile, border, fill, getDashedLine());
+			Color border = config.unclaimedPathBorderColor();
+			Color fill = config.unclaimedPathFillColor();
+			BasicStroke stroke = config.animateUnclaimedPathTiles() ? getDashedLine() : getSolidLine();
+			boolean inset = config.insetUnclaimedPathTiles();
+			drawTile(g, tile, border, fill, stroke, inset);
 
 			// draw tile cost to unlock
-			Color textColor = new Color(200, 200, 200); // TODO - from config
-			drawTileText(graphics, tile, textColor, String.valueOf(tilesRequired));
-
+			Color textColor = config.claimCostsColor();
+			if (config.showClaimCosts()) {
+				int tileCount = config.showClaimCostsAsRemaining() ? plugin.getRemainingTiles() - tilesRequired : tilesRequired;
+				drawTileText(g, tile, textColor, String.valueOf(tileCount));
+			}
 		}
 
 		return null;
@@ -169,7 +181,13 @@ public class TilemanModeOverlay extends Overlay
 		}
 	}
 
-	private void drawTile(Graphics2D graphics, WorldPoint point, Color border, Color fill, BasicStroke stroke)
+	private void drawTile(
+			Graphics2D graphics,
+			WorldPoint point,
+			Color border,
+			Color fill,
+			BasicStroke stroke,
+			Boolean inset)
 	{
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
@@ -190,20 +208,22 @@ public class TilemanModeOverlay extends Overlay
 			return;
 		}
 
-		insetTilePoly(poly);
+		if (inset) {
+			insetTilePoly(poly);
+		}
 
 		OverlayUtil.renderPolygon(graphics, poly, border, fill, stroke);
 	}
 
-	private Color getTileColor() {
+	private Color getClaimedTileBorderColor() {
 		if(config.enableTileWarnings()) {
 			if (plugin.getRemainingTiles() <= 0) {
-				return Color.RED;
+				return config.claimedTileDeficitColor();
 			} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
-				return new Color(255, 153, 0);
+				return config.claimedTileWarningColor();
 			}
 		}
-		return config.markerColor();
+		return config.claimedTileBorderColor();
 	}
 
 	private BasicStroke getSolidLine() {
@@ -223,18 +243,20 @@ public class TilemanModeOverlay extends Overlay
 	}
 
 	private void updatePathIfOutdated(){
-		Instant startTime = Instant.now();
-		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-		WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
-		Boolean playerMoved = !lastPathStart.equals(playerLocation);
-		Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
-		Boolean recalculate = playerMoved || hoverTileChanged;
+		if (config.enableWayfinder()) {
+			Instant startTime = Instant.now();
+			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+			WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
+			Boolean playerMoved = !lastPathStart.equals(playerLocation);
+			Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
+			Boolean recalculate = playerMoved || hoverTileChanged;
 
-		if (recalculate){
-			lastPathStart = playerLocation;
-			lastPathEnd = hoverTile;
-			pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
-			plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
+			if (recalculate) {
+				lastPathStart = playerLocation;
+				lastPathEnd = hoverTile;
+				pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
+				plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
+			}
 		}
 	}
 
@@ -254,10 +276,5 @@ public class TilemanModeOverlay extends Overlay
 		source.ypoints[2] = (source.ypoints[2] * 4 + centreY) / 5;
 		source.ypoints[3] = (source.ypoints[3] * 4 + centreY) / 5;
 
-	}
-
-	public void updateRenderConfigCache() {
-		// because render is invoked extremely frequently, we don't want to config read often
-		// instead we cache the values read into variables and update when changed
 	}
 }
