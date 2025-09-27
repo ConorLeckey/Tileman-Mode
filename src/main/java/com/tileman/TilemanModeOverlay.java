@@ -79,7 +79,6 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D g)
 	{
-		// refresh the path if player or target has changed location
 		updatePathIfOutdated();
 
 		// Don't draw paths if menu option isn't walk here
@@ -92,8 +91,6 @@ public class TilemanModeOverlay extends Overlay
 		Boolean shiftIsHeld = client.isKeyPressed(KeyCode.KC_SHIFT);
 		final Collection<WorldPoint> pathTiles = (shiftIsHeld || shortCircuit) ? Collections.emptyList() : pathToHoverTile;
 
-		// TODO - Should this be done continually or when a path is recalculated?
-		// TODO - I think this should probably only be done when recalcing to make render more optimised
 		// build subset of tiles outside the path to render
 		Set<WorldPoint> simpleTiles = new HashSet<>(plugin.getTilesToRender());
 		if (!config.drawTilesUnderPaths()){
@@ -236,8 +233,9 @@ public class TilemanModeOverlay extends Overlay
 	}
 
 	private void updateDashPhase(){
+
 		dashPhase += 1.0f;
-		if (dashPhase > 15.0f) { // must be total length of dashPattern to loop smoothly
+		if (dashPhase >= 15.0f) { // must be total length of dashPattern to loop smoothly
 			dashPhase = 0;
 		}
 	}
