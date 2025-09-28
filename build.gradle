@@ -13,6 +13,7 @@ repositories {
 def runeLiteVersion = 'latest.release'
 
 dependencies {
+	implementation 'ch.qos.logback:logback-classic:1.5.18'
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
 
 	compileOnly 'org.projectlombok:lombok:1.18.4'
