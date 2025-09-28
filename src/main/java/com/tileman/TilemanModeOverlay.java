@@ -244,7 +244,18 @@ public class TilemanModeOverlay extends Overlay
 		if (config.enableWayfinder()) {
 			Instant startTime = Instant.now();
 			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-			WorldPoint hoverTile = client.getSelectedSceneTile().getWorldLocation();
+			Tile selected = client.getTopLevelWorldView().getSelectedSceneTile();
+
+			// exit early if selected tile is garbage
+			if (selected == null){
+				lastPathStart = playerLocation;
+				lastPathEnd = playerLocation;
+				pathToHoverTile = wayfinder.findPath(playerLocation, playerLocation);
+				plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
+				return;
+			}
+
+			WorldPoint hoverTile = selected.getWorldLocation();
 			Boolean playerMoved = !lastPathStart.equals(playerLocation);
 			Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
 			Boolean recalculate = playerMoved || hoverTileChanged;
