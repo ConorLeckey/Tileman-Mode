@@ -474,11 +474,14 @@ public class TilemanModePlugin extends Plugin {
 
     private Collection<TilemanModeTile> readV2FormatData(int regionID, int plane) {
 
+        // generate the list to build or return empty.
+        List<TilemanModeTile> tilesStoredInV2Format = new ArrayList<>();
+
         // grab the raw encoded string in Base64 from the config file
         String encoded = configManager.getConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionID + "_" + plane);
 
         if (encoded == null){
-            return Collections.emptyList();
+            return tilesStoredInV2Format;
         }
 
         // decode to a byte array, then interpret it as a Bitset
@@ -486,11 +489,10 @@ public class TilemanModePlugin extends Plugin {
 
         // return if there's no data under that key
         if (bytes == null || bytes.length == 0){
-            return Collections.emptyList();
+            return tilesStoredInV2Format;
         }
 
         BitSet bitSet = BitSet.valueOf(bytes);
-        List<TilemanModeTile> tilesStoredInV2Format = new ArrayList<>();
 
         // find bits set to 1, and create a tile when they're found
         for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
@@ -751,7 +753,7 @@ public class TilemanModePlugin extends Plugin {
         WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, localPoint);
         int regionId = worldPoint.getRegionID();
         TilemanModeTile tile = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), plane);
-
+        log.debug("Updating point: {} - {}", tile, worldPoint);
         Collection<TilemanModeTile> tiles = readTiles(regionId, plane);
         Boolean tileIsUnlocked = tiles.contains(tile);
         WorldPoint point = WorldPoint.fromRegion(tile.getRegionId(), tile.getRegionX(), tile.getRegionY(), tile.getZ());
@@ -760,9 +762,6 @@ public class TilemanModePlugin extends Plugin {
         // attempt to unlock
         if (claimTile && !tileIsUnlocked) {
             if ((config.allowTileDeficit() || remainingTiles > 0)) {
-                if (tiles.isEmpty()){
-                    tiles = new ArrayList<TilemanModeTile>();
-                }
                 tiles.add(tile);
                 tilesToRender.add(worldPoint);
                 totalTilesUsed += 1;
