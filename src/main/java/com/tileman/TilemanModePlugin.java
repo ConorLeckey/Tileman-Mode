@@ -237,10 +237,9 @@ public class TilemanModePlugin extends Plugin {
         updateTileCountFromConfigs();
         updateTilesToRender();
 
-
-        TilemanImportPanel panel = new TilemanImportPanel(this);
+        GroupTilemanDataManager panel = new GroupTilemanDataManager(this, configManager);
         NavigationButton navButton = NavigationButton.builder()
-                .tooltip("Tileman Import")
+                .tooltip("Group Tileman Data")
                 .icon(ImageUtil.getResourceStreamFromClass(getClass(), "/icon.png"))
                 .priority(70)
                 .panel(panel)
@@ -417,7 +416,8 @@ public class TilemanModePlugin extends Plugin {
                         filteredTiles.add(tile);
                     }
                 }
-                writeV2FormatData(regionId, filteredTiles, plane);
+                key = "regionv2_" + regionId + "_" + plane;
+                writeV2FormatData(filteredTiles, key);
             }
         }
         configManager.sendConfig(); // v1 -> v2 saved to disk
@@ -439,7 +439,8 @@ public class TilemanModePlugin extends Plugin {
     private void writeTiles(int regionId, Collection<TilemanModeTile> tiles, int plane) {
         // Wrap data writes using this handler so if the format changes in future only one location needs updating
         Instant startTime = Instant.now();
-        writeV2FormatData(regionId, tiles, plane);
+        String key = REGION_PREFIX_V2 + regionId + "_" + plane;
+        writeV2FormatData(tiles, key);
         Duration d = Duration.between(startTime, Instant.now());
         log.debug("TileManMode writeTiles (memory) - Finish (" + d.toMillis() + "ms)");
     }
@@ -518,11 +519,11 @@ public class TilemanModePlugin extends Plugin {
         log.debug("TileManMode updateTilesToRender - Finish (" + d.toNanos()+ " nanoseconds)");
     }
 
-    private void writeV2FormatData(int regionId, Collection<TilemanModeTile> tiles, int plane) {
+    public void writeV2FormatData(Collection<TilemanModeTile> tiles, String key) {
 
         // don't write empty regions. remove them instead.
         if (tiles == null || tiles.isEmpty()) {
-            configManager.unsetConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + plane);
+            configManager.unsetConfiguration(CONFIG_GROUP, key);
             return;
         }
 
@@ -533,7 +534,7 @@ public class TilemanModePlugin extends Plugin {
         }
 
         // write out the plane data directly to base64 encoded string.
-        configManager.setConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionId + "_" + plane, out.toByteArray());
+        configManager.setConfiguration(CONFIG_GROUP, key, out.toByteArray());
     }
 
     private Collection<WorldPoint> translateToWorldPoint(Collection<TilemanModeTile> points) {
