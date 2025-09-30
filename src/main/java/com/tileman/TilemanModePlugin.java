@@ -795,6 +795,10 @@ public class TilemanModePlugin extends Plugin {
         log.debug("TileManMode updateTileMark - Finish (" + d.toNanos()+ " nanoseconds)");
     }
 
+    public String getPlayerName() {
+        return client.getLocalPlayer().getName();
+    }
+
     int getXpUntilNextTile() {
         return xpUntilNextTile;
     }

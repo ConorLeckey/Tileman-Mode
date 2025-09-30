@@ -6,6 +6,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.FlatTextField;
 
+import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import javax.inject.Singleton;
 import javax.swing.*;
@@ -16,11 +17,10 @@ import java.util.*;
 import java.awt.datatransfer.DataFlavor;
 import java.util.List;
 
-import net.runelite.client.chat.ChatMessageManager;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
-class TilesFromUser {
+class GroupTilemanData {
     String playerName;
     TreeMap<String, List<TilemanModeTile>> regionTiles;
 }
@@ -31,17 +31,16 @@ public class GroupTilemanDataManager extends PluginPanel {
 
     private JPanel panel;
     private GridBagConstraints constraints;
-    private ChatMessageManager chatMessageManager;
     private TilemanModePlugin plugin;
     private ConfigManager configManager;
 
     public GroupTilemanDataManager(TilemanModePlugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
-        updatePanelcontents();
+        updatePanelContents();
     }
 
-    private void updatePanelcontents() {
+    private void updatePanelContents() {
         // clean any previous panel contents
         removeAll();
 
@@ -113,8 +112,21 @@ public class GroupTilemanDataManager extends PluginPanel {
         constraints.gridy++;
     }
 
-    private void deleteButtonClicked(String key) {
-        log.debug(key);
+    private void deleteButtonClicked(String dataSetName) {
+        log.debug(dataSetName);
+        List<String> allKeys = configManager.getConfigurationKeys("tilemanMode" + "." + "imported_" + dataSetName);
+        for (String key : allKeys) {
+            String prefixToScrub = "tilemanMode.";
+            key = key.substring(prefixToScrub.length());
+            configManager.unsetConfiguration("tilemanMode", key);
+            log.debug("scrubbed config key: " + "tilemanMode." + key);
+        }
+
+        // write to disk after deleting all the keys
+        configManager.sendConfig();
+
+        // rebuild the visual menu
+        updatePanelContents();
     }
 
     private void addTitleToLayout(String label) {
@@ -176,19 +188,23 @@ public class GroupTilemanDataManager extends PluginPanel {
 
     private void processGroupTilemanImport(String clipboardText){
 
-        // Process legacy group tileman export string to v2 data format store
-        TilesFromUser parsedData;
+        // Read group tileman export string to v2 data format store
+        GroupTilemanData parsedData;
         try {
             Gson gson = new Gson();
-            parsedData = gson.fromJson(clipboardText, TilesFromUser.class);
+            parsedData = gson.fromJson(clipboardText, GroupTilemanData.class);
         } catch (JsonSyntaxException e) {
             log.debug(" | The text on the clipboard was unable to be parsed. Abandoning import.", e);
             return;
         }
 
-        // clean the label by scrubbing all non alphanumeric characters as these can interfere with parsing
+        // clean the label by scrubbing all non-alphanumeric characters as these can interfere with parsing
         String cleaningRegex = "[^a-zA-Z0-9]";
         String cleanLabel = parsedData.playerName.replaceAll(cleaningRegex, "");
+
+        // clean any existing data stored under the same key name
+        List<String> allKeys = configManager.getConfigurationKeys("tilemanMode" + "." + "imported_" + cleanLabel);
+        deleteButtonClicked(cleanLabel);
 
         // write the imported data to the config store
         for (String regionStr : parsedData.regionTiles.keySet()) {
@@ -210,12 +226,38 @@ public class GroupTilemanDataManager extends PluginPanel {
             }
         }
 
-        configManager.sendConfig(); // save to disk
+        // save to disk since we've imported new data
+        configManager.sendConfig();
+
+        // rebuild the visual menu
+        updatePanelContents();
+
         log.debug(" | Tiles successfully imported under label " + cleanLabel);
     }
 
     private void exportButtonClicked() {
-        log.debug("export attempted");
+
+        GroupTilemanData exportData = new GroupTilemanData();
+        exportData.playerName = plugin.getPlayerName();
+        exportData.regionTiles = new TreeMap<>();
+
+        // player keys that need processing into the data structure
+        Set<Integer> regionsToExport = plugin.getAllRegionIds("tilemanMode", "regionv2_");
+
+        for (int regionId : regionsToExport) {
+            List<TilemanModeTile> points = new ArrayList<>();
+            for (int plane = 0; plane < 4; plane++) {
+                points.addAll(plugin.readTiles(regionId, plane));
+            }
+            exportData.regionTiles.put("region_" + String.valueOf(regionId), points);
+        }
+
+        Gson gson = new Gson();
+        final String exportDump = gson.toJson(exportData);
+        log.debug("Exported ground markers: {}", exportDump);
+        Toolkit.getDefaultToolkit()
+                .getSystemClipboard()
+                .setContents(new StringSelection(exportDump), null);
     }
 
 }
