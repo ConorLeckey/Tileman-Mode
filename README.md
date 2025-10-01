@@ -20,6 +20,8 @@ Option to include your total level in the total usable tiles, along side your ex
 
 Ability to import Ground Marker tiles, if you started playing using the Ground Marker plugin.
 
+Natively supports import/export of tiles for Group Tileman gameplay (no additional plugins required).
+
 ## Known Issues
 Moving between map chunks will sometimes cause tiles to be missed.
 
