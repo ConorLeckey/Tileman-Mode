@@ -134,6 +134,9 @@ public class GroupTilemanDataManager extends PluginPanel {
 
         // rebuild the visual menu
         updatePanelContents();
+
+        // update the tiles that the player can visually see on screen around them since tiles have been deleted
+        plugin.updateTilesToRender();
     }
 
     private void addTitleToLayout(String label) {
@@ -242,6 +245,9 @@ public class GroupTilemanDataManager extends PluginPanel {
 
         // rebuild the visual menu
         updatePanelContents();
+
+        // update the tiles that the player can visually see on screen around them based on the new import data
+        plugin.updateTilesToRender();
 
         log.debug(" | Tiles successfully imported under label " + cleanLabel);
     }

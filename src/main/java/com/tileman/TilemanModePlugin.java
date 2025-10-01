@@ -68,8 +68,13 @@ public class TilemanModePlugin extends Plugin {
     private static final String REGION_PREFIX = "region_";
     private static final String REGION_PREFIX_V2 = "regionv2_";
 
+    private GroupTilemanDataManager groupTilemanDataManager;
+
     @Getter(AccessLevel.PACKAGE)
     private final List<WorldPoint> tilesToRender = new ArrayList<>();
+
+    @Getter(AccessLevel.PACKAGE)
+    private final Set<WorldPoint> groupTilesToRender = new HashSet<>();
 
     @Inject
     private Client client;
@@ -237,12 +242,12 @@ public class TilemanModePlugin extends Plugin {
         updateTileCountFromConfigs();
         updateTilesToRender();
 
-        GroupTilemanDataManager panel = new GroupTilemanDataManager(this, configManager);
+        groupTilemanDataManager = new GroupTilemanDataManager(this, configManager);
         NavigationButton navButton = NavigationButton.builder()
                 .tooltip("Group Tileman Data")
                 .icon(ImageUtil.getResourceStreamFromClass(getClass(), "/icon.png"))
                 .priority(70)
-                .panel(panel)
+                .panel(groupTilemanDataManager)
                 .build();
 
         clientToolbar.addNavigation(navButton);
@@ -256,6 +261,7 @@ public class TilemanModePlugin extends Plugin {
         overlayManager.remove(worldMapOverlay);
         overlayManager.remove(infoOverlay);
         tilesToRender.clear();
+        groupTilesToRender.clear();
     }
 
     private void autoMark() {
@@ -449,9 +455,14 @@ public class TilemanModePlugin extends Plugin {
         // Wrap most data reads using this handler so if the format changes in future only one location needs updating
         // The logging here is spammy for general development but useful for on demand profiling, so we comment gate it.
         //Instant startTime = Instant.now();
-        Collection<TilemanModeTile> tiles = readV2FormatData(regionId, plane);
+        Collection<TilemanModeTile> tiles = readV2FormatData(REGION_PREFIX_V2, regionId, plane);
         //Duration d = Duration.between(startTime, Instant.now());
         //log.debug("TileManMode readTiles (memory) " + regionId + ":" + plane + " - Finish (" + d.toNanos()+ " nanoseconds)");
+        return tiles;
+    }
+
+    public Collection<TilemanModeTile> readImportedTileSet(String key, int regionId, int plane) {
+        Collection<TilemanModeTile> tiles = readV2FormatData("imported_" + key + "_", regionId, plane);
         return tiles;
     }
 
@@ -468,13 +479,14 @@ public class TilemanModePlugin extends Plugin {
         }.getType());
     }
 
-    private Collection<TilemanModeTile> readV2FormatData(int regionID, int plane) {
+    private Collection<TilemanModeTile> readV2FormatData(String prefix, int regionID, int plane) {
 
         // generate the list to build or return empty.
         List<TilemanModeTile> tilesStoredInV2Format = new ArrayList<>();
 
         // grab the raw encoded string in Base64 from the config file
-        String encoded = configManager.getConfiguration(CONFIG_GROUP, REGION_PREFIX_V2 + regionID + "_" + plane);
+        String key = prefix + regionID + "_" + plane;
+        String encoded = configManager.getConfiguration(CONFIG_GROUP, key);
 
         if (encoded == null){
             return tilesStoredInV2Format;
@@ -500,19 +512,30 @@ public class TilemanModePlugin extends Plugin {
         return tilesStoredInV2Format;
     }
 
-    private void updateTilesToRender() {
+    public void updateTilesToRender() {
         Instant startTime = Instant.now();
+
+        // clear any existing rendering arrays
         tilesToRender.clear();
+        groupTilesToRender.clear();
 
+        // we only want to update tiles to render if they are around the player
         int[] regions = client.getMapRegions();
-
         if (regions == null) {
             return;
         }
 
         for (int regionId : regions) {
+
+            // update player centric tile claims
             Collection<WorldPoint> worldPoint = translateToWorldPoint(readTiles(regionId, client.getPlane()));
             tilesToRender.addAll(worldPoint);
+
+            // update group tileman claims
+            for (String tileSetName : groupTilemanDataManager.getImportedDataSetKeys()) {
+                Collection<WorldPoint> groupTiles = translateToWorldPoint(readImportedTileSet(tileSetName, regionId, client.getPlane()));
+                groupTilesToRender.addAll(groupTiles);
+            }
         }
 
         Duration d = Duration.between(startTime, Instant.now());
@@ -756,9 +779,10 @@ public class TilemanModePlugin extends Plugin {
         Boolean tileIsUnlocked = tiles.contains(tile);
         WorldPoint point = WorldPoint.fromRegion(tile.getRegionId(), tile.getRegionX(), tile.getRegionY(), tile.getZ());
         Boolean stateChanged = false;
+        Boolean groupTilemanClaimed = groupTilesToRender.contains(WorldPoint.fromLocalInstance(client, localPoint));
 
         // attempt to unlock
-        if (claimTile && !tileIsUnlocked) {
+        if (claimTile && !tileIsUnlocked && !groupTilemanClaimed) {
             if ((config.allowTileDeficit() || remainingTiles > 0)) {
                 log.debug("TileManMode updateTileMark - claimed tile");
                 tiles.add(tile);
@@ -801,6 +825,10 @@ public class TilemanModePlugin extends Plugin {
 
     int getXpUntilNextTile() {
         return xpUntilNextTile;
+    }
+
+    GroupTilemanDataManager getGroupTilemanDataManager() {
+        return groupTilemanDataManager;
     }
 
     @AllArgsConstructor
