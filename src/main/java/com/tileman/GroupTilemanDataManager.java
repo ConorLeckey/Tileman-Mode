@@ -33,6 +33,7 @@ public class GroupTilemanDataManager extends PluginPanel {
     private GridBagConstraints constraints;
     private TilemanModePlugin plugin;
     private ConfigManager configManager;
+    private Set<String> importedDataSetKeys = new HashSet<>();
 
     public GroupTilemanDataManager(TilemanModePlugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
@@ -40,8 +41,12 @@ public class GroupTilemanDataManager extends PluginPanel {
         updatePanelContents();
     }
 
+    public Set<String> getImportedDataSetKeys(){
+        return importedDataSetKeys;
+    }
+
     private void updatePanelContents() {
-        // clean any previous panel contents
+        // clean any previous panel contents ready for a fresh update
         removeAll();
 
         // stylize the panel
@@ -90,10 +95,12 @@ public class GroupTilemanDataManager extends PluginPanel {
         // display imported data sets
         for (String key : cleanKeys){
             {
+                importedDataSetKeys.add(key);
                 addDataEntry(key);
             }
             addDividerToLayout(5);
         }
+
     }
 
     private void addDataEntry(String key) {
@@ -188,6 +195,10 @@ public class GroupTilemanDataManager extends PluginPanel {
 
     private void processGroupTilemanImport(String clipboardText){
 
+        // Config related string keys used in this function should not be updated.
+        // They have been statically implemented to ensure backwards compatibility with data exported
+        // from the legacy group tileman plugin https://github.com/Flexz9/Tileman-GroupMode
+
         // Read group tileman export string to v2 data format store
         GroupTilemanData parsedData;
         try {
@@ -237,19 +248,25 @@ public class GroupTilemanDataManager extends PluginPanel {
 
     private void exportButtonClicked() {
 
+        // Config related string keys used in this function should not be updated.
+        // They have been statically implemented to generate an equivalent export string as
+        // from the legacy group tileman plugin https://github.com/Flexz9/Tileman-GroupMode
+
+        // prepare the export structure for the data export
         GroupTilemanData exportData = new GroupTilemanData();
         exportData.playerName = plugin.getPlayerName();
         exportData.regionTiles = new TreeMap<>();
 
-        // player keys that need processing into the data structure
+        // collect config keys that need processing into the export data structure
         Set<Integer> regionsToExport = plugin.getAllRegionIds("tilemanMode", "regionv2_");
 
+        // iterate all regions and collect the tiles into an export string
         for (int regionId : regionsToExport) {
-            List<TilemanModeTile> points = new ArrayList<>();
+            List<TilemanModeTile> tiles = new ArrayList<>();
             for (int plane = 0; plane < 4; plane++) {
-                points.addAll(plugin.readTiles(regionId, plane));
+                tiles.addAll(plugin.readTiles(regionId, plane));
             }
-            exportData.regionTiles.put("region_" + String.valueOf(regionId), points);
+            exportData.regionTiles.put("region_" + String.valueOf(regionId), tiles);
         }
 
         Gson gson = new Gson();
