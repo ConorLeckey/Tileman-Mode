@@ -758,7 +758,7 @@ public class TilemanModePlugin extends Plugin {
         if(lastPlane != client.getPlane()) {
             return;
         }
-        updateTileMark(localPoint, true, true);
+        updateTileMark(localPoint, true, false);
     }
 
     private void updateTileMark(LocalPoint localPoint, boolean claimTile, boolean ignoreImportedTiles) {
