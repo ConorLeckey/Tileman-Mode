@@ -587,7 +587,7 @@ public class TilemanModePlugin extends Plugin {
         if (selectedPoint == null) {
             return;
         }
-        updateTileMark(selectedPoint, markedValue);
+        updateTileMark(selectedPoint, markedValue, true);
     }
 
     private void handleWalkedToTile(LocalPoint currentPlayerPoint) {
@@ -598,7 +598,7 @@ public class TilemanModePlugin extends Plugin {
         }
 
         // Mark the tile they walked to
-        updateTileMark(currentPlayerPoint, true);
+        updateTileMark(currentPlayerPoint, true, false);
 
         // If player moves 2 tiles in a straight line, fill in the middle tile
         // TODO Fill path between last point and current point. This will fix missing tiles that occur when you lag
@@ -758,10 +758,10 @@ public class TilemanModePlugin extends Plugin {
         if(lastPlane != client.getPlane()) {
             return;
         }
-        updateTileMark(localPoint, true);
+        updateTileMark(localPoint, true, true);
     }
 
-    private void updateTileMark(LocalPoint localPoint, boolean claimTile) {
+    private void updateTileMark(LocalPoint localPoint, boolean claimTile, boolean ignoreImportedTiles) {
         Instant startTime = Instant.now();
 
         // never modify a blocked tile
@@ -779,7 +779,7 @@ public class TilemanModePlugin extends Plugin {
         Boolean tileIsUnlocked = tiles.contains(tile);
         WorldPoint point = WorldPoint.fromRegion(tile.getRegionId(), tile.getRegionX(), tile.getRegionY(), tile.getZ());
         Boolean stateChanged = false;
-        Boolean groupTilemanClaimed = groupTilesToRender.contains(WorldPoint.fromLocalInstance(client, localPoint));
+        Boolean groupTilemanClaimed = !ignoreImportedTiles && groupTilesToRender.contains(WorldPoint.fromLocalInstance(client, localPoint));
 
         // attempt to unlock
         if (claimTile && !tileIsUnlocked && !groupTilemanClaimed) {
