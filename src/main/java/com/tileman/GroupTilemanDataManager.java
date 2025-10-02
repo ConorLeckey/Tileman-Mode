@@ -170,6 +170,39 @@ public class GroupTilemanDataManager extends PluginPanel {
         exportButton.addActionListener(l -> exportButtonClicked());
         exportButton.setToolTipText("Export your claimed tiles as plaintext Tileman Data to the clipboard for sharing.");
         constraints.gridy++;
+
+        // provide optional cleanup functionality for legacy group tileman data
+        List<String> legacyKeys = configManager.getConfigurationKeys("groupTilemanAddon.");
+        if (legacyKeys != null && !legacyKeys.isEmpty()){
+
+            // tiny divider
+            addDividerToLayout(5);
+
+            JButton purgeButton = new JButton("Purge legacy config values");
+            panel.add(purgeButton, constraints);
+            purgeButton.addActionListener(l -> purgeButtonClicked());
+            purgeButton.setToolTipText("Only appears when your config has legacy data from the group Tileman plugin. " +
+                    "When clicked, removes all config keys added by the legacy group tileman plugin (to improve performance)");
+            constraints.gridy++;
+        }
+    }
+
+    private void purgeButtonClicked() {
+        log.debug("Purging legacy keys from old group tileman plugin");
+
+        String groupName = "groupTilemanAddon";
+        List<String> legacyKeys = configManager.getConfigurationKeys(groupName + ".");
+        for (String key : legacyKeys) {
+            String cleanKey = key.substring(groupName.length() + 1);
+            configManager.unsetConfiguration(groupName, cleanKey);
+        }
+
+        // save to disk since we've removed a significant volume of config data
+        configManager.sendConfig();
+
+        // rebuild the visual menu since this purge button should now disappear
+        updatePanelContents();
+
     }
 
     private void importButtonClicked() {
