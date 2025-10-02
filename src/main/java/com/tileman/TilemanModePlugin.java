@@ -65,7 +65,6 @@ public class TilemanModePlugin extends Plugin {
     private static final String MARK = "Unlock Tileman tile";
     private static final String UNMARK = "Clear Tileman tile";
     private static final String WALK_HERE = "Walk here";
-    private static final String REGION_PREFIX = "region_";
     private static final String REGION_PREFIX_V2 = "regionv2_";
 
     private GroupTilemanDataManager groupTilemanDataManager;
@@ -251,6 +250,7 @@ public class TilemanModePlugin extends Plugin {
                 .build();
 
         clientToolbar.addNavigation(navButton);
+
     }
 
     @Override
@@ -294,55 +294,6 @@ public class TilemanModePlugin extends Plugin {
         }
         updateXpUntilNextTile();
         updateRemainingTiles();
-    }
-
-    public void importGroundMarkerTiles() {
-        // Get and store all the Ground Markers Regions
-        // ground markers have not been migrated to v2 data stores as most people have far fewer markers
-        Set<Integer> groundMarkerRegions = getAllRegionIds("groundMarker", REGION_PREFIX);
-        Set<Integer> tilemanModeRegions = getAllRegionIds(CONFIG_GROUP, REGION_PREFIX_V2);
-
-        // CONVERSION
-        // Loop through Ground Marker Regions
-        for (int regionId : groundMarkerRegions) {
-
-            // Get Ground Markers Region's Tiles
-            Collection<TilemanModeTile> groundMarkerTiles = readV1FormatData("groundMarker", REGION_PREFIX + regionId);
-
-            for (int plane = 0; plane < 4; plane++) {
-
-                // If region already exists in Tileman World Regions Array:
-                if (tilemanModeRegions.contains(regionId)) {
-
-                    // Create Empty ArrayList for Region;
-                    // Get Tileman Region's tiles and add them to the region array list
-                    Collection<TilemanModeTile> regionTiles = readTiles(regionId, plane);
-
-                    // Create int for regionOriginalSize;
-                    // Set regionOriginalSize to arraylists length
-                    int regionOriginalSize = regionTiles.size();
-
-                    // Loop through Ground Markers Points
-                    for (TilemanModeTile groundMarkerTile : groundMarkerTiles) {
-                        // If Ground Marker point already exists in Tileman World Region: Break loop iteration
-                        if (regionTiles.contains(groundMarkerTile)) {
-                            continue;
-                        }
-                        // Add point to array list
-                        regionTiles.add(groundMarkerTile);
-                    }
-                    // If regionOriginalSize != current size
-                    if (regionOriginalSize != regionTiles.size()) {
-                        // Save points for arrayList
-                        writeTiles(regionId, regionTiles, plane);
-                    }
-                } else {
-                    // Save points for that region
-                    writeTiles(regionId, groundMarkerTiles, plane);
-                }
-            }
-        }
-        updateTilesToRender();
     }
 
     Set<Integer> getAllRegionIds(String configGroup, String regionPrefix) {

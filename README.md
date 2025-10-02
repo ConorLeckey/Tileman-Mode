@@ -16,9 +16,7 @@ Choose from a selection of gamemodes, each with different rules and difficulties
 
 Option to add additional tiles to your total usable tiles.
 
-Option to include your total level in the total usable tiles, along side your exp tiles. 
-
-Ability to import Ground Marker tiles, if you started playing using the Ground Marker plugin.
+Option to include your total level in the total usable tiles, alongside your exp tiles.
 
 Natively supports import/export of tiles for Group Tileman gameplay (no additional plugins required).
 
