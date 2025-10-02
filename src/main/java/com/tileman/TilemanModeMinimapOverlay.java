@@ -65,6 +65,19 @@ class TilemanModeMinimapOverlay extends Overlay
 			return null;
 		}
 
+		// draw group tileman data first so that player data overlaps it.
+		final Collection<WorldPoint> groupPoints = plugin.getGroupTilesToRender();
+		for (final WorldPoint point : groupPoints)
+		{
+			WorldPoint worldPoint = point;
+			if (worldPoint.getPlane() != client.getPlane())
+			{
+				continue;
+			}
+
+			drawOnMinimap(graphics, worldPoint, Color.PINK);
+		}
+
 		final Collection<WorldPoint> points = plugin.getTilesToRender();
 		for (final WorldPoint point : points)
 		{
@@ -74,13 +87,13 @@ class TilemanModeMinimapOverlay extends Overlay
 				continue;
 			}
 
-			drawOnMinimap(graphics, worldPoint);
+			drawOnMinimap(graphics, worldPoint, getTileColor());
 		}
 
 		return null;
 	}
 
-	private void drawOnMinimap(Graphics2D graphics, WorldPoint point)
+	private void drawOnMinimap(Graphics2D graphics, WorldPoint point, Color color)
 	{
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
@@ -101,7 +114,7 @@ class TilemanModeMinimapOverlay extends Overlay
 			return;
 		}
 
-		OverlayUtil.renderMinimapRect(client, graphics, posOnMinimap, TILE_WIDTH, TILE_HEIGHT, getTileColor());
+		OverlayUtil.renderMinimapRect(client, graphics, posOnMinimap, TILE_WIDTH, TILE_HEIGHT, color);
 	}
 
 	private Color getTileColor() {

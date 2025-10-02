@@ -18,6 +18,8 @@ Option to add additional tiles to your total usable tiles.
 
 Option to include your total level in the total usable tiles, alongside your exp tiles.
 
+Natively supports import/export of tiles for Group Tileman gameplay (no additional plugins required).
+
 ## Known Issues
 Moving between map chunks will sometimes cause tiles to be missed.
 

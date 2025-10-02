@@ -28,6 +28,8 @@
 package com.tileman;
 
 import java.awt.*;
+import java.util.HashSet;
+import java.util.Set;
 import javax.inject.Inject;
 
 import net.runelite.api.Client;
@@ -95,6 +97,29 @@ class TilemanModeWorldMapOverlay extends Overlay {
             for (int y = yRegionMin; y < yRegionMax; y += REGION_SIZE) {
                 int regionId = ((x >> 6) << 8) | (y >> 6);
                 int plane = client.getPlane();
+
+                // draw imported tile sets
+                Set<TilemanModeTile> importedTiles = new HashSet<>();
+                for (String key : plugin.getGroupTilemanDataManager().getImportedDataSetKeys()) {
+                    importedTiles.addAll(plugin.readImportedTileSet(key, regionId, plane));
+                }
+                for (final TilemanModeTile tile : importedTiles) {
+                    if (tile.getZ() != plane) {
+                        continue;
+                    }
+                    int yTileOffset = -(yTileMin - y) + 2; // Added offset of 2 as tiles were misaligned
+                    int xTileOffset = x + widthInTiles / 2 - worldMapPosition.getX();
+                    int xPos = ((int) (xTileOffset * pixelsPerTile)) + (int) worldMapRect.getX();
+                    int yPos = (worldMapRect.height - (int) (yTileOffset * pixelsPerTile)) + (int) worldMapRect.getY();
+                    int size = (regionPixelSize / (64 - Math.round(48f * ((8f - pixelsPerTile) / 7f))));
+                    int tileSize = regionPixelSize / 64;
+
+                    graphics.setColor(Color.PINK);
+                    graphics.fillRect(xPos + (tile.getRegionX() * tileSize), yPos - (tile.getRegionY() * tileSize) + tileSize, size - 1, size - 1);
+                    graphics.drawRect(xPos + (tile.getRegionX() * tileSize), yPos - (tile.getRegionY() * tileSize) + tileSize, size - 1, size - 1);
+                }
+
+                // draw player claimed tiles
                 for (final TilemanModeTile tile : plugin.readTiles(regionId, plane)) {
                     if(tile.getZ() != plane) {
                         continue;
