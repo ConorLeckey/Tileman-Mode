@@ -52,6 +52,7 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -134,6 +135,13 @@ public class TilemanModePlugin extends Plugin {
     private long totalXp;
     private boolean dataMigrationInProgress = false;
 
+    public Duration durationLastStart;
+    public Duration durationLastWayfind;
+    public Duration durationLastRegionRead;
+    public Duration durationLastRegionWrite;
+    public Duration durationLastMove;
+    public Duration durationLastTilesUpdate;
+
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
@@ -173,7 +181,10 @@ public class TilemanModePlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick tick) {
+
+        // update tile claims based on movement
         autoMark();
+
     }
 
     @Subscribe
@@ -237,7 +248,6 @@ public class TilemanModePlugin extends Plugin {
         updateTileCountFromConfigs();
         updateTilesToRender();
 
-
         TilemanImportPanel panel = new TilemanImportPanel(this);
         NavigationButton navButton = NavigationButton.builder()
                 .tooltip("Tileman Import")
@@ -278,8 +288,7 @@ public class TilemanModePlugin extends Plugin {
             handleWalkedToTile(playerPosLocal);
             lastTile = playerPosLocal;
             lastPlane = client.getPlane();
-            log.debug("player moved");
-            log.debug("last tile={}  distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
+            log.debug("moved to tile={} distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
         }
 
         // Refresh metrics
@@ -432,25 +441,21 @@ public class TilemanModePlugin extends Plugin {
         // any future migrations should be added here migrating from v2 data to v3 and so on.
 
         dataMigrationInProgress = false;
-        Duration d = Duration.between(startTime, Instant.now());
-        log.debug("TileManMode performConfigVersionMigrations - Finish (" + d.toMillis() + "ms)");
+        durationLastStart = Duration.between(startTime, Instant.now());
     }
 
     private void writeTiles(int regionId, Collection<TilemanModeTile> tiles, int plane) {
         // Wrap data writes using this handler so if the format changes in future only one location needs updating
         Instant startTime = Instant.now();
         writeV2FormatData(regionId, tiles, plane);
-        Duration d = Duration.between(startTime, Instant.now());
-        log.debug("TileManMode writeTiles (memory) - Finish (" + d.toMillis() + "ms)");
+        durationLastRegionWrite = Duration.between(startTime, Instant.now());
     }
 
     public Collection<TilemanModeTile> readTiles(int regionId, int plane) {
         // Wrap most data reads using this handler so if the format changes in future only one location needs updating
-        // The logging here is spammy for general development but useful for on demand profiling, so we comment gate it.
-        //Instant startTime = Instant.now();
+        Instant startTime = Instant.now();
         Collection<TilemanModeTile> tiles = readV2FormatData(regionId, plane);
-        //Duration d = Duration.between(startTime, Instant.now());
-        //log.debug("TileManMode readTiles (memory) " + regionId + ":" + plane + " - Finish (" + d.toNanos()+ " nanoseconds)");
+        durationLastRegionRead = Duration.between(startTime, Instant.now());
         return tiles;
     }
 
@@ -514,8 +519,7 @@ public class TilemanModePlugin extends Plugin {
             tilesToRender.addAll(worldPoint);
         }
 
-        Duration d = Duration.between(startTime, Instant.now());
-        log.debug("TileManMode updateTilesToRender - Finish (" + d.toNanos()+ " nanoseconds)");
+        durationLastTilesUpdate = Duration.between(startTime, Instant.now());
     }
 
     private void writeV2FormatData(int regionId, Collection<TilemanModeTile> tiles, int plane) {
@@ -750,7 +754,6 @@ public class TilemanModePlugin extends Plugin {
         int regionId = worldPoint.getRegionID();
         TilemanModeTile tile = new TilemanModeTile(regionId, worldPoint.getRegionX(), worldPoint.getRegionY(), plane);
         log.debug("Updating point: {} - {}", tile, worldPoint);
-
         Collection<TilemanModeTile> tiles = readTiles(regionId, plane);
         Boolean tileIsUnlocked = tiles.contains(tile);
         WorldPoint point = WorldPoint.fromRegion(tile.getRegionId(), tile.getRegionX(), tile.getRegionY(), tile.getZ());
@@ -759,7 +762,6 @@ public class TilemanModePlugin extends Plugin {
         // attempt to unlock
         if (claimTile && !tileIsUnlocked) {
             if ((config.allowTileDeficit() || remainingTiles > 0)) {
-                log.debug("TileManMode updateTileMark - claimed tile");
                 tiles.add(tile);
                 tilesToRender.add(worldPoint);
                 totalTilesUsed += 1;
@@ -770,7 +772,6 @@ public class TilemanModePlugin extends Plugin {
         // release lock
         if (!claimTile && tileIsUnlocked)
         {
-            log.debug("TileManMode updateTileMark - released tile");
             tiles.remove(tile);
             tilesToRender.remove(worldPoint);
             totalTilesUsed -= 1;
@@ -784,18 +785,20 @@ public class TilemanModePlugin extends Plugin {
         }
 
         if (lastPlane != plane){
-            log.debug("TileManMode updateTileMark - changed plane");
             // Otherwise moving to a claimed tile between planes doesn't render
             lastPlane = plane;
             updateTilesToRender();
         }
 
-        Duration d = Duration.between(startTime, Instant.now());
-        log.debug("TileManMode updateTileMark - Finish (" + d.toNanos()+ " nanoseconds)");
+        durationLastMove = Duration.between(startTime, Instant.now());
     }
 
     int getXpUntilNextTile() {
         return xpUntilNextTile;
+    }
+
+    public Client getClient(){
+        return client;
     }
 
     @AllArgsConstructor

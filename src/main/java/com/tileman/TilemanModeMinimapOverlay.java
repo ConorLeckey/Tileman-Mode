@@ -112,6 +112,6 @@ class TilemanModeMinimapOverlay extends Overlay
 				return new Color(255, 153, 0);
 			}
 		}
-		return config.markerColor();
+		return config.claimedTileBorderColor();
 	}
 }
