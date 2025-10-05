@@ -75,14 +75,14 @@ public class GroupTilemanDataManager extends PluginPanel {
         addDividerToLayout(10);
         populateListOfImportedTiles();
 
-        // add the root panel so it displays on the plugin panel
+        // add the root panel, so it displays on the plugin panel
         add(panel);
     }
 
     private void populateListOfImportedTiles(){
 
         // process the config file to determine imported tile sets
-        String prefix = "tilemanMode.imported_";
+        String prefix = TilemanModePlugin.CONFIG_GROUP + "." + TilemanModePlugin.REGION_PREFIX_IMPORTED;
         List<String> configString = configManager.getConfigurationKeys(prefix);
         Set<String> cleanKeys = new HashSet<>();
         for (String key : configString){
@@ -90,7 +90,7 @@ public class GroupTilemanDataManager extends PluginPanel {
             // scrub the prefix from the front of the string
             key = key.substring(prefix.length());
 
-            // get the label for the dataset
+            // advance forward in the string until _ is encountered, using the characters traveled over as the label
             int underscoreIndex = key.indexOf('_');
             String cleanLabel = key.substring(0, underscoreIndex);
             cleanKeys.add(cleanLabel);
@@ -125,6 +125,8 @@ public class GroupTilemanDataManager extends PluginPanel {
 
     private void deleteTileSet(String tileSetName, boolean silent) {
 
+        // deleteTileSet is triggered silently when updating a tileset that has already been imported.
+        // It first deletes it, then imports fresh from the import string.
         if (!silent) {
             String chatMessage = new ChatMessageBuilder()
                     .append(NEUTRAL_COLOR, "Deleting tile set " + tileSetName + "...")
@@ -132,12 +134,13 @@ public class GroupTilemanDataManager extends PluginPanel {
             plugin.sendChatMessage(chatMessage);
         }
 
-        List<String> allKeys = configManager.getConfigurationKeys("tilemanMode" + "." + "imported_" + tileSetName);
+        // walk all imported keys matching that tile set name, then delete them.
+        String configGroup = TilemanModePlugin.CONFIG_GROUP + ".";
+        List<String> allKeys = configManager.getConfigurationKeys(configGroup + TilemanModePlugin.REGION_PREFIX_IMPORTED + tileSetName);
         for (String key : allKeys) {
-            String prefixToScrub = "tilemanMode.";
-            key = key.substring(prefixToScrub.length());
-            configManager.unsetConfiguration("tilemanMode", key);
-            log.debug("scrubbed config key: " + "tilemanMode." + key);
+            log.debug("Scrubbing config key: " + key);
+            key = key.substring(configGroup.length());
+            configManager.unsetConfiguration(TilemanModePlugin.CONFIG_GROUP, key);
         }
 
         // write to disk after deleting all the keys
@@ -191,7 +194,7 @@ public class GroupTilemanDataManager extends PluginPanel {
         constraints.gridy++;
 
         // provide optional cleanup functionality for legacy group tileman data
-        List<String> legacyKeys = configManager.getConfigurationKeys("groupTilemanAddon.");
+        List<String> legacyKeys = configManager.getConfigurationKeys(TilemanModePlugin.LEGACY_GROUP_TILEMAN_CONFIG_GROUP);
         if (legacyKeys != null && !legacyKeys.isEmpty()){
 
             // tiny divider
@@ -214,7 +217,8 @@ public class GroupTilemanDataManager extends PluginPanel {
                 .build();
         plugin.sendChatMessage(start);
 
-        String groupName = "groupTilemanAddon";
+        // walk all legacy keys and delete them
+        String groupName = TilemanModePlugin.LEGACY_GROUP_TILEMAN_CONFIG_GROUP;
         List<String> legacyKeys = configManager.getConfigurationKeys(groupName + ".");
         for (String key : legacyKeys) {
             String cleanKey = key.substring(groupName.length() + 1);
@@ -229,7 +233,7 @@ public class GroupTilemanDataManager extends PluginPanel {
 
         // provide results feedback
         String end = new ChatMessageBuilder()
-                .append(SUCCESS_GREEN, legacyKeys.size() + " legacy entries were successfully removed.")
+                .append(SUCCESS_GREEN, legacyKeys.size() + " legacy config entries were successfully removed.")
                 .build();
         plugin.sendChatMessage(end);
     }
@@ -291,7 +295,7 @@ public class GroupTilemanDataManager extends PluginPanel {
         }
 
         // generate a sanitized pure alphanumeric label for the tile set
-        String cleanLabel = "";
+        String tileSetName = "";
         try {
             // guard against empty field contents
             if (parsedData.playerName == null){
@@ -300,10 +304,10 @@ public class GroupTilemanDataManager extends PluginPanel {
 
             // clean the label by scrubbing all non-alphanumeric characters as these can interfere with parsing
             String cleaningRegex = "[^a-zA-Z0-9]";
-            cleanLabel = parsedData.playerName.replaceAll(cleaningRegex, "");
+            tileSetName = parsedData.playerName.replaceAll(cleaningRegex, "");
 
             // guard against the sanitized string being clean, but empty
-            if (cleanLabel.trim().isEmpty()){
+            if (tileSetName.trim().isEmpty()){
                 throw new IllegalArgumentException();
             }
 
@@ -317,15 +321,14 @@ public class GroupTilemanDataManager extends PluginPanel {
         }
 
         // clean any existing data stored under the same key name
-        List<String> allKeys = configManager.getConfigurationKeys("tilemanMode" + "." + "imported_" + cleanLabel);
-        deleteTileSet(cleanLabel, true);
+        List<String> allKeys = configManager.getConfigurationKeys(TilemanModePlugin.CONFIG_GROUP + "." + TilemanModePlugin.REGION_PREFIX_IMPORTED + tileSetName);
+        deleteTileSet(tileSetName, true);
 
         // write the imported data to the config store
         int tilesImported = 0;
         for (String regionStr : parsedData.regionTiles.keySet()) {
             List<TilemanModeTile> regionTiles = parsedData.regionTiles.get(regionStr);
-            String prefixToScrub = "region_";
-            int regionId = Integer.parseInt(regionStr.substring(prefixToScrub.length()));
+            int regionId = Integer.parseInt(regionStr.substring(TilemanModePlugin.REGION_PREFIX_V1.length()));
             for(int plane = 0; plane < 4; plane++){
 
                 // split the region data to planes
@@ -336,7 +339,7 @@ public class GroupTilemanDataManager extends PluginPanel {
                     }
                 }
 
-                String key = "imported_" + cleanLabel + "_" + regionId + "_" + plane;
+                String key = TilemanModePlugin.REGION_PREFIX_IMPORTED + tileSetName + "_" + regionId + "_" + plane;
                 plugin.writeV2FormatData(filteredTiles, key);
                 tilesImported += filteredTiles.size();
             }
@@ -353,7 +356,7 @@ public class GroupTilemanDataManager extends PluginPanel {
 
         // provide some feedback to the player
         String chatMessage = new ChatMessageBuilder()
-                .append(SUCCESS_GREEN, "Successfully imported " + tilesImported + " tiles into tile set " + cleanLabel + "!")
+                .append(SUCCESS_GREEN, "Successfully imported " + tilesImported + " tiles into tile set " + tileSetName + "!")
                 .build();
         plugin.sendChatMessage(chatMessage);
     }
@@ -375,7 +378,7 @@ public class GroupTilemanDataManager extends PluginPanel {
         exportData.regionTiles = new TreeMap<>();
 
         // collect config keys that need processing into the export data structure
-        Set<Integer> regionsToExport = plugin.getAllRegionIds("tilemanMode", "regionv2_");
+        Set<Integer> regionsToExport = plugin.getAllRegionIds(TilemanModePlugin.CONFIG_GROUP, TilemanModePlugin.REGION_PREFIX_V2);
 
         // iterate all regions and collect the tiles into an export string
         int tilesExported = 0;
@@ -384,7 +387,8 @@ public class GroupTilemanDataManager extends PluginPanel {
             for (int plane = 0; plane < 4; plane++) {
                 tiles.addAll(plugin.readTiles(regionId, plane));
             }
-            exportData.regionTiles.put("region_" + String.valueOf(regionId), tiles);
+            // V1 is used for legacy format compatibility with historic exports from group tileman addon plugin.
+            exportData.regionTiles.put(TilemanModePlugin.REGION_PREFIX_V1 + String.valueOf(regionId), tiles);
             tilesExported += tiles.size();
         }
 
@@ -403,6 +407,40 @@ public class GroupTilemanDataManager extends PluginPanel {
                 .build();
         plugin.sendChatMessage(end);
 
+    }
+
+    void generateLegacyGroupTilemanPluginWarning() {
+
+        // generates a warning for up to three independent gameplay sessions about legacy plugin behavior.
+
+        // search for group tileman related config keys
+        List<String> legacyKeys = configManager.getConfigurationKeys(TilemanModePlugin.LEGACY_GROUP_TILEMAN_CONFIG_GROUP + ".");
+        String warningKey = "timesWarnedAboutGroupTilemanPlugin";
+        String keyContents = configManager.getConfiguration(TilemanModePlugin.CONFIG_GROUP, warningKey);
+        int warningCount = 0;
+        if (keyContents != null){
+            warningCount = Integer.parseInt(keyContents);
+        }
+
+        // manage maximum number of warnings to provide about this
+        final int maxWarningsToGive = 3;
+        final int remainingWarnings = maxWarningsToGive - (warningCount + 1);
+        final Map<Integer, String> countMessage = new HashMap<Integer, String>();
+        countMessage.put(2, "This warning will display two more times.");
+        countMessage.put(1, "This warning will display one more time.");
+        countMessage.put(0, "This warning will not display again.");
+
+        // actually show the warning the first three times
+        if (!legacyKeys.isEmpty() && warningCount < maxWarningsToGive) {
+
+            String warning = "Legacy data from the 'Group tileman addon' plugin was found. "
+                    + "This plugin is no longer compatible or required. "
+                    + "Group play functionality is now built in by default and managed from the side navigation bar menu. "
+                    + countMessage.get(remainingWarnings);
+
+            plugin.sendChatMessage(new ChatMessageBuilder().append(Color.RED, warning).build());
+            configManager.setConfiguration(TilemanModePlugin.CONFIG_GROUP, warningKey, warningCount + 1);
+        }
     }
 
 }

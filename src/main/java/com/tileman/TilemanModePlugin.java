@@ -38,8 +38,6 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
-import net.runelite.client.chat.ChatColorType;
-import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -48,14 +46,12 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.game.chatbox.ChatboxPanelManager;
 
 import javax.inject.Inject;
-import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -69,11 +65,18 @@ import java.util.stream.Collectors;
         tags = {"overlay", "tiles"}
 )
 public class TilemanModePlugin extends Plugin {
-    private static final String CONFIG_GROUP = "tilemanMode";
+
+    // Constants with values that should not be modified. Configs "in the wild" use these keys.
+    public static final String CONFIG_GROUP = "tilemanMode";
+    public static final String LEGACY_GROUP_TILEMAN_CONFIG_GROUP = "groupTilemanAddon";
+    public static final String REGION_PREFIX_IMPORTED = "imported_";
+    public static final String REGION_PREFIX_V2 = "regionv2_";
+    public static final String REGION_PREFIX_V1 = "region_";
+
+    // Constants for menu option strings that the plugin utilises
     private static final String MARK = "Unlock Tileman tile";
     private static final String UNMARK = "Clear Tileman tile";
     private static final String WALK_HERE = "Walk here";
-    private static final String REGION_PREFIX_V2 = "regionv2_";
 
     private GroupTilemanDataManager groupTilemanDataManager;
 
@@ -266,6 +269,8 @@ public class TilemanModePlugin extends Plugin {
 
         clientToolbar.addNavigation(navButton);
 
+        // check if legacy group tileman data is found
+        groupTilemanDataManager.generateLegacyGroupTilemanPluginWarning();
     }
 
     @Override
@@ -427,8 +432,8 @@ public class TilemanModePlugin extends Plugin {
         return tiles;
     }
 
-    public Collection<TilemanModeTile> readImportedTileSet(String key, int regionId, int plane) {
-        Collection<TilemanModeTile> tiles = readV2FormatData("imported_" + key + "_", regionId, plane);
+    public Collection<TilemanModeTile> readImportedTileSet(String tileSetName, int regionId, int plane) {
+        Collection<TilemanModeTile> tiles = readV2FormatData(REGION_PREFIX_IMPORTED + tileSetName + "_", regionId, plane);
         return tiles;
     }
 
