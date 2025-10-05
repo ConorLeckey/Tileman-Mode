@@ -8,7 +8,7 @@ This plugin sets out to make the marking of tiles and the counting of both your 
 ## Features
 Automatically fill in tiles as you walk/run with 'Auto-mark'.
 
-Draw tiles on the minimap.
+Draws tiles on the minimap.
 
 Ability for the tiles/overlay change colour to notify you when you've gone over your set tile limit or when you use up all your tiles.
 
@@ -25,3 +25,24 @@ Moving between map chunks will sometimes cause tiles to be missed.
 
 ## Contact
 Feel free to contact me on discord at Conleck#6160 with any bug reports or suggestions :) 
+
+# Changelog
+
+## October 2025 Major Update
+
+**Significantly improved plugin performance (approx 40x faster)**
+> The plugin has been migrated to an updated config file format.
+> Users should be automatically migrated to the new format without requiring any user action.
+> Users at high tile counts should now be able to enable auto tile without performance issues.
+
+**Added native group tileman support**
+> Historically players have had to use an additional plugin to manage group play.
+> With the migration to the new data format for performance fixes, this plugin is no longer compatible.
+> The new implementation is fully compatible with previously exported data, simply import and go.
+> Accessible via the new "Group Tileman Data" navigation menu on the sidebar
+> Includes tools for cleaning remnant data from the deprecated "group tileman addon" plugin.
+> The plugin will generate three warnings in chat about this change for visiblity to players.
+
+**Ground marker import functionality removed**
+> This legacy migration feature from ground marker plugin was removed as no longer required.
+
