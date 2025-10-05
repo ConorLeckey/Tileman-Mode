@@ -1,6 +1,7 @@
 package com.tileman;
 import com.google.gson.JsonSyntaxException;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
@@ -34,6 +35,9 @@ public class GroupTilemanDataManager extends PluginPanel {
     private TilemanModePlugin plugin;
     private ConfigManager configManager;
     private Set<String> importedDataSetKeys = new HashSet<>();
+    private Color NEUTRAL_COLOR = new Color(0, 0, 0);
+    private Color FAILURE_RED = new Color(100, 0, 0);
+    private Color SUCCESS_GREEN = new Color(0, 100, 0);
 
     public GroupTilemanDataManager(TilemanModePlugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
@@ -77,7 +81,7 @@ public class GroupTilemanDataManager extends PluginPanel {
 
     private void populateListOfImportedTiles(){
 
-        // process the config file to determine imported data sets
+        // process the config file to determine imported tile sets
         String prefix = "tilemanMode.imported_";
         List<String> configString = configManager.getConfigurationKeys(prefix);
         Set<String> cleanKeys = new HashSet<>();
@@ -92,7 +96,7 @@ public class GroupTilemanDataManager extends PluginPanel {
             cleanKeys.add(cleanLabel);
         }
 
-        // display imported data sets
+        // display imported tile sets
         for (String key : cleanKeys){
             {
                 importedDataSetKeys.add(key);
@@ -114,14 +118,21 @@ public class GroupTilemanDataManager extends PluginPanel {
 
         // add a delete button with input handling
         JButton deleteButton = new JButton("Delete");
-        deleteButton.addActionListener(l -> deleteButtonClicked(key));
+        deleteButton.addActionListener(l -> deleteTileSet(key, false));
         panel.add(deleteButton, constraints);
         constraints.gridy++;
     }
 
-    private void deleteButtonClicked(String dataSetName) {
-        log.debug(dataSetName);
-        List<String> allKeys = configManager.getConfigurationKeys("tilemanMode" + "." + "imported_" + dataSetName);
+    private void deleteTileSet(String tileSetName, boolean silent) {
+
+        if (!silent) {
+            String chatMessage = new ChatMessageBuilder()
+                    .append(NEUTRAL_COLOR, "Deleting tile set " + tileSetName + "...")
+                    .build();
+            plugin.sendChatMessage(chatMessage);
+        }
+
+        List<String> allKeys = configManager.getConfigurationKeys("tilemanMode" + "." + "imported_" + tileSetName);
         for (String key : allKeys) {
             String prefixToScrub = "tilemanMode.";
             key = key.substring(prefixToScrub.length());
@@ -137,6 +148,14 @@ public class GroupTilemanDataManager extends PluginPanel {
 
         // update the tiles that the player can visually see on screen around them since tiles have been deleted
         plugin.updateTilesToRender();
+
+        // provide feedback to the player
+        if (!silent) {
+            String chatMessage = new ChatMessageBuilder()
+                    .append(SUCCESS_GREEN, "Tile set " + tileSetName + " was removed.")
+                    .build();
+            plugin.sendChatMessage(chatMessage);
+        }
     }
 
     private void addTitleToLayout(String label) {
@@ -188,7 +207,12 @@ public class GroupTilemanDataManager extends PluginPanel {
     }
 
     private void purgeButtonClicked() {
-        log.debug("Purging legacy keys from old group tileman plugin");
+
+        // provide immediate feedback when the button is clicked
+        String start = new ChatMessageBuilder()
+                .append(NEUTRAL_COLOR, "Attempting to clean legacy group tileman plugin config file data.")
+                .build();
+        plugin.sendChatMessage(start);
 
         String groupName = "groupTilemanAddon";
         List<String> legacyKeys = configManager.getConfigurationKeys(groupName + ".");
@@ -203,10 +227,19 @@ public class GroupTilemanDataManager extends PluginPanel {
         // rebuild the visual menu since this purge button should now disappear
         updatePanelContents();
 
+        // provide results feedback
+        String end = new ChatMessageBuilder()
+                .append(SUCCESS_GREEN, legacyKeys.size() + " legacy entries were successfully removed.")
+                .build();
+        plugin.sendChatMessage(end);
     }
 
     private void importButtonClicked() {
-        log.debug("===== Tileman Data Import Summary =====");
+
+        String start = new ChatMessageBuilder()
+                .append(NEUTRAL_COLOR, "Beginning tile set import from system clipboard...")
+                .build();
+        plugin.sendChatMessage(start);
 
         // Exit early if we can't get the clipboard text contents
         final String clipboardText;
@@ -216,13 +249,21 @@ public class GroupTilemanDataManager extends PluginPanel {
                     .getData(DataFlavor.stringFlavor)
                     .toString();
         } catch (IOException | UnsupportedFlavorException ex) {
+            // this is so we grab the exception details in debug
             log.debug(" | There was an error while reading from the clipboard", ex);
+            String chatMessage = new ChatMessageBuilder()
+                    .append(FAILURE_RED, "Import failed. Unable to read the data from the system clipboard.")
+                    .build();
+            plugin.sendChatMessage(chatMessage);
             return;
         }
 
         // Exit early if we can't validate the data is a string
         if (Strings.isNullOrEmpty(clipboardText)) {
-            log.debug(" | No text was found on the clipboard.");
+            String chatMessage = new ChatMessageBuilder()
+                    .append(FAILURE_RED, "Import failed. No text was found on the clipboard.")
+                    .build();
+            plugin.sendChatMessage(chatMessage);
             return;
         }
 
@@ -235,25 +276,52 @@ public class GroupTilemanDataManager extends PluginPanel {
         // They have been statically implemented to ensure backwards compatibility with data exported
         // from the legacy group tileman plugin https://github.com/Flexz9/Tileman-GroupMode
 
-        // Read group tileman export string to v2 data format store
+        // convert export string to groupTilemanData
         GroupTilemanData parsedData;
         try {
             Gson gson = new Gson();
             parsedData = gson.fromJson(clipboardText, GroupTilemanData.class);
         } catch (JsonSyntaxException e) {
-            log.debug(" | The text on the clipboard was unable to be parsed. Abandoning import.", e);
+            log.debug("The text on the clipboard was unable to be parsed. Abandoning import.", e);
+            String chatMessage = new ChatMessageBuilder()
+                    .append(FAILURE_RED, "Import failed. Clipboard text was not a well formed group tileman tile set.")
+                    .build();
+            plugin.sendChatMessage(chatMessage);
             return;
         }
 
-        // clean the label by scrubbing all non-alphanumeric characters as these can interfere with parsing
-        String cleaningRegex = "[^a-zA-Z0-9]";
-        String cleanLabel = parsedData.playerName.replaceAll(cleaningRegex, "");
+        // generate a sanitized pure alphanumeric label for the tile set
+        String cleanLabel = "";
+        try {
+            // guard against empty field contents
+            if (parsedData.playerName == null){
+                throw new IllegalArgumentException();
+            }
+
+            // clean the label by scrubbing all non-alphanumeric characters as these can interfere with parsing
+            String cleaningRegex = "[^a-zA-Z0-9]";
+            cleanLabel = parsedData.playerName.replaceAll(cleaningRegex, "");
+
+            // guard against the sanitized string being clean, but empty
+            if (cleanLabel.trim().isEmpty()){
+                throw new IllegalArgumentException();
+            }
+
+        } catch (Exception e){
+            log.debug("Unable to extract a sensible tile set name from the supplied string.", e);
+            String badName = new ChatMessageBuilder()
+                    .append(FAILURE_RED, "Import failed. Unable to generate a sensible tile set name from the clipboard contents.")
+                    .build();
+            plugin.sendChatMessage(badName);
+            return;
+        }
 
         // clean any existing data stored under the same key name
         List<String> allKeys = configManager.getConfigurationKeys("tilemanMode" + "." + "imported_" + cleanLabel);
-        deleteButtonClicked(cleanLabel);
+        deleteTileSet(cleanLabel, true);
 
         // write the imported data to the config store
+        int tilesImported = 0;
         for (String regionStr : parsedData.regionTiles.keySet()) {
             List<TilemanModeTile> regionTiles = parsedData.regionTiles.get(regionStr);
             String prefixToScrub = "region_";
@@ -270,6 +338,7 @@ public class GroupTilemanDataManager extends PluginPanel {
 
                 String key = "imported_" + cleanLabel + "_" + regionId + "_" + plane;
                 plugin.writeV2FormatData(filteredTiles, key);
+                tilesImported += filteredTiles.size();
             }
         }
 
@@ -282,7 +351,11 @@ public class GroupTilemanDataManager extends PluginPanel {
         // update the tiles that the player can visually see on screen around them based on the new import data
         plugin.updateTilesToRender();
 
-        log.debug(" | Tiles successfully imported under label " + cleanLabel);
+        // provide some feedback to the player
+        String chatMessage = new ChatMessageBuilder()
+                .append(SUCCESS_GREEN, "Successfully imported " + tilesImported + " tiles into tile set " + cleanLabel + "!")
+                .build();
+        plugin.sendChatMessage(chatMessage);
     }
 
     private void exportButtonClicked() {
@@ -290,6 +363,11 @@ public class GroupTilemanDataManager extends PluginPanel {
         // Config related string keys used in this function should not be updated.
         // They have been statically implemented to generate an equivalent export string as
         // from the legacy group tileman plugin https://github.com/Flexz9/Tileman-GroupMode
+
+        String start = new ChatMessageBuilder()
+                .append(NEUTRAL_COLOR, "Beginning tile set export to system clipboard...")
+                .build();
+        plugin.sendChatMessage(start);
 
         // prepare the export structure for the data export
         GroupTilemanData exportData = new GroupTilemanData();
@@ -300,20 +378,31 @@ public class GroupTilemanDataManager extends PluginPanel {
         Set<Integer> regionsToExport = plugin.getAllRegionIds("tilemanMode", "regionv2_");
 
         // iterate all regions and collect the tiles into an export string
+        int tilesExported = 0;
         for (int regionId : regionsToExport) {
             List<TilemanModeTile> tiles = new ArrayList<>();
             for (int plane = 0; plane < 4; plane++) {
                 tiles.addAll(plugin.readTiles(regionId, plane));
             }
             exportData.regionTiles.put("region_" + String.valueOf(regionId), tiles);
+            tilesExported += tiles.size();
         }
 
         Gson gson = new Gson();
         final String exportDump = gson.toJson(exportData);
-        log.debug("Exported ground markers: {}", exportDump);
         Toolkit.getDefaultToolkit()
                 .getSystemClipboard()
                 .setContents(new StringSelection(exportDump), null);
+
+        // log the complete output to the console for developers.
+        log.debug("Exported tile set: {}", exportDump);
+
+        // provide player feedback
+        String end = new ChatMessageBuilder()
+                .append(SUCCESS_GREEN, "Successfully exported tile set containing " + tilesExported + " tiles to system clipboard!")
+                .build();
+        plugin.sendChatMessage(end);
+
     }
 
 }

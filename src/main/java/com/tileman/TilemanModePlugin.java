@@ -38,6 +38,8 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.client.chat.ChatColorType;
+import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -46,12 +48,18 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.chat.ChatMessageManager;
+import net.runelite.client.chat.QueuedMessage;
+import net.runelite.client.game.chatbox.ChatboxPanelManager;
 
 import javax.inject.Inject;
+import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -105,6 +113,12 @@ public class TilemanModePlugin extends Plugin {
     @Inject
     private ClientToolbar clientToolbar;
 
+    @Inject
+    private ChatMessageManager chatMessageManager;
+
+    @Inject
+    private ChatboxPanelManager chatboxPanelManager;
+
     @Provides
     TilemanModeConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(TilemanModeConfig.class);
@@ -140,6 +154,7 @@ public class TilemanModePlugin extends Plugin {
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
+
         if (event.getMenuAction().getId() != MenuAction.RUNELITE.getId() ||
                 !(event.getMenuOption().equals(MARK) || event.getMenuOption().equals(UNMARK))) {
             return;
@@ -776,6 +791,17 @@ public class TilemanModePlugin extends Plugin {
 
     int getXpUntilNextTile() {
         return xpUntilNextTile;
+    }
+
+    public void sendChatMessage(String message)
+    {
+        // display the stylised message
+        chatMessageManager.queue(QueuedMessage.builder()
+                .type(ChatMessageType.FRIENDSCHAT)
+                .sender("Tileman Mode Plugin")
+                .runeLiteFormattedMessage(message)
+                .timestamp((int) (System.currentTimeMillis() / 1000))
+                .build());
     }
 
     GroupTilemanDataManager getGroupTilemanDataManager() {
