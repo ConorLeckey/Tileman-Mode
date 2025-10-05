@@ -26,19 +26,19 @@ Feel free to contact me on discord at Conleck#6160 with any bug reports or sugge
 ## October 2025 Major Update
 
 **Significantly improved plugin performance (approx 40x faster)**
-- The plugin has been migrated to operate on an updated config file format.
-- Users should be automatically migrated to the new format without requiring any user action.
-- Users at high tile counts should now be able to enable auto tile without performance issues.
+> - The plugin has been migrated to operate on an updated config file format.
+> - Users should be automatically migrated to the new format without requiring any user action.
+> - Users at high tile counts should now be able to enable auto tile without performance issues.
 
 **Added native Group Tileman support**
-- Historically players have had to use an additional plugin to manage group play.
-  With the migration to the new data format for performance fixes, this is no longer compatible.
-  To address this issue this functionality has gone core and was integrated into the main plugin.
-- The new implementation is fully compatible with previously exported data, simply import and go.
-- Accessible via the new "Group Tileman Data" navigation menu on the RuneLite sidebar.
-- Includes tools for cleaning remnant data from the deprecated "Group tileman addon" plugin.
-- The plugin will generate three warnings in chat about this change to ensure visibility to players.
-- Auto-mark functionality now respects imported tile sets, preventing claim on group tiles.
+> - Historically players have had to use an additional plugin to manage group play.
+    With the migration to the new data format for performance fixes, this is no longer compatible.
+    To address this issue this functionality has gone core and was integrated into the main plugin.
+> - The new implementation is fully compatible with previously exported data, simply import and go.
+> - Accessible via the new "Group Tileman Data" navigation menu on the RuneLite sidebar.
+> - Includes tools for cleaning remnant data from the deprecated "Group tileman addon" plugin.
+> - The plugin will generate three warnings in chat about this change to ensure visibility to players.
+> - Auto-mark functionality now respects imported tile sets, preventing claim on group tiles.
 
 **Ground marker import functionality removed**
-- This legacy migration feature from ground marker plugin was removed as no longer required.
+> - This legacy migration feature from ground marker plugin was removed as no longer required.
