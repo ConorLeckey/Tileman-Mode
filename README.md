@@ -40,5 +40,12 @@ Feel free to contact me on discord at Conleck#6160 with any bug reports or sugge
 > - The plugin will generate three warnings in chat about this change to ensure visibility to players.
 > - Auto-mark functionality now respects imported tile sets, preventing claim on group tiles.
 
+**Expanded overlay customization options**
+> - A large number of new customization options are available for rendering tile overlays.
+
+**Added wayfinder functionality**
+> - Enabling the wayfinder in settings will overlay the path your character will walk to the tile you are hovering in realtime.
+> - The unlock cost to walk to the tile can also be displayed as a text overlay on unclaimed tiles.
+
 **Ground marker import functionality removed**
 > - This legacy migration feature from ground marker plugin was removed as no longer required.
