@@ -76,10 +76,138 @@ public class TilemanModeOverlay extends Overlay
 		}, 75, 75);
 	}
 
+	private void updateDashPhase(){
+
+		dashPhase += 1.0f;
+		if (dashPhase >= 15.0f) { // must be total length of dashPattern to loop smoothly
+			dashPhase = 0;
+		}
+	}
+
+	private void drawTileText(Graphics2D graphics, WorldPoint tile, Color color, String label) {
+		if (label == ""){
+			return;
+		}
+
+		LocalPoint lp = LocalPoint.fromWorld(client, tile);
+		Point canvasCountLocation = Perspective.getCanvasTextLocation(client, graphics, lp, label, 0);
+		if (canvasCountLocation != null)
+		{
+			OverlayUtil.renderTextLocation(graphics, canvasCountLocation, label, color);
+		}
+	}
+
+	private void insetTilePoly(Polygon source)
+	{
+		int centreX = (source.xpoints[0] + source.xpoints[1] + source.xpoints[2] + source.xpoints[3]) / 4;
+		int centreY = (source.ypoints[0] + source.ypoints[1] + source.ypoints[2] + source.ypoints[3]) / 4;
+
+		// 20% inset
+		source.xpoints[0] = (source.xpoints[0] * 4 + centreX) / 5;
+		source.xpoints[1] = (source.xpoints[1] * 4 + centreX) / 5;
+		source.xpoints[2] = (source.xpoints[2] * 4 + centreX) / 5;
+		source.xpoints[3] = (source.xpoints[3] * 4 + centreX) / 5;
+
+		source.ypoints[0] = (source.ypoints[0] * 4 + centreY) / 5;
+		source.ypoints[1] = (source.ypoints[1] * 4 + centreY) / 5;
+		source.ypoints[2] = (source.ypoints[2] * 4 + centreY) / 5;
+		source.ypoints[3] = (source.ypoints[3] * 4 + centreY) / 5;
+
+	}
+
+	private void drawTile(Graphics2D graphics, WorldPoint point, Color border, Color fill, BasicStroke stroke, boolean inset)
+	{
+		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+
+		if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
+		{
+			return;
+		}
+
+		LocalPoint lp = LocalPoint.fromWorld(client, point);
+		if (lp == null)
+		{
+			return;
+		}
+
+		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+		if (poly == null)
+		{
+			return;
+		}
+
+		if (inset) {
+			insetTilePoly(poly);
+		}
+
+		OverlayUtil.renderPolygon(graphics, poly, border, fill, stroke);
+	}
+
+	private void updatePathIfOutdated(){
+		if (config.enableWayfinder()) {
+			Instant startTime = Instant.now();
+			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+			Tile selected = client.getTopLevelWorldView().getSelectedSceneTile();
+
+			// exit early if selected tile is garbage
+			if (selected == null){
+				lastPathStart = playerLocation;
+				lastPathEnd = playerLocation;
+				pathToHoverTile = wayfinder.findPath(playerLocation, playerLocation);
+				plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
+				return;
+			}
+
+			WorldPoint hoverTile = selected.getWorldLocation();
+			Boolean playerMoved = !lastPathStart.equals(playerLocation);
+			Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
+			Boolean recalculate = playerMoved || hoverTileChanged;
+
+			if (recalculate) {
+				lastPathStart = playerLocation;
+				lastPathEnd = hoverTile;
+				pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
+				plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
+			}
+		}
+	}
+
+	private Color getClaimedTileBorderColor() {
+		if(config.enableTileWarnings()) {
+			if (plugin.getRemainingTiles() <= 0) {
+				return config.claimedTileDeficitColor();
+			} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
+				return config.claimedTileWarningColor();
+			}
+		}
+		return config.claimedTileBorderColor();
+	}
+
+	private BasicStroke getSolidLine() {
+		return new BasicStroke();
+	}
+
+	private BasicStroke getDashedLine() {
+		float[] dashPattern = {10.0f, 5.0f}; // 10 units on, 5 units off
+		return new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, dashPattern, dashPhase);
+	}
+
 	@Override
 	public Dimension render(Graphics2D g)
 	{
 		updatePathIfOutdated();
+
+		// draw group tileman data first so that player centric rendering draws on top of them
+		final Collection<WorldPoint> groupPoints = plugin.getGroupTilesToRender();
+		for (final WorldPoint point : groupPoints)
+		{
+			if (point.getPlane() != client.getPlane())
+			{
+				continue;
+			}
+			// TODO - DRIVE THIS FROM CONFIGS
+			drawTile(g, point, Color.PINK, new Color(32,32,32,32), getSolidLine(), true);
+		}
 
 		// Don't draw paths if menu option isn't walk here
 		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
@@ -122,7 +250,6 @@ public class TilemanModeOverlay extends Overlay
 				Color fill = config.claimedTileFillColor();
 				boolean inset = config.insetClaimedTiles();
 				drawTile(g, tile, border, fill, getSolidLine(), inset);
-				continue;
 			}
 
 			// if whole path is unlocked highlight the path to hover tile
@@ -162,128 +289,5 @@ public class TilemanModeOverlay extends Overlay
 		}
 
 		return null;
-	}
-
-	private void drawTileText(Graphics2D graphics, WorldPoint tile, Color color, String label)
-	{
-		if (label == ""){
-			return;
-		}
-
-		LocalPoint lp = LocalPoint.fromWorld(client, tile);
-		Point canvasCountLocation = Perspective.getCanvasTextLocation(client, graphics, lp, label, 0);
-		if (canvasCountLocation != null)
-		{
-			OverlayUtil.renderTextLocation(graphics, canvasCountLocation, label, color);
-		}
-	}
-
-	private void drawTile(
-			Graphics2D graphics,
-			WorldPoint point,
-			Color border,
-			Color fill,
-			BasicStroke stroke,
-			Boolean inset)
-	{
-		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-
-		if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
-		{
-			return;
-		}
-
-		LocalPoint lp = LocalPoint.fromWorld(client, point);
-		if (lp == null)
-		{
-			return;
-		}
-
-		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-		if (poly == null)
-		{
-			return;
-		}
-
-		if (inset) {
-			insetTilePoly(poly);
-		}
-
-		OverlayUtil.renderPolygon(graphics, poly, border, fill, stroke);
-	}
-
-	private Color getClaimedTileBorderColor() {
-		if(config.enableTileWarnings()) {
-			if (plugin.getRemainingTiles() <= 0) {
-				return config.claimedTileDeficitColor();
-			} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
-				return config.claimedTileWarningColor();
-			}
-		}
-		return config.claimedTileBorderColor();
-	}
-
-	private BasicStroke getSolidLine() {
-		return new BasicStroke();
-	}
-
-	private BasicStroke getDashedLine() {
-		float[] dashPattern = {10.0f, 5.0f}; // 10 units on, 5 units off
-		return new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, dashPattern, dashPhase);
-	}
-
-	private void updateDashPhase(){
-
-		dashPhase += 1.0f;
-		if (dashPhase >= 15.0f) { // must be total length of dashPattern to loop smoothly
-			dashPhase = 0;
-		}
-	}
-
-	private void updatePathIfOutdated(){
-		if (config.enableWayfinder()) {
-			Instant startTime = Instant.now();
-			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-			Tile selected = client.getTopLevelWorldView().getSelectedSceneTile();
-
-			// exit early if selected tile is garbage
-			if (selected == null){
-				lastPathStart = playerLocation;
-				lastPathEnd = playerLocation;
-				pathToHoverTile = wayfinder.findPath(playerLocation, playerLocation);
-				plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
-				return;
-			}
-
-			WorldPoint hoverTile = selected.getWorldLocation();
-			Boolean playerMoved = !lastPathStart.equals(playerLocation);
-			Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
-			Boolean recalculate = playerMoved || hoverTileChanged;
-
-			if (recalculate) {
-				lastPathStart = playerLocation;
-				lastPathEnd = hoverTile;
-				pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
-				plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
-			}
-		}
-	}
-
-	private void insetTilePoly(Polygon source)
-	{
-		int centreX = (source.xpoints[0] + source.xpoints[1] + source.xpoints[2] + source.xpoints[3]) / 4;
-		int centreY = (source.ypoints[0] + source.ypoints[1] + source.ypoints[2] + source.ypoints[3]) / 4;
-
-		// 20% inset
-		source.xpoints[0] = (source.xpoints[0] * 4 + centreX) / 5;
-		source.xpoints[1] = (source.xpoints[1] * 4 + centreX) / 5;
-		source.xpoints[2] = (source.xpoints[2] * 4 + centreX) / 5;
-		source.xpoints[3] = (source.xpoints[3] * 4 + centreX) / 5;
-
-		source.ypoints[0] = (source.ypoints[0] * 4 + centreY) / 5;
-		source.ypoints[1] = (source.ypoints[1] * 4 + centreY) / 5;
-		source.ypoints[2] = (source.ypoints[2] * 4 + centreY) / 5;
-		source.ypoints[3] = (source.ypoints[3] * 4 + centreY) / 5;
-
 	}
 }
