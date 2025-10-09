@@ -200,11 +200,11 @@ public class GroupTilemanDataManager extends PluginPanel {
             // tiny divider
             addDividerToLayout(5);
 
-            JButton purgeButton = new JButton("Purge legacy config values");
+            JButton purgeButton = new JButton("Purge legacy Group tileman data");
             panel.add(purgeButton, constraints);
             purgeButton.addActionListener(l -> purgeButtonClicked());
-            purgeButton.setToolTipText("Only appears when your config has legacy data from the group Tileman plugin. " +
-                    "When clicked, removes all config keys added by the legacy group tileman plugin (to improve performance)");
+            purgeButton.setToolTipText("Deletes data from the old 'Group tileman addon' plugin (deprecated). "
+                    + "May improve performance if you had previously imported many group tiles.");
             constraints.gridy++;
         }
     }
@@ -213,7 +213,7 @@ public class GroupTilemanDataManager extends PluginPanel {
 
         // provide immediate feedback when the button is clicked
         String start = new ChatMessageBuilder()
-                .append(NEUTRAL_COLOR, "Attempting to clean legacy group tileman plugin config file data.")
+                .append(NEUTRAL_COLOR, "Cleaning up 'Group tileman addon' config file data...")
                 .build();
         plugin.sendChatMessage(start);
 
@@ -433,9 +433,9 @@ public class GroupTilemanDataManager extends PluginPanel {
         // actually show the warning the first three times
         if (!legacyKeys.isEmpty() && warningCount < maxWarningsToGive) {
 
-            String warning = "Legacy data from the 'Group tileman addon' plugin was found. "
-                    + "This plugin is no longer compatible or required. "
-                    + "Group play functionality is now built in by default and managed from the side navigation bar menu. "
+            String warning = "Warning: Data from the 'Group tileman addon' plugin was detected. That plugin has been deprecated! "
+                    + "Group tiles are now managed in the 'Group Tileman Data' menu (located on the far right navigation bar). "
+                    + "Please have your group export and import tiles through this new interface. "
                     + countMessage.get(remainingWarnings);
 
             plugin.sendChatMessage(new ChatMessageBuilder().append(Color.RED, warning).build());
