@@ -60,6 +60,18 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		// draw group tileman data first so that player centric rendering draws on top of them
+		final Collection<WorldPoint> groupPoints = plugin.getGroupTilesToRender();
+		for (final WorldPoint point : groupPoints)
+		{
+			if (point.getPlane() != client.getPlane())
+			{
+				continue;
+			}
+			temporaryDrawImportedTile(graphics, point);
+		}
+
+		// draw player tiles
 		final Collection<WorldPoint> points = plugin.getTilesToRender();
 		for (final WorldPoint point : points)
 		{
@@ -72,6 +84,29 @@ public class TilemanModeOverlay extends Overlay
 		}
 
 		return null;
+	}
+
+	private void temporaryDrawImportedTile(Graphics2D graphics, WorldPoint point)
+	{
+		// This method is temporary to avoid touching the changed rendering logic in drawTile when
+		// integrating with the wayfinding code.
+
+		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+		if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
+		{
+			return;
+		}
+		LocalPoint lp = LocalPoint.fromWorld(client, point);
+		if (lp == null)
+		{
+			return;
+		}
+		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+		if (poly == null)
+		{
+			return;
+		}
+		OverlayUtil.renderPolygon(graphics, poly, Color.PINK);
 	}
 
 	private void drawTile(Graphics2D graphics, WorldPoint point)
