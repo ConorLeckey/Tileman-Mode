@@ -229,6 +229,10 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
+        if (client.getGameState() != GameState.LOGGED_IN){
+            return;
+        }
+
         // Check if automark tiles is on, and if so attempt to step on current tile
         final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
         final LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
@@ -296,6 +300,13 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void autoMark() {
+
+        // We always refresh the tilestoRender as the Plane can change continually
+        if (lastPlane != client.getPlane()) {
+            updateTilesToRender();
+            lastPlane = client.getPlane();
+        }
+
         final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
         if (playerPos == null) {
             return;
@@ -313,7 +324,6 @@ public class TilemanModePlugin extends Plugin {
             // Player moved
             handleWalkedToTile(playerPosLocal);
             lastTile = playerPosLocal;
-            lastPlane = client.getPlane();
             log.debug("moved to tile={} distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
         }
 
@@ -502,15 +512,16 @@ public class TilemanModePlugin extends Plugin {
             return;
         }
 
+        int plane = client.getTopLevelWorldView().getPlane();
         for (int regionId : regions) {
 
             // update player centric tile claims
-            Collection<WorldPoint> worldPoint = translateToWorldPoint(readTiles(regionId, client.getPlane()));
+            Collection<WorldPoint> worldPoint = translateToWorldPoint(readTiles(regionId, plane));
             tilesToRender.addAll(worldPoint);
 
             // update group tileman claims
             for (String tileSetName : groupTilemanDataManager.getImportedDataSetKeys()) {
-                Collection<WorldPoint> groupTiles = translateToWorldPoint(readImportedTileSet(tileSetName, regionId, client.getPlane()));
+                Collection<WorldPoint> groupTiles = translateToWorldPoint(readImportedTileSet(tileSetName, regionId, plane));
                 groupTilesToRender.addAll(groupTiles);
             }
         }
