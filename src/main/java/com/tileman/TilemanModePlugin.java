@@ -149,7 +149,7 @@ public class TilemanModePlugin extends Plugin {
 
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
-    private int lastPlane;
+    public int lastPlane;
     private boolean lastAutoTilesConfig = false;
     private boolean inHouse = false;
     private long totalXp;
@@ -285,6 +285,7 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void autoMark() {
+
         final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
         if (playerPos == null) {
             return;
@@ -302,8 +303,6 @@ public class TilemanModePlugin extends Plugin {
             // Player moved
             handleWalkedToTile(playerPosLocal);
             lastTile = playerPosLocal;
-            lastPlane = client.getPlane();
-            log.debug("player moved");
             log.debug("last tile={}  distance={}", lastTile, lastTile == null ? "null" : lastTile.distanceTo(playerPosLocal));
         }
 
@@ -777,13 +776,6 @@ public class TilemanModePlugin extends Plugin {
         if (stateChanged)
         {
             writeTiles(regionId, tiles, plane);
-        }
-
-        if (lastPlane != plane){
-            log.debug("TileManMode updateTileMark - changed plane");
-            // Otherwise moving to a claimed tile between planes doesn't render
-            lastPlane = plane;
-            updateTilesToRender();
         }
 
         Duration d = Duration.between(startTime, Instant.now());

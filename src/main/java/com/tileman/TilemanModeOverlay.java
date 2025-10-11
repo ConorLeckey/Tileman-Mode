@@ -60,6 +60,13 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		// If players plane changes (or has never been set) refresh the tile list to render
+		// We trigger it here in the render thread to avoid a ConcurrentModificationException of the tilesToRender collection.
+		if (plugin.lastPlane != client.getPlane()){
+			plugin.updateTilesToRender();
+			plugin.lastPlane = client.getPlane();
+		}
+
 		// draw group tileman data first so that player centric rendering draws on top of them
 		final Collection<WorldPoint> groupPoints = plugin.getGroupTilesToRender();
 		for (final WorldPoint point : groupPoints)
