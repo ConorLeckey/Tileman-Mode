@@ -786,13 +786,15 @@ public class TilemanModePlugin extends Plugin {
             writeTiles(regionId, tiles, plane);
         }
 
+        durationLastMove = Duration.between(startTime, Instant.now());
+    }
+
+    public void handlePlaneChanged() {
+        int plane = client.getPlane();
         if (lastPlane != plane){
-            // Otherwise moving to a claimed tile between planes doesn't render
             lastPlane = plane;
             updateTilesToRender();
         }
-
-        durationLastMove = Duration.between(startTime, Instant.now());
     }
 
     public String getPlayerName() {

@@ -41,12 +41,10 @@ import java.util.List;
 
 public class TilemanModeOverlay extends Overlay
 {
-	private static final int MAX_DRAW_DISTANCE = 32;
 	private final Client client;
 	private final TilemanModePlugin plugin;
 	private final Timer timer = new Timer();
 	private float dashPhase = 0f;
-
 	private final TilemanPath wayfinder;
 	private WorldPoint lastPathStart = new WorldPoint(0,0,0);
 	private WorldPoint lastPathEnd = new WorldPoint(0,0,0);
@@ -77,7 +75,6 @@ public class TilemanModeOverlay extends Overlay
 	}
 
 	private void updateDashPhase(){
-
 		dashPhase += 1.0f;
 		if (dashPhase >= 15.0f) { // must be total length of dashPattern to loop smoothly
 			dashPhase = 0;
@@ -117,24 +114,11 @@ public class TilemanModeOverlay extends Overlay
 
 	private void drawTile(Graphics2D graphics, WorldPoint point, Color border, Color fill, BasicStroke stroke, boolean inset)
 	{
-		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-
-		if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
-		{
-			return;
-		}
-
 		LocalPoint lp = LocalPoint.fromWorld(client, point);
-		if (lp == null)
-		{
-			return;
-		}
+		if (lp == null) { return; }
 
 		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-		if (poly == null)
-		{
-			return;
-		}
+		if (poly == null) { return; }
 
 		if (inset) {
 			insetTilePoly(poly);
@@ -195,107 +179,145 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D g)
 	{
+		// Start by validating the state to make sure it actually makes sense to try and render tiles
 
-		// If players plane changes (or has never been set) refresh the tile list to render
-		// We trigger it here in the render thread to avoid a ConcurrentModificationException of the tilesToRender collection.
-		if (plugin.lastPlane != client.getPlane()){
-			plugin.updateTilesToRender();
-			plugin.lastPlane = client.getPlane();
-		}
-
-		updatePathIfOutdated();
-
-		// draw group tileman data first so that player centric rendering draws on top of them
-		final Collection<WorldPoint> groupPoints = plugin.getGroupTilesToRender();
-		for (final WorldPoint point : groupPoints)
-		{
-			if (point.getPlane() != client.getPlane())
-			{
-				continue;
-			}
-			// TODO - DRIVE THIS FROM CONFIGS
-			drawTile(g, point, Color.PINK, new Color(32,32,32,32), getSolidLine(), true);
-		}
-
-		// Don't draw paths if menu option isn't walk here
-		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
-		// last element is the default left click option
-		String option = menuEntries[menuEntries.length-1].getOption();
-		Boolean shortCircuit = !option.startsWith("Walk here");
-
-		// fetch the last navigation path generated, remain empty when shift is held
-		Boolean shiftIsHeld = client.isKeyPressed(KeyCode.KC_SHIFT);
-		final Collection<WorldPoint> pathTiles = (shiftIsHeld || shortCircuit) ? Collections.emptyList() : pathToHoverTile;
-
-		// build subset of tiles outside the path to render
-		Set<WorldPoint> simpleTiles = new HashSet<>(plugin.getTilesToRender());
-		if (!config.drawTilesUnderPaths()){
-			simpleTiles.removeAll(pathTiles);
-		}
-
-		// render non path tile squares
-		for (WorldPoint tile : simpleTiles) {
-			Color border = getClaimedTileBorderColor();
-			Color fill = config.claimedTileFillColor();
-			drawTile(g, tile, border, fill, getSolidLine(), config.insetClaimedTiles());
-		}
-
-		// Exit early to avoid rendering path tiles while shift is held
-		// Interacting with right click menu can be annoying otherwise
-		if (shiftIsHeld || !config.enableWayfinder()){
+		if (client.getGameState() != GameState.LOGGED_IN) {
 			return null;
 		}
 
-		// render path tiles
-		int tilesRequired = 0;
-		Boolean allUnlocked = plugin.getTilesToRender().containsAll(pathTiles);
-		for (WorldPoint tile : pathTiles) {
+		Player player = client.getLocalPlayer();
+		if (player == null) { return null; }
 
-			// render claimed path tiles as ordinary path tile squares if shift is held
-			Boolean tileIsClaimed = plugin.getTilesToRender().contains(tile);
-			if (shiftIsHeld && tileIsClaimed) {
-				Color border = getClaimedTileBorderColor();
-				Color fill = config.claimedTileFillColor();
-				boolean inset = config.insetClaimedTiles();
-				drawTile(g, tile, border, fill, getSolidLine(), inset);
+		WorldView wv = player.getWorldView();
+		if (wv == null) { return null; }
+
+		Scene scene = wv.getScene();
+		if (scene == null) { return null; }
+
+		int plane = client.getPlane();
+		Tile[][][] sceneTiles = scene.getTiles();
+
+		// If players plane changes (or has never been set) refresh the tile list to render
+		// We trigger it here in the render thread to avoid a ConcurrentModificationException of the tilesToRender collection.
+		plugin.handlePlaneChanged();
+
+		// Update the wayfinder data (only if relevant)
+		boolean isUsingWayfinder = config.enableWayfinder();
+		if (isUsingWayfinder){
+			updatePathIfOutdated();
+		}
+
+		// build combined set of unlocked tiles
+		HashSet<WorldPoint> allClaimedTiles = new HashSet<WorldPoint>();
+		allClaimedTiles.addAll(plugin.getTilesToRender());
+		allClaimedTiles.addAll(plugin.getGroupTilesToRender());
+		Boolean isWholePathUnlocked = allClaimedTiles.containsAll(pathToHoverTile);
+
+		Boolean shiftIsNotHeld = !(client.isKeyPressed(KeyCode.KC_SHIFT));
+
+		// Render each tile in scene (reduced by 1 to fix dodgy tile vertex position reporting)
+		for (int x = 1; x < Constants.SCENE_SIZE - 1; ++x) {
+			for (int y = 1; y < Constants.SCENE_SIZE - 1; ++y) {
+
+				Tile sceneTile = sceneTiles[plane][x][y];
+				if (sceneTile == null) { continue; }
+
+				WorldPoint tile = sceneTile.getWorldLocation();
+				if (tile == null) { continue; }
+
+				boolean isGroupTile = plugin.getGroupTilesToRender().contains(tile);
+				boolean isClaimedTile = plugin.getTilesToRender().contains(tile);
+				boolean isPathTile = pathToHoverTile.contains(tile);
+
+				if (isClaimedTile) {
+					DrawClaimedTile(g, tile);
+				}
+
+				if (isGroupTile) {
+					DrawGroupTile(g, tile);
+				}
+
+				if (isUsingWayfinder && shiftIsNotHeld) {
+					if (isWholePathUnlocked && isPathTile) {
+						DrawCompletePathTile(g, tile);
+						continue;
+					}
+
+					if (isClaimedTile && isPathTile) {
+						DrawClaimedPathTile(g, tile);
+						continue;
+					}
+
+					if (!isClaimedTile && isPathTile) {
+						DrawUnclaimedPathTile(g, tile);
+					}
+				}
 			}
+		}
 
-			// if whole path is unlocked highlight the path to hover tile
-			if (allUnlocked) {
-				Color border = config.completePathBorderColor();
-				Color fill = config.completePathFillColor();
-				BasicStroke stroke = config.animateCompletePathTiles() ? getDashedLine() : getSolidLine();
-				boolean inset = config.insetCompletePathTiles();
-				drawTile(g, tile, border, fill, stroke, inset);
-				continue;
-			}
+		// draw tile costs if enabled
+		DrawUnclaimedTileClaimCosts(g);
 
-			// render partially claimed paths
-			if (tileIsClaimed) {
-				Color border = config.claimedPathBorderColor();
-				Color fill = config.claimedPathFillColor();
-				BasicStroke stroke = config.animateClaimedPathTiles() ? getDashedLine() : getSolidLine();
-				boolean inset = config.insetClaimedPathTiles();
-				drawTile(g, tile, border, fill, stroke, inset);
-				continue;
-			}
+		return null;
+	}
 
-			// draw tiles requiring fresh unlock
-			tilesRequired += 1;
-			Color border = config.unclaimedPathBorderColor();
-			Color fill = config.unclaimedPathFillColor();
-			BasicStroke stroke = config.animateUnclaimedPathTiles() ? getDashedLine() : getSolidLine();
-			boolean inset = config.insetUnclaimedPathTiles();
-			drawTile(g, tile, border, fill, stroke, inset);
+	private boolean CanPlayerWalkToTarget() {
+		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
+		// last element is the default left click option
+		String option = menuEntries[menuEntries.length-1].getOption();
+		return !option.startsWith("Walk here");
+	}
 
-			// draw tile cost to unlock
-			Color textColor = config.claimCostsColor();
-			if (config.showClaimCosts()) {
+	private void DrawCompletePathTile(Graphics2D g, WorldPoint tile) {
+		Color border = config.completePathBorderColor();
+		Color fill = config.completePathFillColor();
+		BasicStroke stroke = config.animateCompletePathTiles() ? getDashedLine() : getSolidLine();
+		boolean inset = config.insetCompletePathTiles();
+		drawTile(g, tile, border, fill, stroke, inset);
+	}
+
+	private void DrawClaimedTile(Graphics2D g, WorldPoint tile) {
+		Color border = getClaimedTileBorderColor();
+		Color fill = config.claimedTileFillColor();
+		boolean inset = config.insetClaimedTiles();
+		drawTile(g, tile, border, fill, getSolidLine(), inset);
+	}
+
+	private void DrawUnclaimedPathTile(Graphics2D g, WorldPoint tile) {
+		Color border = config.unclaimedPathBorderColor();
+		Color fill = config.unclaimedPathFillColor();
+		BasicStroke stroke = config.animateUnclaimedPathTiles() ? getDashedLine() : getSolidLine();
+		boolean inset = config.insetUnclaimedPathTiles();
+		drawTile(g, tile, border, fill, stroke, inset);
+	}
+
+	private void DrawUnclaimedTileClaimCosts(Graphics2D g) {
+		if (config.showClaimCosts()) {
+			int tilesRequired = 0;
+			for (WorldPoint tile : pathToHoverTile) {
+				boolean isClaimedTile = plugin.getTilesToRender().contains(tile);
+				boolean isGroupTile = plugin.getGroupTilesToRender().contains(tile);
+				if (isClaimedTile || isGroupTile){
+					continue;
+				}
+				tilesRequired += 1;
+				Color textColor = config.claimCostsColor();
 				int tileCount = config.showClaimCostsAsRemaining() ? plugin.getRemainingTiles() - tilesRequired : tilesRequired;
 				drawTileText(g, tile, textColor, String.valueOf(tileCount));
 			}
 		}
+	}
 
-		return null;
+	private void DrawClaimedPathTile(Graphics2D g, WorldPoint tile) {
+		Color border = config.claimedPathBorderColor();
+		Color fill = config.claimedPathFillColor();
+		BasicStroke stroke = config.animateClaimedPathTiles() ? getDashedLine() : getSolidLine();
+		boolean inset = config.insetClaimedPathTiles();
+		drawTile(g, tile, border, fill, stroke, inset);
+	}
+
+	private void DrawGroupTile(Graphics2D g, WorldPoint tile) {
+		// TODO - Style this from configs properly
+		drawTile(g, tile, Color.PINK, new Color(32,32,32,32), getSolidLine(), true);
 	}
 }
