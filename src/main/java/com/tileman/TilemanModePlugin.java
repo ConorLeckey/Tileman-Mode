@@ -149,7 +149,7 @@ public class TilemanModePlugin extends Plugin {
 
     private int totalTilesUsed, remainingTiles, xpUntilNextTile;
     private LocalPoint lastTile;
-    private int lastPlane;
+    public int lastPlane;
     private boolean lastAutoTilesConfig = false;
     private boolean inHouse = false;
     private long totalXp;
@@ -300,12 +300,6 @@ public class TilemanModePlugin extends Plugin {
     }
 
     private void autoMark() {
-
-        // We always refresh the tilestoRender as the Plane can change continually
-        if (lastPlane != client.getPlane()) {
-            updateTilesToRender();
-            lastPlane = client.getPlane();
-        }
 
         final WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
         if (playerPos == null) {
