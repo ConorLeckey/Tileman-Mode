@@ -229,11 +229,13 @@ public class TilemanModeOverlay extends Overlay
 				boolean isClaimedTile = plugin.getTilesToRender().contains(tile);
 				boolean isPathTile = pathToHoverTile.contains(tile);
 
-				if (isClaimedTile) {
+				boolean shouldHideClaimed = isPathTile && !config.drawTilesUnderPaths();
+				if (isClaimedTile && !shouldHideClaimed) {
 					DrawClaimedTile(g, tile);
 				}
 
-				if (isGroupTile) {
+				boolean shouldHideGroup = isPathTile && !config.drawGroupTilesUnderPaths();
+				if (isGroupTile  && !shouldHideGroup) {
 					DrawGroupTile(g, tile);
 				}
 
@@ -259,13 +261,6 @@ public class TilemanModeOverlay extends Overlay
 		DrawUnclaimedTileClaimCosts(g);
 
 		return null;
-	}
-
-	private boolean CanPlayerWalkToTarget() {
-		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
-		// last element is the default left click option
-		String option = menuEntries[menuEntries.length-1].getOption();
-		return !option.startsWith("Walk here");
 	}
 
 	private void DrawCompletePathTile(Graphics2D g, WorldPoint tile) {
@@ -317,7 +312,9 @@ public class TilemanModeOverlay extends Overlay
 	}
 
 	private void DrawGroupTile(Graphics2D g, WorldPoint tile) {
-		// TODO - Style this from configs properly
-		drawTile(g, tile, Color.PINK, new Color(32,32,32,32), getSolidLine(), true);
+		Color border = config.groupTileBorderColor();
+		Color fill = config.groupTileFillColor();
+		boolean inset = config.insetGroupTiles();
+		drawTile(g, tile, border, fill, getSolidLine(), inset);
 	}
 }

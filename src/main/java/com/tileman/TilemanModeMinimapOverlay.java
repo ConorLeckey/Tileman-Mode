@@ -60,37 +60,38 @@ class TilemanModeMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.drawTilesOnMinimap())
-		{
-			return null;
-		}
-
 		// draw group tileman data first so that player data overlaps it.
-		final Collection<WorldPoint> groupPoints = plugin.getGroupTilesToRender();
-		for (final WorldPoint point : groupPoints)
-		{
-			WorldPoint worldPoint = point;
-			if (worldPoint.getPlane() != client.getPlane())
-			{
-				continue;
-			}
-
-			drawOnMinimap(graphics, worldPoint, Color.PINK);
-		}
-
-		final Collection<WorldPoint> points = plugin.getTilesToRender();
-		for (final WorldPoint point : points)
-		{
-			WorldPoint worldPoint = point;
-			if (worldPoint.getPlane() != client.getPlane())
-			{
-				continue;
-			}
-
-			drawOnMinimap(graphics, worldPoint, getTileColor());
-		}
-
+		renderGroupTiles(graphics);
+		renderClaimedTiles(graphics);
 		return null;
+	}
+
+	private void renderGroupTiles(Graphics2D graphics) {
+		if (config.drawGroupTilesOnMinimap()) {
+			final Collection<WorldPoint> groupPoints = plugin.getGroupTilesToRender();
+			Color renderColor = config.groupTileBorderColor();
+			for (final WorldPoint point : groupPoints) {
+				WorldPoint worldPoint = point;
+				if (worldPoint.getPlane() != client.getPlane()) {
+					continue;
+				}
+				drawOnMinimap(graphics, worldPoint, renderColor);
+			}
+		}
+	}
+
+	private void renderClaimedTiles(Graphics2D graphics) {
+		if (config.drawTilesOnMinimap()) {
+			final Collection<WorldPoint> points = plugin.getTilesToRender();
+			Color renderColor = getTileColor();
+			for (final WorldPoint point : points) {
+				WorldPoint worldPoint = point;
+				if (worldPoint.getPlane() != client.getPlane()) {
+					continue;
+				}
+				drawOnMinimap(graphics, worldPoint, renderColor);
+			}
+		}
 	}
 
 	private void drawOnMinimap(Graphics2D graphics, WorldPoint point, Color color)

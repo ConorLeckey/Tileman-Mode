@@ -181,7 +181,7 @@ class TileInfoOverlay extends OverlayPanel {
                     .build());
 
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("Move:")
+                    .left("AutoTile:")
                     .right(prettyDuration(plugin.durationLastMove))
                     .build());
 

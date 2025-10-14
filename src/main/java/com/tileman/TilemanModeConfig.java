@@ -62,9 +62,17 @@ public interface TilemanModeConfig extends Config {
     String claimedTilesSection = "claimedTiles";
 
     @ConfigSection(
+            name = "Group Tiles",
+            description = "Tile rendering options for group tiles'",
+            position = 5,
+            closedByDefault = true
+    )
+    String groupTilesSection = "groupTiles";
+
+    @ConfigSection(
             name = "Claimed on Complete Path",
             description = "Wayfinder tile rendering options for tiles on a complete path requiring no unlocks",
-            position = 5,
+            position = 6,
             closedByDefault = true
     )
     String completePathSection = "completePath";
@@ -72,7 +80,7 @@ public interface TilemanModeConfig extends Config {
     @ConfigSection(
             name = "Claimed on Incomplete Path",
             description = "Wayfinder tile rendering options for claimed tiles on a path that requires unlocks",
-            position = 6,
+            position = 7,
             closedByDefault = true
     )
     String claimedPathSection = "claimedPath";
@@ -80,7 +88,7 @@ public interface TilemanModeConfig extends Config {
     @ConfigSection(
             name = "Unclaimed on Incomplete Path",
             description = "Wayfinder tile rendering options for unclaimed tiles on a path that requires unlocks",
-            position = 7,
+            position = 8,
             closedByDefault = true
     )
     String unclaimedPathSection = "unclaimedPath";
@@ -88,7 +96,7 @@ public interface TilemanModeConfig extends Config {
     @ConfigSection(
             name = "Metrics",
             description = "Additional overlay information",
-            position = 8,
+            position = 9,
             closedByDefault = true
     )
     String metricsSection = "metrics";
@@ -244,7 +252,7 @@ public interface TilemanModeConfig extends Config {
 
     @ConfigItem(
             keyName = "drawOnMinimap",
-            name = "Draw tiles on minimap",
+            name = "Draw on minimap",
             section = claimedTilesSection,
             description = "Configures whether marked tiles should be drawn on minimap",
             position = 1
@@ -255,7 +263,7 @@ public interface TilemanModeConfig extends Config {
 
     @ConfigItem(
             keyName = "drawTilesOnWorldMap",
-            name = "Draw tiles on world map",
+            name = "Draw on world map",
             section = claimedTilesSection,
             description = "Configures whether marked tiles should be drawn on world map",
             position = 2
@@ -280,7 +288,7 @@ public interface TilemanModeConfig extends Config {
             // keyName here should not be made consistent as this is a legacy schema field
             // we don't want upgrading version to stop respecting old settings
             keyName = "markerColor",
-            name = "Tile Border Color",
+            name = "Border Color",
             section = claimedTilesSection,
             description = "Border color of unlocked tiles",
             position = 4
@@ -290,7 +298,7 @@ public interface TilemanModeConfig extends Config {
     @Alpha
     @ConfigItem(
             keyName = "claimedTileFillColor",
-            name = "Tile Fill Color",
+            name = "Fill Color",
             section = claimedTilesSection,
             description = "Fill color of unlocked tiles",
             position = 5
@@ -300,7 +308,7 @@ public interface TilemanModeConfig extends Config {
     @Alpha
     @ConfigItem(
             keyName = "claimedTileWarningColor",
-            name = "Tile Warning Color",
+            name = "Warning Color",
             section = claimedTilesSection,
             description = "Color claimed tile borders change to at the warning threshold",
             position = 6
@@ -310,7 +318,7 @@ public interface TilemanModeConfig extends Config {
     @Alpha
     @ConfigItem(
             keyName = "claimedTileDeficitColor",
-            name = "Tile Deficit Color",
+            name = "Deficit Color",
             section = claimedTilesSection,
             description = "Color claimed tile borders change to when no tile unlocks remain.",
             position = 7
@@ -325,6 +333,75 @@ public interface TilemanModeConfig extends Config {
             position = 8
     )
     default boolean insetClaimedTiles() {
+        return false;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // groupTiles section
+
+    @ConfigItem(
+            keyName = "drawGroupTilesOnMinimap",
+            name = "Draw on minimap",
+            section = groupTilesSection,
+            description = "Configures whether group tiles should be drawn on minimap",
+            position = 1
+    )
+    default boolean drawGroupTilesOnMinimap() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "drawGroupTilesOnWorldMap",
+            name = "Draw on world map",
+            section = groupTilesSection,
+            description = "Configures whether group tiles should be drawn on world map",
+            position = 2
+    )
+    default boolean drawGroupTilesOnWorldMap() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "drawGroupTilesUnderPaths",
+            name = "Draw on wayfinder path",
+            section = groupTilesSection,
+            description = "Draw group tiles under the predictive wayfinder paths",
+            position = 3
+    )
+    default boolean drawGroupTilesUnderPaths() {
+        return true;
+    }
+
+    @Alpha
+    @ConfigItem(
+            // keyName here should not be made consistent as this is a legacy schema field
+            // we don't want upgrading version to stop respecting old settings
+            keyName = "groupTileBorderColor",
+            name = "Border Color",
+            section = groupTilesSection,
+            description = "Border color of unlocked tiles",
+            position = 4
+    )
+    default Color groupTileBorderColor() { return new Color(123,232,0,79); }
+
+    @Alpha
+    @ConfigItem(
+            keyName = "groupTileFillColor",
+            name = "Fill Color",
+            section = groupTilesSection,
+            description = "Fill color of group tiles",
+            position = 5
+    )
+    default Color groupTileFillColor() { return new Color(0, 0, 0, 32); }
+
+    @ConfigItem(
+            keyName = "insetGroupTiles",
+            name = "Inset",
+            section = groupTilesSection,
+            description = "Reduces the rendered tile size by 20%",
+            position = 8
+    )
+    default boolean insetGroupTiles() {
         return false;
     }
 
