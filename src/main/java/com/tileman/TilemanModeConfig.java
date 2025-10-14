@@ -372,6 +372,17 @@ public interface TilemanModeConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            keyName = "drawGroupTilesUnderClaimedTiles",
+            name = "Draw under claimed tiles",
+            section = groupTilesSection,
+            description = "Draw group tiles under player claimed tiles",
+            position = 4
+    )
+    default boolean drawGroupTilesUnderClaimedTiles() {
+        return true;
+    }
+
     @Alpha
     @ConfigItem(
             // keyName here should not be made consistent as this is a legacy schema field
@@ -380,7 +391,7 @@ public interface TilemanModeConfig extends Config {
             name = "Border Color",
             section = groupTilesSection,
             description = "Border color of unlocked tiles",
-            position = 4
+            position = 5
     )
     default Color groupTileBorderColor() { return new Color(123,232,0,79); }
 
@@ -390,7 +401,7 @@ public interface TilemanModeConfig extends Config {
             name = "Fill Color",
             section = groupTilesSection,
             description = "Fill color of group tiles",
-            position = 5
+            position = 6
     )
     default Color groupTileFillColor() { return new Color(0, 0, 0, 32); }
 
@@ -399,7 +410,7 @@ public interface TilemanModeConfig extends Config {
             name = "Inset",
             section = groupTilesSection,
             description = "Reduces the rendered tile size by 20%",
-            position = 8
+            position = 7
     )
     default boolean insetGroupTiles() {
         return false;

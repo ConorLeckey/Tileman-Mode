@@ -214,6 +214,7 @@ public class TilemanModeOverlay extends Overlay
 		Boolean isWholePathUnlocked = allClaimedTiles.containsAll(pathToHoverTile);
 
 		Boolean shiftIsNotHeld = !(client.isKeyPressed(KeyCode.KC_SHIFT));
+		Boolean canWalk = CurrentInteractionTypeIsWalk();
 
 		// Render each tile in scene (reduced by 1 to fix dodgy tile vertex position reporting)
 		for (int x = 1; x < Constants.SCENE_SIZE - 1; ++x) {
@@ -234,12 +235,13 @@ public class TilemanModeOverlay extends Overlay
 					DrawClaimedTile(g, tile);
 				}
 
-				boolean shouldHideGroup = isPathTile && !config.drawGroupTilesUnderPaths();
+				boolean shouldHideGroup = isPathTile && !config.drawGroupTilesUnderPaths()
+						|| isClaimedTile && !config.drawGroupTilesUnderClaimedTiles();
 				if (isGroupTile  && !shouldHideGroup) {
 					DrawGroupTile(g, tile);
 				}
 
-				if (isUsingWayfinder && shiftIsNotHeld) {
+				if (isUsingWayfinder && shiftIsNotHeld && canWalk) {
 					if (isWholePathUnlocked && isPathTile) {
 						DrawCompletePathTile(g, tile);
 						continue;
@@ -261,6 +263,14 @@ public class TilemanModeOverlay extends Overlay
 		DrawUnclaimedTileClaimCosts(g);
 
 		return null;
+	}
+
+	private boolean CurrentInteractionTypeIsWalk() {
+		// we check this so that when attacking or interacting at cursor the path doesn't render
+		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
+		// last element is the default left click option
+		String option = menuEntries[menuEntries.length-1].getOption();
+		return option.startsWith("Walk here");
 	}
 
 	private void DrawCompletePathTile(Graphics2D g, WorldPoint tile) {
@@ -287,7 +297,7 @@ public class TilemanModeOverlay extends Overlay
 	}
 
 	private void DrawUnclaimedTileClaimCosts(Graphics2D g) {
-		if (config.showClaimCosts()) {
+		if (config.showClaimCosts() && CurrentInteractionTypeIsWalk()) {
 			int tilesRequired = 0;
 			for (WorldPoint tile : pathToHoverTile) {
 				boolean isClaimedTile = plugin.getTilesToRender().contains(tile);
