@@ -259,8 +259,9 @@ public class TilemanModeOverlay extends Overlay
 			}
 		}
 
-		// draw tile costs if enabled
-		DrawUnclaimedTileClaimCosts(g);
+		if (shiftIsNotHeld) {
+			DrawUnclaimedTileClaimCosts(g);
+		}
 
 		return null;
 	}
