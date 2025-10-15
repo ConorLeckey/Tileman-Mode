@@ -179,6 +179,8 @@ public class TilemanModeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D g)
 	{
+		Instant startTime = Instant.now();
+
 		// Start by validating the state to make sure it actually makes sense to try and render tiles
 		if (client.getGameState() != GameState.LOGGED_IN) {
 			return null;
@@ -215,6 +217,8 @@ public class TilemanModeOverlay extends Overlay
 
 		// Render each tile in scene
 		RenderSceneTiles(g, scene, isUsingWayfinder, canWalk);
+
+		plugin.durationLastRender = Duration.between(startTime, Instant.now());
 
 		return null;
 	}

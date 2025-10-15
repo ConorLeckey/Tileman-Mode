@@ -189,6 +189,11 @@ class TileInfoOverlay extends OverlayPanel {
                     .left("Tiles Update:")
                     .right(prettyDuration(plugin.durationLastTilesUpdate))
                     .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Render:")
+                    .right(prettyDuration(plugin.durationLastRender))
+                    .build());
         }
     }
 

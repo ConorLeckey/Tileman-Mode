@@ -1,5 +1,6 @@
 package com.tileman;
 
+import net.runelite.api.Constants;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
@@ -31,7 +32,7 @@ public class TilemanPath {
         unevaluatedNodes.add(new Node(start, null));
 
         int bestDistance = Integer.MAX_VALUE;
-        int searchLimiter = 20000; // one full tile region
+        int searchLimiter = Constants.EXTENDED_SCENE_SIZE * Constants.EXTENDED_SCENE_SIZE;
 
         while (!unevaluatedNodes.isEmpty() && searchLimiter > 0) {
             searchLimiter -= 1; // used to exit the loop if search gets too large

@@ -161,6 +161,7 @@ public class TilemanModePlugin extends Plugin {
     public Duration durationLastRegionWrite;
     public Duration durationLastMove;
     public Duration durationLastTilesUpdate;
+    public Duration durationLastRender;
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
