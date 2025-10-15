@@ -180,7 +180,6 @@ public class TilemanModeOverlay extends Overlay
 	public Dimension render(Graphics2D g)
 	{
 		// Start by validating the state to make sure it actually makes sense to try and render tiles
-
 		if (client.getGameState() != GameState.LOGGED_IN) {
 			return null;
 		}
@@ -194,9 +193,6 @@ public class TilemanModeOverlay extends Overlay
 		Scene scene = wv.getScene();
 		if (scene == null) { return null; }
 
-		int plane = client.getPlane();
-		Tile[][][] sceneTiles = scene.getTiles();
-
 		// If players plane changes (or has never been set) refresh the tile list to render
 		// We trigger it here in the render thread to avoid a ConcurrentModificationException of the tilesToRender collection.
 		plugin.handlePlaneChanged();
@@ -207,18 +203,39 @@ public class TilemanModeOverlay extends Overlay
 			updatePathIfOutdated();
 		}
 
+		// This check ensures that the path renders correctly when moving the cursor
+		// between obstructions partially overlapping a tile and the clear space of the same tile
+		Boolean canWalk = CurrentInteractionTypeIsWalk();
+		if (!canWalk) {
+			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+			lastPathStart = playerLocation;
+			lastPathEnd = playerLocation;
+			pathToHoverTile = wayfinder.findPath(playerLocation, playerLocation);
+		}
+
+		// Render each tile in scene
+		RenderSceneTiles(g, scene, isUsingWayfinder, canWalk);
+
+		return null;
+	}
+
+	private void RenderSceneTiles(Graphics2D g, Scene scene, Boolean isUsingWayfinder, Boolean canWalk) {
+
+		int plane = client.getPlane();
+		Tile[][][] sceneTiles = scene.getTiles();
+
 		// build combined set of unlocked tiles
 		HashSet<WorldPoint> allClaimedTiles = new HashSet<WorldPoint>();
 		allClaimedTiles.addAll(plugin.getTilesToRender());
 		allClaimedTiles.addAll(plugin.getGroupTilesToRender());
 		Boolean isWholePathUnlocked = allClaimedTiles.containsAll(pathToHoverTile);
-
 		Boolean shiftIsNotHeld = !(client.isKeyPressed(KeyCode.KC_SHIFT));
-		Boolean canWalk = CurrentInteractionTypeIsWalk();
 
-		// Render each tile in scene (reduced by 1 to fix dodgy tile vertex position reporting)
-		for (int x = 1; x < Constants.SCENE_SIZE - 1; ++x) {
-			for (int y = 1; y < Constants.SCENE_SIZE - 1; ++y) {
+		// We reduced the render area by 1 outer row to fix dodgy tile vertex position reporting by RuneLite
+		// The dodgy positions render as large, nearly vertical tiles which are super distracting visually
+		int fixRenderArtifact = 1;
+		for (int x = fixRenderArtifact; x < Constants.SCENE_SIZE - fixRenderArtifact; ++x) {
+			for (int y = fixRenderArtifact; y < Constants.SCENE_SIZE - fixRenderArtifact; ++y) {
 
 				Tile sceneTile = sceneTiles[plane][x][y];
 				if (sceneTile == null) { continue; }
@@ -262,9 +279,8 @@ public class TilemanModeOverlay extends Overlay
 		if (shiftIsNotHeld) {
 			DrawUnclaimedTileClaimCosts(g);
 		}
-
-		return null;
 	}
+
 
 	private boolean CurrentInteractionTypeIsWalk() {
 		// we check this so that when attacking or interacting at cursor the path doesn't render
