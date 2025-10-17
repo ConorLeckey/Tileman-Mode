@@ -26,6 +26,7 @@
  */
 package com.tileman;
 
+import net.runelite.api.Constants;
 import net.runelite.client.config.*;
 
 import java.awt.*;
@@ -236,15 +237,30 @@ public interface TilemanModeConfig extends Config {
         return false;
     }
 
+    @Range(
+            min = 5,
+            max = Constants.SCENE_SIZE
+    )
+    @ConfigItem(
+            keyName = "maximumRenderDistance",
+            name = "Max Render Distance",
+            section = settingsSection,
+            description = "Maximum distance to attempt to render (in world tiles).",
+            position = 6
+    )
+    default int maximumRenderDistance() {
+        return Constants.SCENE_SIZE;
+    }
+
     @ConfigItem(
             keyName = "enableWayfinderSystem",
             name = "Enable Wayfinder",
             section = settingsSection,
             description = "Draws the path to the tile underneath the cursor",
-            position = 6
+            position = 7
     )
     default boolean enableWayfinder() {
-        return true;
+        return false;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -293,7 +309,7 @@ public interface TilemanModeConfig extends Config {
             description = "Border color of unlocked tiles",
             position = 4
     )
-    default Color claimedTileBorderColor() { return new Color(123,232,0,79); }
+    default Color claimedTileBorderColor() { return new Color(0,176,53,128); }
 
     @Alpha
     @ConfigItem(
@@ -313,7 +329,7 @@ public interface TilemanModeConfig extends Config {
             description = "Color claimed tile borders change to at the warning threshold",
             position = 6
     )
-    default Color claimedTileWarningColor() { return new Color(255, 153, 0, 90); }
+    default Color claimedTileWarningColor() { return new Color(255, 125, 0, 96); }
 
     @Alpha
     @ConfigItem(
@@ -323,7 +339,7 @@ public interface TilemanModeConfig extends Config {
             description = "Color claimed tile borders change to when no tile unlocks remain.",
             position = 7
     )
-    default Color claimedTileDeficitColor() { return new Color(255, 0, 0, 128); }
+    default Color claimedTileDeficitColor() { return new Color(255, 0, 0, 96); }
 
     @ConfigItem(
             keyName = "insetClaimedTiles",
@@ -380,20 +396,18 @@ public interface TilemanModeConfig extends Config {
             position = 4
     )
     default boolean drawGroupTilesUnderClaimedTiles() {
-        return true;
+        return false;
     }
 
     @Alpha
     @ConfigItem(
-            // keyName here should not be made consistent as this is a legacy schema field
-            // we don't want upgrading version to stop respecting old settings
             keyName = "groupTileBorderColor",
             name = "Border Color",
             section = groupTilesSection,
             description = "Border color of unlocked tiles",
             position = 5
     )
-    default Color groupTileBorderColor() { return new Color(123,232,0,79); }
+    default Color groupTileBorderColor() { return new Color(255,189,189,64); }
 
     @Alpha
     @ConfigItem(
@@ -427,7 +441,7 @@ public interface TilemanModeConfig extends Config {
             description = "Border color of path tiles on paths with all tiles claimed",
             position = 1
     )
-    default Color completePathBorderColor() { return new Color(0, 255, 0, 64); }
+    default Color completePathBorderColor() { return new Color(123, 232, 0, 255); }
 
     @Alpha
     @ConfigItem(
@@ -437,7 +451,7 @@ public interface TilemanModeConfig extends Config {
             description = "Fill color of path tiles on paths with all tiles claimed",
             position = 2
     )
-    default Color completePathFillColor() { return new Color(0, 255, 0, 16); }
+    default Color completePathFillColor() { return new Color(0, 255, 0, 32); }
 
     @ConfigItem(
             keyName = "insetCompletePathTiles",
@@ -468,7 +482,7 @@ public interface TilemanModeConfig extends Config {
             description = "Border color of claimed path tiles on paths that are partially claimed",
             position = 1
     )
-    default Color claimedPathBorderColor() { return new Color(0, 255, 0, 64); }
+    default Color claimedPathBorderColor() { return new Color(123, 232, 0, 255); }
 
     @Alpha
     @ConfigItem(
@@ -478,7 +492,7 @@ public interface TilemanModeConfig extends Config {
             description = "Fill color of claimed path tiles on paths that are partially claimed",
             position = 2
     )
-    default Color claimedPathFillColor() { return new Color(0, 255, 0, 16); }
+    default Color claimedPathFillColor() { return new Color(0, 255, 0, 32); }
 
     @ConfigItem(
             keyName = "insetClaimedPathTiles",
@@ -509,7 +523,7 @@ public interface TilemanModeConfig extends Config {
             description = "Border color of unclaimed path tiles on paths that are partially claimed",
             position = 1
     )
-    default Color unclaimedPathBorderColor() { return new Color(180, 180, 180, 96); }
+    default Color unclaimedPathBorderColor() { return new Color(255, 255, 255, 255); }
 
     @Alpha
     @ConfigItem(
@@ -519,7 +533,7 @@ public interface TilemanModeConfig extends Config {
             description = "Fill color of unclaimed path tiles on paths that are partially claimed",
             position = 2
     )
-    default Color unclaimedPathFillColor() { return new Color(180, 180, 180, 16); }
+    default Color unclaimedPathFillColor() { return new Color(0, 0, 0, 16); }
 
     @ConfigItem(
             keyName = "insetUnclaimedPathTiles",
@@ -555,7 +569,7 @@ public interface TilemanModeConfig extends Config {
             description = "Shows the cost to unlock tiles as the balance remaining after claiming.",
             position = 6
     )
-    default boolean showClaimCostsAsRemaining() { return false; }
+    default boolean showClaimCostsAsRemaining() { return true; }
 
     @ConfigItem(
             keyName = "wayfinderCostsTextColor",

@@ -232,8 +232,12 @@ public class TilemanModeOverlay extends Overlay
 		HashSet<WorldPoint> allClaimedTiles = new HashSet<WorldPoint>();
 		allClaimedTiles.addAll(plugin.getTilesToRender());
 		allClaimedTiles.addAll(plugin.getGroupTilesToRender());
+
+		// prepare shared data for the whole render pass
 		Boolean isWholePathUnlocked = allClaimedTiles.containsAll(pathToHoverTile);
 		Boolean shiftIsNotHeld = !(client.isKeyPressed(KeyCode.KC_SHIFT));
+		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+		int maxDrawDistance = config.maximumRenderDistance();
 
 		// We reduced the render area by 1 outer row to fix dodgy tile vertex position reporting by RuneLite
 		// The dodgy positions render as large, nearly vertical tiles which are super distracting visually
@@ -247,17 +251,20 @@ public class TilemanModeOverlay extends Overlay
 				WorldPoint tile = sceneTile.getWorldLocation();
 				if (tile == null) { continue; }
 
+				if (tile.distanceTo(playerLocation) > maxDrawDistance) { continue; }
+
 				boolean isGroupTile = plugin.getGroupTilesToRender().contains(tile);
-				boolean isClaimedTile = plugin.getTilesToRender().contains(tile);
+				boolean isPlayerTile = plugin.getTilesToRender().contains(tile);
 				boolean isPathTile = pathToHoverTile.contains(tile);
+				boolean isUnlocked = isGroupTile || isPlayerTile;
 
 				boolean shouldHideClaimed = isPathTile && !config.drawTilesUnderPaths();
-				if (isClaimedTile && !shouldHideClaimed) {
+				if (isPlayerTile && !shouldHideClaimed) {
 					DrawClaimedTile(g, tile);
 				}
 
 				boolean shouldHideGroup = isPathTile && !config.drawGroupTilesUnderPaths()
-						|| isClaimedTile && !config.drawGroupTilesUnderClaimedTiles();
+						|| isPlayerTile && !config.drawGroupTilesUnderClaimedTiles();
 				if (isGroupTile  && !shouldHideGroup) {
 					DrawGroupTile(g, tile);
 				}
@@ -268,12 +275,12 @@ public class TilemanModeOverlay extends Overlay
 						continue;
 					}
 
-					if (isClaimedTile && isPathTile) {
+					if (isUnlocked && isPathTile) {
 						DrawClaimedPathTile(g, tile);
 						continue;
 					}
 
-					if (!isClaimedTile && isPathTile) {
+					if (!isUnlocked && isPathTile) {
 						DrawUnclaimedPathTile(g, tile);
 					}
 				}
@@ -319,8 +326,15 @@ public class TilemanModeOverlay extends Overlay
 
 	private void DrawUnclaimedTileClaimCosts(Graphics2D g) {
 		if (config.showClaimCosts() && CurrentInteractionTypeIsWalk()) {
+
+			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+			int maxDrawDistance = config.maximumRenderDistance();
+
 			int tilesRequired = 0;
 			for (WorldPoint tile : pathToHoverTile) {
+
+				if (tile.distanceTo(playerLocation) > maxDrawDistance) { continue; }
+
 				boolean isClaimedTile = plugin.getTilesToRender().contains(tile);
 				boolean isGroupTile = plugin.getGroupTilesToRender().contains(tile);
 				if (isClaimedTile || isGroupTile){
