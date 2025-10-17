@@ -26,23 +26,29 @@
  */
 package com.tileman;
 
-import net.runelite.api.Client;
-import net.runelite.api.Perspective;
+import net.runelite.api.*;
+import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.*;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.util.Collection;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.List;
 
 public class TilemanModeOverlay extends Overlay
 {
-	private static final int MAX_DRAW_DISTANCE = 32;
-
 	private final Client client;
 	private final TilemanModePlugin plugin;
-
+	private final Timer timer = new Timer();
+	private float dashPhase = 0f;
+	private final TilemanPath wayfinder;
+	private WorldPoint lastPathStart = new WorldPoint(0,0,0);
+	private WorldPoint lastPathEnd = new WorldPoint(0,0,0);
+	private List<WorldPoint> pathToHoverTile;
 	@Inject
 	private TilemanModeConfig config;
 
@@ -52,102 +58,308 @@ public class TilemanModeOverlay extends Overlay
 		this.client = client;
 		this.plugin = plugin;
 		this.config = config;
+		this.wayfinder = new TilemanPath(plugin);
+
+		// define RuneLite rendering params
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
+
+		// Update the animation timer at a regular interval to make paths animate
+		timer.scheduleAtFixedRate(new TimerTask() {
+			@Override
+			public void run() {
+				updateDashPhase();
+			}
+		}, 75, 75);
+	}
+
+	private void updateDashPhase(){
+		dashPhase += 1.0f;
+		if (dashPhase >= 15.0f) { // must be total length of dashPattern to loop smoothly
+			dashPhase = 0;
+		}
+	}
+
+	private void drawTileText(Graphics2D graphics, WorldPoint tile, Color color, String label) {
+		if (label == ""){
+			return;
+		}
+
+		LocalPoint lp = LocalPoint.fromWorld(client, tile);
+		Point canvasCountLocation = Perspective.getCanvasTextLocation(client, graphics, lp, label, 0);
+		if (canvasCountLocation != null)
+		{
+			OverlayUtil.renderTextLocation(graphics, canvasCountLocation, label, color);
+		}
+	}
+
+	private void insetTilePoly(Polygon source)
+	{
+		int centreX = (source.xpoints[0] + source.xpoints[1] + source.xpoints[2] + source.xpoints[3]) / 4;
+		int centreY = (source.ypoints[0] + source.ypoints[1] + source.ypoints[2] + source.ypoints[3]) / 4;
+
+		// 20% inset
+		source.xpoints[0] = (source.xpoints[0] * 4 + centreX) / 5;
+		source.xpoints[1] = (source.xpoints[1] * 4 + centreX) / 5;
+		source.xpoints[2] = (source.xpoints[2] * 4 + centreX) / 5;
+		source.xpoints[3] = (source.xpoints[3] * 4 + centreX) / 5;
+
+		source.ypoints[0] = (source.ypoints[0] * 4 + centreY) / 5;
+		source.ypoints[1] = (source.ypoints[1] * 4 + centreY) / 5;
+		source.ypoints[2] = (source.ypoints[2] * 4 + centreY) / 5;
+		source.ypoints[3] = (source.ypoints[3] * 4 + centreY) / 5;
+
+	}
+
+	private void drawTile(Graphics2D graphics, WorldPoint point, Color border, Color fill, BasicStroke stroke, boolean inset)
+	{
+		LocalPoint lp = LocalPoint.fromWorld(client, point);
+		if (lp == null) { return; }
+
+		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+		if (poly == null) { return; }
+
+		if (inset) {
+			insetTilePoly(poly);
+		}
+
+		OverlayUtil.renderPolygon(graphics, poly, border, fill, stroke);
+	}
+
+	private void updatePathIfOutdated(){
+		if (config.enableWayfinder()) {
+			Instant startTime = Instant.now();
+			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+			Tile selected = client.getTopLevelWorldView().getSelectedSceneTile();
+
+			// exit early if selected tile is garbage
+			if (selected == null){
+				lastPathStart = playerLocation;
+				lastPathEnd = playerLocation;
+				pathToHoverTile = wayfinder.findPath(playerLocation, playerLocation);
+				plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
+				return;
+			}
+
+			WorldPoint hoverTile = selected.getWorldLocation();
+			Boolean playerMoved = !lastPathStart.equals(playerLocation);
+			Boolean hoverTileChanged = !lastPathEnd.equals(hoverTile);
+			Boolean recalculate = playerMoved || hoverTileChanged;
+
+			if (recalculate) {
+				lastPathStart = playerLocation;
+				lastPathEnd = hoverTile;
+				pathToHoverTile = wayfinder.findPath(playerLocation, hoverTile);
+				plugin.durationLastWayfind = Duration.between(startTime, Instant.now());
+			}
+		}
+	}
+
+	private Color getClaimedTileBorderColor() {
+		if(config.enableTileWarnings()) {
+			if (plugin.getRemainingTiles() <= 0) {
+				return config.claimedTileDeficitColor();
+			} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
+				return config.claimedTileWarningColor();
+			}
+		}
+		return config.claimedTileBorderColor();
+	}
+
+	private BasicStroke getSolidLine() {
+		return new BasicStroke();
+	}
+
+	private BasicStroke getDashedLine() {
+		float[] dashPattern = {10.0f, 5.0f}; // 10 units on, 5 units off
+		return new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, dashPattern, dashPhase);
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
+	public Dimension render(Graphics2D g)
 	{
+		Instant startTime = Instant.now();
+
+		// Start by validating the state to make sure it actually makes sense to try and render tiles
+		if (client.getGameState() != GameState.LOGGED_IN) {
+			return null;
+		}
+
+		Player player = client.getLocalPlayer();
+		if (player == null) { return null; }
+
+		WorldView wv = player.getWorldView();
+		if (wv == null) { return null; }
+
+		Scene scene = wv.getScene();
+		if (scene == null) { return null; }
+
 		// If players plane changes (or has never been set) refresh the tile list to render
 		// We trigger it here in the render thread to avoid a ConcurrentModificationException of the tilesToRender collection.
-		if (plugin.lastPlane != client.getPlane()){
-			plugin.updateTilesToRender();
-			plugin.lastPlane = client.getPlane();
+		plugin.handlePlaneChanged();
+
+		// Update the wayfinder data (only if relevant)
+		boolean isUsingWayfinder = config.enableWayfinder();
+		if (isUsingWayfinder){
+			updatePathIfOutdated();
 		}
 
-		// draw group tileman data first so that player centric rendering draws on top of them
-		final Collection<WorldPoint> groupPoints = plugin.getGroupTilesToRender();
-		for (final WorldPoint point : groupPoints)
-		{
-			if (point.getPlane() != client.getPlane())
-			{
-				continue;
-			}
-			temporaryDrawImportedTile(graphics, point);
+		// This check ensures that the path renders correctly when moving the cursor
+		// between obstructions partially overlapping a tile and the clear space of the same tile
+		Boolean canWalk = CurrentInteractionTypeIsWalk();
+		if (!canWalk) {
+			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+			lastPathStart = playerLocation;
+			lastPathEnd = playerLocation;
+			pathToHoverTile = wayfinder.findPath(playerLocation, playerLocation);
 		}
 
-		// draw player tiles
-		final Collection<WorldPoint> points = plugin.getTilesToRender();
-		for (final WorldPoint point : points)
-		{
-			if (point.getPlane() != client.getPlane())
-			{
-				continue;
-			}
+		// Render each tile in scene
+		RenderSceneTiles(g, scene, isUsingWayfinder, canWalk);
 
-			drawTile(graphics, point);
-		}
+		plugin.durationLastRender = Duration.between(startTime, Instant.now());
 
 		return null;
 	}
 
-	private void temporaryDrawImportedTile(Graphics2D graphics, WorldPoint point)
-	{
-		// This method is temporary to avoid touching the changed rendering logic in drawTile when
-		// integrating with the wayfinding code.
+	private void RenderSceneTiles(Graphics2D g, Scene scene, Boolean isUsingWayfinder, Boolean canWalk) {
 
+		int plane = client.getPlane();
+		Tile[][][] sceneTiles = scene.getTiles();
+
+		// build combined set of unlocked tiles
+		HashSet<WorldPoint> allClaimedTiles = new HashSet<WorldPoint>();
+		allClaimedTiles.addAll(plugin.getTilesToRender());
+		allClaimedTiles.addAll(plugin.getGroupTilesToRender());
+
+		// prepare shared data for the whole render pass
+		Boolean isWholePathUnlocked = allClaimedTiles.containsAll(pathToHoverTile);
+		Boolean shiftIsNotHeld = !(client.isKeyPressed(KeyCode.KC_SHIFT));
 		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-		if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
-		{
-			return;
-		}
-		LocalPoint lp = LocalPoint.fromWorld(client, point);
-		if (lp == null)
-		{
-			return;
-		}
-		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-		if (poly == null)
-		{
-			return;
-		}
-		OverlayUtil.renderPolygon(graphics, poly, Color.PINK);
-	}
+		int maxDrawDistance = config.maximumRenderDistance();
 
-	private void drawTile(Graphics2D graphics, WorldPoint point)
-	{
-		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+		// We reduced the render area by 1 outer row to fix dodgy tile vertex position reporting by RuneLite
+		// The dodgy positions render as large, nearly vertical tiles which are super distracting visually
+		int fixRenderArtifact = 1;
+		for (int x = fixRenderArtifact; x < Constants.SCENE_SIZE - fixRenderArtifact; ++x) {
+			for (int y = fixRenderArtifact; y < Constants.SCENE_SIZE - fixRenderArtifact; ++y) {
 
-		if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
-		{
-			return;
-		}
+				Tile sceneTile = sceneTiles[plane][x][y];
+				if (sceneTile == null) { continue; }
 
-		LocalPoint lp = LocalPoint.fromWorld(client, point);
-		if (lp == null)
-		{
-			return;
-		}
+				WorldPoint tile = sceneTile.getWorldLocation();
+				if (tile == null) { continue; }
 
-		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-		if (poly == null)
-		{
-			return;
-		}
+				if (tile.distanceTo(playerLocation) > maxDrawDistance) { continue; }
 
-		OverlayUtil.renderPolygon(graphics, poly, getTileColor());
-	}
+				boolean isGroupTile = plugin.getGroupTilesToRender().contains(tile);
+				boolean isPlayerTile = plugin.getTilesToRender().contains(tile);
+				boolean isPathTile = pathToHoverTile.contains(tile);
+				boolean isUnlocked = isGroupTile || isPlayerTile;
 
-	private Color getTileColor() {
-		if(config.enableTileWarnings()) {
-			if (plugin.getRemainingTiles() <= 0) {
-				return Color.RED;
-			} else if (plugin.getRemainingTiles() <= config.warningLimit()) {
-				return new Color(255, 153, 0);
+				boolean shouldHideClaimed = isPathTile && !config.drawTilesUnderPaths();
+				if (isPlayerTile && !shouldHideClaimed) {
+					DrawClaimedTile(g, tile);
+				}
+
+				boolean shouldHideGroup = isPathTile && !config.drawGroupTilesUnderPaths()
+						|| isPlayerTile && !config.drawGroupTilesUnderClaimedTiles();
+				if (isGroupTile  && !shouldHideGroup) {
+					DrawGroupTile(g, tile);
+				}
+
+				if (isUsingWayfinder && shiftIsNotHeld && canWalk) {
+					if (isWholePathUnlocked && isPathTile) {
+						DrawCompletePathTile(g, tile);
+						continue;
+					}
+
+					if (isUnlocked && isPathTile) {
+						DrawClaimedPathTile(g, tile);
+						continue;
+					}
+
+					if (!isUnlocked && isPathTile) {
+						DrawUnclaimedPathTile(g, tile);
+					}
+				}
 			}
 		}
-		return config.markerColor();
+
+		if (shiftIsNotHeld) {
+			DrawUnclaimedTileClaimCosts(g);
+		}
+	}
+
+
+	private boolean CurrentInteractionTypeIsWalk() {
+		// we check this so that when attacking or interacting at cursor the path doesn't render
+		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
+		// last element is the default left click option
+		String option = menuEntries[menuEntries.length-1].getOption();
+		return option.startsWith("Walk here");
+	}
+
+	private void DrawCompletePathTile(Graphics2D g, WorldPoint tile) {
+		Color border = config.completePathBorderColor();
+		Color fill = config.completePathFillColor();
+		BasicStroke stroke = config.animateCompletePathTiles() ? getDashedLine() : getSolidLine();
+		boolean inset = config.insetCompletePathTiles();
+		drawTile(g, tile, border, fill, stroke, inset);
+	}
+
+	private void DrawClaimedTile(Graphics2D g, WorldPoint tile) {
+		Color border = getClaimedTileBorderColor();
+		Color fill = config.claimedTileFillColor();
+		boolean inset = config.insetClaimedTiles();
+		drawTile(g, tile, border, fill, getSolidLine(), inset);
+	}
+
+	private void DrawUnclaimedPathTile(Graphics2D g, WorldPoint tile) {
+		Color border = config.unclaimedPathBorderColor();
+		Color fill = config.unclaimedPathFillColor();
+		BasicStroke stroke = config.animateUnclaimedPathTiles() ? getDashedLine() : getSolidLine();
+		boolean inset = config.insetUnclaimedPathTiles();
+		drawTile(g, tile, border, fill, stroke, inset);
+	}
+
+	private void DrawUnclaimedTileClaimCosts(Graphics2D g) {
+		if (config.showClaimCosts() && CurrentInteractionTypeIsWalk()) {
+
+			WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+			int maxDrawDistance = config.maximumRenderDistance();
+
+			int tilesRequired = 0;
+			for (WorldPoint tile : pathToHoverTile) {
+
+				if (tile.distanceTo(playerLocation) > maxDrawDistance) { continue; }
+
+				boolean isClaimedTile = plugin.getTilesToRender().contains(tile);
+				boolean isGroupTile = plugin.getGroupTilesToRender().contains(tile);
+				if (isClaimedTile || isGroupTile){
+					continue;
+				}
+				tilesRequired += 1;
+				Color textColor = config.claimCostsColor();
+				int tileCount = config.showClaimCostsAsRemaining() ? plugin.getRemainingTiles() - tilesRequired : tilesRequired;
+				drawTileText(g, tile, textColor, String.valueOf(tileCount));
+			}
+		}
+	}
+
+	private void DrawClaimedPathTile(Graphics2D g, WorldPoint tile) {
+		Color border = config.claimedPathBorderColor();
+		Color fill = config.claimedPathFillColor();
+		BasicStroke stroke = config.animateClaimedPathTiles() ? getDashedLine() : getSolidLine();
+		boolean inset = config.insetClaimedPathTiles();
+		drawTile(g, tile, border, fill, stroke, inset);
+	}
+
+	private void DrawGroupTile(Graphics2D g, WorldPoint tile) {
+		Color border = config.groupTileBorderColor();
+		Color fill = config.groupTileFillColor();
+		boolean inset = config.insetGroupTiles();
+		drawTile(g, tile, border, fill, getSolidLine(), inset);
 	}
 }

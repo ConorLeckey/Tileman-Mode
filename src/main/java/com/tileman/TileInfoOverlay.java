@@ -25,14 +25,20 @@
  */
 package com.tileman;
 
+import net.runelite.api.Tile;
+import net.runelite.api.WorldView;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
+import net.runelite.client.ui.overlay.components.PanelComponent;
+import net.runelite.client.ui.overlay.components.TitleComponent;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.time.Duration;
 
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
@@ -85,12 +91,119 @@ class TileInfoOverlay extends OverlayPanel {
                 .right(unlockedTiles)
                 .build());
 
+
+        renderTileInfoPanel(panelComponent);
+        renderPerformancePanel(panelComponent);
+
         panelComponent.setPreferredSize(new Dimension(
                 getLongestStringWidth(STRINGS, graphics)
                         + getLongestStringWidth(new String[] {unlockedTiles, unspentTiles}, graphics),
                 0));
 
         return super.render(graphics);
+    }
+
+    private void renderTileInfoPanel(PanelComponent panelComponent) {
+
+        if (!config.showTileInfo()) {
+            return;
+        }
+
+        TitleComponent spacer = TitleComponent.builder().text("").build();
+        panelComponent.getChildren().add(spacer);
+
+        TitleComponent title = TitleComponent.builder().text("Tile Info").color(Color.ORANGE).build();
+        panelComponent.getChildren().add(title);
+
+        WorldPoint target;
+        try{
+            target = plugin.getClient().getLocalPlayer().getWorldView().getSelectedSceneTile().getWorldLocation();
+        } catch (Exception ex) {
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Invalid Target")
+                    .build());
+            return;
+        }
+
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("RegionID:")
+                .right(String.valueOf(target.getRegionID()))
+                .build());
+
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("RegionX:")
+                .right(String.valueOf(target.getRegionX()))
+                .build());
+
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("RegionY:")
+                .right(String.valueOf(target.getRegionY()))
+                .build());
+
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("RegionPlane:")
+                .right(String.valueOf(target.getPlane()))
+                .build());
+
+        panelComponent.getChildren().add(LineComponent.builder()
+                .left("State:")
+                .right(plugin.getTilesToRender().contains(target) ? "Unlocked" : "Locked")
+                .build());
+    }
+
+    private void renderPerformancePanel(PanelComponent panelComponent) {
+        if (config.showPerformanceInfo()) {
+
+            TitleComponent spacer = TitleComponent.builder().text("").build();
+            panelComponent.getChildren().add(spacer);
+
+            TitleComponent title = TitleComponent.builder().text("Performance").color(Color.ORANGE).build();
+            panelComponent.getChildren().add(title);
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Region Read:")
+                    .right(prettyDuration(plugin.durationLastRegionRead))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Region Write:")
+                    .right(prettyDuration(plugin.durationLastRegionWrite))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Wayfind:")
+                    .right(prettyDuration(plugin.durationLastWayfind))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Startup:")
+                    .right(prettyDuration(plugin.durationLastStart))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("AutoTile:")
+                    .right(prettyDuration(plugin.durationLastMove))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Tiles Update:")
+                    .right(prettyDuration(plugin.durationLastTilesUpdate))
+                    .build());
+
+            panelComponent.getChildren().add(LineComponent.builder()
+                    .left("Render:")
+                    .right(prettyDuration(plugin.durationLastRender))
+                    .build());
+        }
+    }
+
+    private String prettyDuration(Duration d)
+    {
+        if (d == null) {
+            return "-";
+        }
+        long millis = d.toMillis();
+        return millis >= 1 ? String.valueOf(millis) + "ms" : "<1ms";
     }
 
     private Color getTextColor() {
