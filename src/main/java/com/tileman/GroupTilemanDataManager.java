@@ -34,14 +34,16 @@ public class GroupTilemanDataManager extends PluginPanel {
     private GridBagConstraints constraints;
     final private TilemanModePlugin plugin;
     final private ConfigManager configManager;
+    final private Gson gson;
     final private Set<String> importedDataSetKeys = new HashSet<>();
     final private Color NEUTRAL_COLOR = new Color(0, 0, 0);
     final private Color FAILURE_RED = new Color(100, 0, 0);
     final private Color SUCCESS_GREEN = new Color(0, 100, 0);
 
-    public GroupTilemanDataManager(TilemanModePlugin plugin, ConfigManager configManager) {
+    public GroupTilemanDataManager(TilemanModePlugin plugin, ConfigManager configManager, Gson gson) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.gson = gson;
         updatePanelContents();
     }
 
@@ -283,7 +285,6 @@ public class GroupTilemanDataManager extends PluginPanel {
         // convert export string to groupTilemanData
         GroupTilemanData parsedData;
         try {
-            Gson gson = new Gson();
             parsedData = gson.fromJson(clipboardText, GroupTilemanData.class);
         } catch (JsonSyntaxException e) {
             log.debug("The text on the clipboard was unable to be parsed. Abandoning import.", e);
@@ -391,7 +392,6 @@ public class GroupTilemanDataManager extends PluginPanel {
             tilesExported += tiles.size();
         }
 
-        Gson gson = new Gson();
         final String exportDump = gson.toJson(exportData);
         Toolkit.getDefaultToolkit()
                 .getSystemClipboard()
