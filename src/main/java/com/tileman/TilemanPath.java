@@ -94,16 +94,14 @@ public class TilemanPath {
             return;
         }
 
+        // evaluation orders below are important - the order neighbours are added impacts path selection.
+        // this order has to match the default clients evaluation order to generate the same path to a tile
+
         // Axis aligned
 
-        if (travelCheck.canTravelInDirection(wv, staticAxis, northOnYAxis)){
-            WorldPoint north = new WorldPoint(x, y + northOnYAxis, plane);
-            addNeighbor(head, north);
-        }
-
-        if (travelCheck.canTravelInDirection(wv, eastOnXAxis, staticAxis)){
-            WorldPoint east = new WorldPoint(x + eastOnXAxis, y, plane);
-            addNeighbor(head, east);
+        if (travelCheck.canTravelInDirection(wv, westOnXAxis, staticAxis)){
+            WorldPoint west = new WorldPoint(x + westOnXAxis, y, plane);
+            addNeighbor(head, west);
         }
 
         if (travelCheck.canTravelInDirection(wv, staticAxis, southOnYAxis)){
@@ -111,35 +109,39 @@ public class TilemanPath {
             addNeighbor(head, south);
         }
 
-        if (travelCheck.canTravelInDirection(wv, westOnXAxis, staticAxis)){
-            WorldPoint west = new WorldPoint(x + westOnXAxis, y, plane);
-            addNeighbor(head, west);
+        if (travelCheck.canTravelInDirection(wv, eastOnXAxis, staticAxis)){
+            WorldPoint east = new WorldPoint(x + eastOnXAxis, y, plane);
+            addNeighbor(head, east);
         }
 
-        // Diagonal north
-
-        if (travelCheck.canTravelInDirection(wv, eastOnXAxis, northOnYAxis)){
-            WorldPoint northEast = new WorldPoint(x + eastOnXAxis, y + northOnYAxis, plane);
-            addNeighbor(head, northEast);
-        }
-
-        if (travelCheck.canTravelInDirection(wv, westOnXAxis, northOnYAxis)){
-            WorldPoint northWest = new WorldPoint(x + westOnXAxis, y + northOnYAxis, plane);
-            addNeighbor(head, northWest);
+        if (travelCheck.canTravelInDirection(wv, staticAxis, northOnYAxis)){
+            WorldPoint north = new WorldPoint(x, y + northOnYAxis, plane);
+            addNeighbor(head, north);
         }
 
         // Diagonal south
-
-        if (travelCheck.canTravelInDirection(wv, eastOnXAxis, southOnYAxis)){
-            WorldPoint southEast = new WorldPoint(x + eastOnXAxis, y + southOnYAxis, plane);
-            addNeighbor(head, southEast);
-        }
 
         if (travelCheck.canTravelInDirection(wv, westOnXAxis, southOnYAxis)){
             WorldPoint southWest = new WorldPoint(x + westOnXAxis, y + southOnYAxis, plane);
             addNeighbor(head, southWest);
         }
 
+        if (travelCheck.canTravelInDirection(wv, eastOnXAxis, southOnYAxis)){
+            WorldPoint southEast = new WorldPoint(x + eastOnXAxis, y + southOnYAxis, plane);
+            addNeighbor(head, southEast);
+        }
+
+        // Diagonal north
+
+        if (travelCheck.canTravelInDirection(wv, westOnXAxis, northOnYAxis)){
+            WorldPoint northWest = new WorldPoint(x + westOnXAxis, y + northOnYAxis, plane);
+            addNeighbor(head, northWest);
+        }
+
+        if (travelCheck.canTravelInDirection(wv, eastOnXAxis, northOnYAxis)){
+            WorldPoint northEast = new WorldPoint(x + eastOnXAxis, y + northOnYAxis, plane);
+            addNeighbor(head, northEast);
+        }
     }
 
     private void addNeighbor(Node head, WorldPoint neighbor) {
