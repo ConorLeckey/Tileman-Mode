@@ -274,8 +274,7 @@ public class TilemanModePlugin extends Plugin {
         updateTileCountFromConfigs();
         updateTilesToRender();
 
-        groupTilemanDataManager = new GroupTilemanDataManager(this, configManager);
-
+        groupTilemanDataManager = new GroupTilemanDataManager(this, configManager, gson);
         NavigationButton navButton = NavigationButton.builder()
                 .tooltip("Group Tileman Data")
                 .icon(ImageUtil.getResourceStreamFromClass(getClass(), "/icon.png"))
@@ -758,7 +757,6 @@ public class TilemanModePlugin extends Plugin {
         log.debug("Updating point: {} - {}", tile, worldPoint);
         Collection<TilemanModeTile> tiles = readTiles(regionId, plane);
         Boolean tileIsUnlocked = tiles.contains(tile);
-        WorldPoint point = WorldPoint.fromRegion(tile.getRegionId(), tile.getRegionX(), tile.getRegionY(), tile.getZ());
         Boolean stateChanged = false;
         Boolean groupTilemanClaimed = !ignoreImportedTiles && groupTilesToRender.contains(WorldPoint.fromLocalInstance(client, localPoint));
 

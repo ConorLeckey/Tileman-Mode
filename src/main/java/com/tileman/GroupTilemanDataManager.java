@@ -32,16 +32,18 @@ public class GroupTilemanDataManager extends PluginPanel {
 
     private JPanel panel;
     private GridBagConstraints constraints;
-    private TilemanModePlugin plugin;
-    private ConfigManager configManager;
-    private Set<String> importedDataSetKeys = new HashSet<>();
-    private Color NEUTRAL_COLOR = new Color(0, 0, 0);
-    private Color FAILURE_RED = new Color(100, 0, 0);
-    private Color SUCCESS_GREEN = new Color(0, 100, 0);
+    final private TilemanModePlugin plugin;
+    final private ConfigManager configManager;
+    final private Gson gson;
+    final private Set<String> importedDataSetKeys = new HashSet<>();
+    final private Color NEUTRAL_COLOR = new Color(0, 0, 0);
+    final private Color FAILURE_RED = new Color(100, 0, 0);
+    final private Color SUCCESS_GREEN = new Color(0, 100, 0);
 
-    public GroupTilemanDataManager(TilemanModePlugin plugin, ConfigManager configManager) {
+    public GroupTilemanDataManager(TilemanModePlugin plugin, ConfigManager configManager, Gson gson) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.gson = gson;
         updatePanelContents();
     }
 
@@ -283,7 +285,6 @@ public class GroupTilemanDataManager extends PluginPanel {
         // convert export string to groupTilemanData
         GroupTilemanData parsedData;
         try {
-            Gson gson = new Gson();
             parsedData = gson.fromJson(clipboardText, GroupTilemanData.class);
         } catch (JsonSyntaxException e) {
             log.debug("The text on the clipboard was unable to be parsed. Abandoning import.", e);
@@ -295,7 +296,7 @@ public class GroupTilemanDataManager extends PluginPanel {
         }
 
         // generate a sanitized pure alphanumeric label for the tile set
-        String tileSetName = "";
+        String tileSetName;
         try {
             // guard against empty field contents
             if (parsedData.playerName == null){
@@ -321,7 +322,6 @@ public class GroupTilemanDataManager extends PluginPanel {
         }
 
         // clean any existing data stored under the same key name
-        List<String> allKeys = configManager.getConfigurationKeys(TilemanModePlugin.CONFIG_GROUP + "." + TilemanModePlugin.REGION_PREFIX_IMPORTED + tileSetName);
         deleteTileSet(tileSetName, true);
 
         // write the imported data to the config store
@@ -332,7 +332,7 @@ public class GroupTilemanDataManager extends PluginPanel {
             for(int plane = 0; plane < 4; plane++){
 
                 // split the region data to planes
-                List<TilemanModeTile> filteredTiles = new ArrayList<TilemanModeTile>();
+                List<TilemanModeTile> filteredTiles = new ArrayList<>();
                 for (TilemanModeTile tile : regionTiles) {
                     if (tile.getZ() == plane){
                         filteredTiles.add(tile);
@@ -388,11 +388,10 @@ public class GroupTilemanDataManager extends PluginPanel {
                 tiles.addAll(plugin.readTiles(regionId, plane));
             }
             // V1 is used for legacy format compatibility with historic exports from group tileman addon plugin.
-            exportData.regionTiles.put(TilemanModePlugin.REGION_PREFIX_V1 + String.valueOf(regionId), tiles);
+            exportData.regionTiles.put(TilemanModePlugin.REGION_PREFIX_V1 + regionId, tiles);
             tilesExported += tiles.size();
         }
 
-        Gson gson = new Gson();
         final String exportDump = gson.toJson(exportData);
         Toolkit.getDefaultToolkit()
                 .getSystemClipboard()
@@ -425,7 +424,7 @@ public class GroupTilemanDataManager extends PluginPanel {
         // manage maximum number of warnings to provide about this
         final int maxWarningsToGive = 3;
         final int remainingWarnings = maxWarningsToGive - (warningCount + 1);
-        final Map<Integer, String> countMessage = new HashMap<Integer, String>();
+        final Map<Integer, String> countMessage = new HashMap<>();
         countMessage.put(2, "This warning will display two more times.");
         countMessage.put(1, "This warning will display one more time.");
         countMessage.put(0, "This warning will not display again.");
