@@ -23,7 +23,7 @@ Feel free to contact me on discord at Conleck#6160 with any bug reports or sugge
 
 # Changelog
 
-## Late October 2025 Minor Update
+## November 2025 Minor Update
 
 **Expanded overlay customization options**
 > - A large number of new customization options are available for rendering tile overlays.
